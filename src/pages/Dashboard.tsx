@@ -1,10 +1,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Users, Activity, TrendingUp, Target } from "lucide-react";
+import { Building2, Users, Activity, TrendingUp, Target, Mail, Phone, Linkedin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { Progress } from "@/components/ui/progress";
 
 const Dashboard = () => {
   const queryClient = useQueryClient();
@@ -70,21 +71,69 @@ const Dashboard = () => {
     },
   });
 
-  const { data: activitiesCount } = useQuery({
-    queryKey: ["activities-count"],
+  const { data: monthlyActivities } = useQuery({
+    queryKey: ["monthly-activities"],
     queryFn: async () => {
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
+      const now = new Date();
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
-      const { count, error } = await supabase
+      const { data, error } = await supabase
         .from("outreach_activities")
-        .select("*", { count: "exact", head: true })
-        .gte("created_at", startOfMonth.toISOString());
+        .select("*")
+        .gte("created_at", firstDay.toISOString())
+        .lte("created_at", lastDay.toISOString());
       if (error) throw error;
-      return count || 0;
+      return data || [];
     },
   });
+
+  const activityStats = useMemo(() => {
+    if (!monthlyActivities) return {
+      completed: 0,
+      scheduled: 0,
+      byType: { Email: 0, Phone: 0, LinkedIn: 0 }
+    };
+
+    const now = new Date();
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+    const completed = monthlyActivities.filter(a => 
+      a.completed_date && a.outcome === 'Completed'
+    ).length;
+
+    const scheduled = monthlyActivities.filter(a => 
+      a.scheduled_date && 
+      new Date(a.scheduled_date) > now &&
+      new Date(a.scheduled_date) <= endOfMonth
+    ).length;
+
+    const byType = {
+      Email: monthlyActivities.filter(a => a.activity_type === 'Email').length,
+      Phone: monthlyActivities.filter(a => a.activity_type === 'Phone').length,
+      LinkedIn: monthlyActivities.filter(a => 
+        a.activity_type === 'LinkedIn Connection' || 
+        a.activity_type === 'LinkedIn Message'
+      ).length
+    };
+
+    return { completed, scheduled, byType };
+  }, [monthlyActivities]);
+
+  const monthProgress = useMemo(() => {
+    const now = new Date();
+    const currentDay = now.getDate();
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const percentage = Math.round((currentDay / daysInMonth) * 100);
+    return { currentDay, daysInMonth, percentage };
+  }, []);
+
+  const currentMonthName = useMemo(() => {
+    return new Date().toLocaleDateString("en-US", { 
+      month: "long", 
+      year: "numeric" 
+    });
+  }, []);
 
   const { data: pilotProgramsCount } = useQuery({
     queryKey: ["pilot-programs-count"],
@@ -226,16 +275,67 @@ const Dashboard = () => {
 
         {/* This Month's Activities Card */}
         <Card 
-          className="cursor-pointer hover:shadow-lg transition-shadow"
+          className="cursor-pointer hover:shadow-lg transition-shadow col-span-2"
           onClick={() => navigate('/activities')}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">This Month's Activities</CardTitle>
+            <div>
+              <CardTitle className="text-sm font-medium">This Month's Activities</CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">{currentMonthName}</p>
+            </div>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{activitiesCount}</div>
-            <p className="text-xs text-muted-foreground mt-2">Outreach touchpoints</p>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-2xl font-bold">{activityStats.completed}</p>
+                  <p className="text-xs text-muted-foreground">Activities completed</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{activityStats.scheduled}</p>
+                  <p className="text-xs text-muted-foreground">Scheduled upcoming</p>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Breakdown:</p>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-muted-foreground">Emails</span>
+                    </div>
+                    <span className="font-semibold">{activityStats.byType.Email}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-muted-foreground">Calls</span>
+                    </div>
+                    <span className="font-semibold">{activityStats.byType.Phone}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <Linkedin className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-muted-foreground">LinkedIn</span>
+                    </div>
+                    <span className="font-semibold">{activityStats.byType.LinkedIn}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Month Progress</span>
+                  <span className="text-muted-foreground">
+                    Day {monthProgress.currentDay}/{monthProgress.daysInMonth}
+                  </span>
+                </div>
+                <Progress value={monthProgress.percentage} className="h-2" />
+                <p className="text-xs text-muted-foreground text-right">{monthProgress.percentage}%</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 

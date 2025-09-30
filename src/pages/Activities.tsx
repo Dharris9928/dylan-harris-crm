@@ -1,38 +1,103 @@
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity } from "lucide-react";
+import { Activity, Calendar } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format } from "date-fns";
 
 const Activities = () => {
-  const { data: activities, isLoading } = useQuery({
-    queryKey: ["activities"],
-    queryFn: async () => {
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
+  const [dateRange, setDateRange] = useState<{
+    from: Date;
+    to: Date;
+  }>(() => {
+    // Default to current month
+    const now = new Date();
+    return {
+      from: new Date(now.getFullYear(), now.getMonth(), 1),
+      to: new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
+    };
+  });
 
+  const { data: activities, isLoading } = useQuery({
+    queryKey: ["activities", dateRange],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from("outreach_activities")
         .select("*, companies(company_name), contacts(first_name, last_name)")
-        .gte("created_at", startOfMonth.toISOString())
+        .gte("created_at", dateRange.from.toISOString())
+        .lte("created_at", dateRange.to.toISOString())
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
   });
 
-  const currentMonth = new Date().toLocaleDateString("en-US", { 
-    month: "long", 
-    year: "numeric" 
-  });
+  const isCurrentMonth = useMemo(() => {
+    const now = new Date();
+    return dateRange.from.getMonth() === now.getMonth() && 
+           dateRange.from.getFullYear() === now.getFullYear();
+  }, [dateRange]);
+
+  const resetToCurrentMonth = () => {
+    const now = new Date();
+    setDateRange({
+      from: new Date(now.getFullYear(), now.getMonth(), 1),
+      to: new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
+    });
+  };
+
+  const dateRangeText = `${format(dateRange.from, "MMM d, yyyy")} - ${format(dateRange.to, "MMM d, yyyy")}`;
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Activities</h1>
-        <p className="text-muted-foreground">
-          Outreach activities for {currentMonth}
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Activities</h1>
+          <p className="text-muted-foreground">
+            Outreach activities {isCurrentMonth ? "for current month" : `from ${dateRangeText}`}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          {!isCurrentMonth && (
+            <Button variant="outline" onClick={resetToCurrentMonth}>
+              Current Month
+            </Button>
+          )}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline">
+                <Calendar className="h-4 w-4 mr-2" />
+                Date Range
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <div className="p-4 space-y-4">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">From Date</label>
+                  <CalendarComponent
+                    mode="single"
+                    selected={dateRange.from}
+                    onSelect={(date) => date && setDateRange(prev => ({ ...prev, from: date }))}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">To Date</label>
+                  <CalendarComponent
+                    mode="single"
+                    selected={dateRange.to}
+                    onSelect={(date) => date && setDateRange(prev => ({ 
+                      ...prev, 
+                      to: new Date(date.setHours(23, 59, 59, 999))
+                    }))}
+                  />
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
 
       {isLoading ? (

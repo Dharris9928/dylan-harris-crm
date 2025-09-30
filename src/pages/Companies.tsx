@@ -62,6 +62,13 @@ const Companies = () => {
   const priorityFilter = searchParams.get("priority");
   const builderSegmentFilter = searchParams.get("builder_segment");
   const contractorSegmentFilter = searchParams.get("contractor_segment");
+  const industryTypeFilter = searchParams.get("industry_type");
+  const stateFilter = searchParams.get("state");
+  const cityFilter = searchParams.get("city");
+  const hasWebsiteFilter = searchParams.get("has_website");
+  const hasLinkedinFilter = searchParams.get("has_linkedin");
+  const hasPartnerFilter = searchParams.get("has_partner");
+  const lastContactFilter = searchParams.get("last_contact");
 
   // Persist sort selection
   useEffect(() => {
@@ -101,7 +108,7 @@ const Companies = () => {
   useEffect(() => {
     setCurrentPage(1);
     setSelectedRows([]);
-  }, [debouncedSearch, statusFilter, priorityFilter, builderSegmentFilter, contractorSegmentFilter]);
+  }, [debouncedSearch, statusFilter, priorityFilter, builderSegmentFilter, contractorSegmentFilter, industryTypeFilter, stateFilter, cityFilter]);
 
   const { data: companies, isLoading, refetch } = useQuery({
     queryKey: ["companies"],
@@ -132,6 +139,11 @@ const Companies = () => {
       );
     }
     
+    // Apply industry type filter
+    if (industryTypeFilter) {
+      filtered = filtered.filter(company => company.industry_type === industryTypeFilter);
+    }
+    
     // Apply status filter
     if (statusFilter) {
       filtered = filtered.filter(company => company.status === statusFilter);
@@ -150,6 +162,22 @@ const Companies = () => {
     // Apply contractor segment filter
     if (contractorSegmentFilter) {
       filtered = filtered.filter(company => company.contractor_segment === contractorSegmentFilter);
+    }
+    
+    // Note: State and city filters require company_branches data
+    // These can be implemented when branches data is joined in the query
+    
+    // Apply data completeness filters
+    if (hasWebsiteFilter === "true") {
+      filtered = filtered.filter(company => company.website_url);
+    }
+    
+    if (hasLinkedinFilter === "true") {
+      filtered = filtered.filter(company => company.linkedin_company_url);
+    }
+    
+    if (hasPartnerFilter === "true") {
+      filtered = filtered.filter(company => company.nest_pro_partner_id);
     }
     
     // Apply sorting
@@ -173,7 +201,7 @@ const Companies = () => {
     });
     
     return filtered;
-  }, [companies, debouncedSearch, statusFilter, priorityFilter, builderSegmentFilter, contractorSegmentFilter, sortBy]);
+  }, [companies, debouncedSearch, statusFilter, priorityFilter, builderSegmentFilter, contractorSegmentFilter, industryTypeFilter, hasWebsiteFilter, hasLinkedinFilter, hasPartnerFilter, sortBy]);
 
   // Paginated companies
   const paginatedCompanies = useMemo(() => {
@@ -207,13 +235,23 @@ const Companies = () => {
     priority: priorityFilter,
     builder_segment: builderSegmentFilter,
     contractor_segment: contractorSegmentFilter,
+    industry_type: industryTypeFilter,
+    state: stateFilter,
+    city: cityFilter,
   };
 
   const activeFilters = [
+    industryTypeFilter && { type: "Industry", value: industryTypeFilter, key: "industry_type" },
     statusFilter && { type: "Status", value: statusFilter, key: "status" },
     priorityFilter && { type: "Priority", value: priorityFilter.split(":")[0], key: "priority" },
     builderSegmentFilter && { type: "Builder", value: builderSegmentFilter, key: "builder_segment" },
     contractorSegmentFilter && { type: "Contractor", value: contractorSegmentFilter, key: "contractor_segment" },
+    stateFilter && { type: "State", value: stateFilter, key: "state" },
+    cityFilter && { type: "City", value: cityFilter, key: "city" },
+    hasWebsiteFilter === "true" && { type: "Filter", value: "Has Website", key: "has_website" },
+    hasLinkedinFilter === "true" && { type: "Filter", value: "Has LinkedIn", key: "has_linkedin" },
+    hasPartnerFilter === "true" && { type: "Filter", value: "Has Partner", key: "has_partner" },
+    lastContactFilter && { type: "Last Contact", value: lastContactFilter, key: "last_contact" },
   ].filter(Boolean);
 
   const removeFilter = (key: string) => {

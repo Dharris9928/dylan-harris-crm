@@ -28,9 +28,11 @@ export type Database = {
           created_by: string | null
           id: string
           industry_type: Database["public"]["Enums"]["industry_type"]
+          is_franchise: boolean | null
           lead_score: number | null
           linkedin_company_url: string | null
           nest_pro_partner_id: string | null
+          parent_company_id: string | null
           primary_phone: string | null
           priority_tier: Database["public"]["Enums"]["priority_tier"] | null
           segment_confidence:
@@ -57,9 +59,11 @@ export type Database = {
           created_by?: string | null
           id?: string
           industry_type: Database["public"]["Enums"]["industry_type"]
+          is_franchise?: boolean | null
           lead_score?: number | null
           linkedin_company_url?: string | null
           nest_pro_partner_id?: string | null
+          parent_company_id?: string | null
           primary_phone?: string | null
           priority_tier?: Database["public"]["Enums"]["priority_tier"] | null
           segment_confidence?:
@@ -86,9 +90,11 @@ export type Database = {
           created_by?: string | null
           id?: string
           industry_type?: Database["public"]["Enums"]["industry_type"]
+          is_franchise?: boolean | null
           lead_score?: number | null
           linkedin_company_url?: string | null
           nest_pro_partner_id?: string | null
+          parent_company_id?: string | null
           primary_phone?: string | null
           priority_tier?: Database["public"]["Enums"]["priority_tier"] | null
           segment_confidence?:
@@ -106,6 +112,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companies_parent_company_id_fkey"
+            columns: ["parent_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]

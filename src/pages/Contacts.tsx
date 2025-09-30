@@ -1,8 +1,73 @@
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import { ContactTable } from "@/components/contacts/ContactTable";
+import { AddContactDialog } from "@/components/contacts/AddContactDialog";
+import { EditContactDialog } from "@/components/contacts/EditContactDialog";
+
 const Contacts = () => {
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedContact, setSelectedContact] = useState<any>(null);
+
+  const { data: contacts, isLoading, refetch } = useQuery({
+    queryKey: ["contacts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contacts")
+        .select("*, companies(company_name)")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold text-foreground">Contacts</h1>
-      <p className="text-muted-foreground mt-2">Contact management coming soon</p>
+    <div className="p-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Contacts</h1>
+          <p className="text-muted-foreground">
+            Manage decision makers and key contacts
+          </p>
+        </div>
+        <Button onClick={() => setIsAddDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Contact
+        </Button>
+      </div>
+
+      <ContactTable
+        contacts={contacts || []}
+        isLoading={isLoading}
+        onEdit={(contact) => {
+          setSelectedContact(contact);
+          setIsEditDialogOpen(true);
+        }}
+      />
+
+      <AddContactDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        onSuccess={() => {
+          refetch();
+          setIsAddDialogOpen(false);
+        }}
+      />
+
+      {selectedContact && (
+        <EditContactDialog
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          onSuccess={() => {
+            refetch();
+            setIsEditDialogOpen(false);
+          }}
+          contact={selectedContact}
+        />
+      )}
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Edit } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -20,14 +20,18 @@ interface Company {
   lead_score: number;
   priority_tier: string | null;
   website_url: string | null;
+  primary_phone: string | null;
+  is_franchise: boolean;
+  parent_company_id: string | null;
 }
 
 interface CompanyTableProps {
   companies: Company[];
   isLoading: boolean;
+  onEdit: (company: Company) => void;
 }
 
-export function CompanyTable({ companies, isLoading }: CompanyTableProps) {
+export function CompanyTable({ companies, isLoading, onEdit }: CompanyTableProps) {
   const getPriorityColor = (tier: string | null) => {
     if (!tier) return "bg-muted";
     if (tier.includes("P1")) return "bg-priority-p1 text-priority-p1-foreground";
@@ -113,13 +117,18 @@ export function CompanyTable({ companies, isLoading }: CompanyTableProps) {
                 )}
               </TableCell>
               <TableCell>
-                {company.website_url && (
-                  <Button variant="ghost" size="sm" asChild>
-                    <a href={company.website_url} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => onEdit(company)}>
+                    <Edit className="h-4 w-4" />
                   </Button>
-                )}
+                  {company.website_url && (
+                    <Button variant="ghost" size="sm" asChild>
+                      <a href={company.website_url} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  )}
+                </div>
               </TableCell>
             </TableRow>
           ))}

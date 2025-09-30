@@ -9,6 +9,7 @@ import Companies from "./pages/Companies";
 import Contacts from "./pages/Contacts";
 import Activities from "./pages/Activities";
 import Reports from "./pages/Reports";
+import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -59,6 +60,14 @@ const App = () => (
             element={
               <AppLayout>
                 <Reports />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <AppLayout>
+                <Settings />
               </AppLayout>
             }
           />

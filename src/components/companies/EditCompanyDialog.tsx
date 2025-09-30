@@ -21,10 +21,24 @@ import {
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 
-interface AddCompanyDialogProps {
+interface Company {
+  id: string;
+  company_name: string;
+  industry_type: string;
+  builder_segment: string | null;
+  contractor_segment: string | null;
+  status: string;
+  website_url: string | null;
+  primary_phone: string | null;
+  is_franchise: boolean;
+  parent_company_id: string | null;
+}
+
+interface EditCompanyDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  company: Company;
 }
 
 const builderSegments = [
@@ -48,17 +62,20 @@ const contractorSegments = [
   "Emergency/Repair Specialists",
 ];
 
-export function AddCompanyDialog({ open, onOpenChange, onSuccess }: AddCompanyDialogProps) {
+const statuses = ["Lead", "Contacted", "Engaged", "Pilot", "Active", "Inactive", "Lost"];
+
+export function EditCompanyDialog({ open, onOpenChange, onSuccess, company }: EditCompanyDialogProps) {
   const [loading, setLoading] = useState(false);
   const [companies, setCompanies] = useState<{ id: string; company_name: string }[]>([]);
   const [formData, setFormData] = useState({
-    company_name: "",
-    industry_type: "Builder" as "Builder" | "Contractor",
-    segment: "",
-    website_url: "",
-    primary_phone: "",
-    is_franchise: false,
-    parent_company_id: "",
+    company_name: company.company_name,
+    industry_type: company.industry_type as "Builder" | "Contractor",
+    segment: (company.builder_segment || company.contractor_segment) || "",
+    status: company.status,
+    website_url: company.website_url || "",
+    primary_phone: company.primary_phone || "",
+    is_franchise: company.is_franchise,
+    parent_company_id: company.parent_company_id || "",
   });
 
   useEffect(() => {
@@ -71,6 +88,7 @@ export function AddCompanyDialog({ open, onOpenChange, onSuccess }: AddCompanyDi
     const { data } = await supabase
       .from("companies")
       .select("id, company_name")
+      .neq("id", company.id)
       .order("company_name");
     if (data) setCompanies(data);
   };
@@ -80,42 +98,32 @@ export function AddCompanyDialog({ open, onOpenChange, onSuccess }: AddCompanyDi
     setLoading(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const companyData: any = {
+      const updateData: any = {
         company_name: formData.company_name,
-        industry_type: formData.industry_type,
+        status: formData.status,
         website_url: formData.website_url || null,
         primary_phone: formData.primary_phone || null,
         is_franchise: formData.is_franchise,
         parent_company_id: formData.parent_company_id || null,
-        created_by: user.id,
       };
 
       if (formData.industry_type === "Builder") {
-        companyData.builder_segment = formData.segment;
+        updateData.builder_segment = formData.segment;
       } else {
-        companyData.contractor_segment = formData.segment;
+        updateData.contractor_segment = formData.segment;
       }
 
-      const { error } = await supabase.from("companies").insert([companyData]);
+      const { error } = await supabase
+        .from("companies")
+        .update(updateData)
+        .eq("id", company.id);
 
       if (error) throw error;
 
-      toast.success("Company added successfully!");
-      setFormData({
-        company_name: "",
-        industry_type: "Builder",
-        segment: "",
-        website_url: "",
-        primary_phone: "",
-        is_franchise: false,
-        parent_company_id: "",
-      });
+      toast.success("Company updated successfully!");
       onSuccess();
     } catch (error: any) {
-      toast.error(error.message || "Failed to add company");
+      toast.error(error.message || "Failed to update company");
     } finally {
       setLoading(false);
     }
@@ -125,11 +133,11 @@ export function AddCompanyDialog({ open, onOpenChange, onSuccess }: AddCompanyDi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Company</DialogTitle>
+          <DialogTitle>Edit Company</DialogTitle>
           <DialogDescription>
-            Enter the company details to add them to your CRM.
+            Update company details and status.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -144,19 +152,17 @@ export function AddCompanyDialog({ open, onOpenChange, onSuccess }: AddCompanyDi
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="industry_type">Industry Type *</Label>
-              <Select
-                value={formData.industry_type}
-                onValueChange={(value: "Builder" | "Contractor") =>
-                  setFormData({ ...formData, industry_type: value, segment: "" })
-                }
-              >
+              <Label htmlFor="status">Status *</Label>
+              <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Builder">Builder</SelectItem>
-                  <SelectItem value="Contractor">Contractor</SelectItem>
+                  {statuses.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -164,7 +170,7 @@ export function AddCompanyDialog({ open, onOpenChange, onSuccess }: AddCompanyDi
               <Label htmlFor="segment">Segment *</Label>
               <Select value={formData.segment} onValueChange={(value) => setFormData({ ...formData, segment: value })}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a segment" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {segments.map((segment) => (
@@ -174,25 +180,6 @@ export function AddCompanyDialog({ open, onOpenChange, onSuccess }: AddCompanyDi
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="website_url">Website URL</Label>
-              <Input
-                id="website_url"
-                type="url"
-                placeholder="https://example.com"
-                value={formData.website_url}
-                onChange={(e) => setFormData({ ...formData, website_url: e.target.value })}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="primary_phone">Phone Number</Label>
-              <Input
-                id="primary_phone"
-                type="tel"
-                value={formData.primary_phone}
-                onChange={(e) => setFormData({ ...formData, primary_phone: e.target.value })}
-              />
             </div>
             <div className="flex items-center space-x-2">
               <Checkbox
@@ -224,13 +211,32 @@ export function AddCompanyDialog({ open, onOpenChange, onSuccess }: AddCompanyDi
                 </Select>
               </div>
             )}
+            <div className="grid gap-2">
+              <Label htmlFor="website_url">Website URL</Label>
+              <Input
+                id="website_url"
+                type="url"
+                placeholder="https://example.com"
+                value={formData.website_url}
+                onChange={(e) => setFormData({ ...formData, website_url: e.target.value })}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="primary_phone">Phone Number</Label>
+              <Input
+                id="primary_phone"
+                type="tel"
+                value={formData.primary_phone}
+                onChange={(e) => setFormData({ ...formData, primary_phone: e.target.value })}
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Adding..." : "Add Company"}
+              {loading ? "Updating..." : "Update Company"}
             </Button>
           </DialogFooter>
         </form>

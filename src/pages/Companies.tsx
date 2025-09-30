@@ -5,9 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { CompanyTable } from "@/components/companies/CompanyTable";
 import { AddCompanyDialog } from "@/components/companies/AddCompanyDialog";
+import { EditCompanyDialog } from "@/components/companies/EditCompanyDialog";
 
 const Companies = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState<any>(null);
 
   const { data: companies, isLoading, refetch } = useQuery({
     queryKey: ["companies"],
@@ -36,7 +39,14 @@ const Companies = () => {
         </Button>
       </div>
 
-      <CompanyTable companies={companies || []} isLoading={isLoading} />
+      <CompanyTable
+        companies={companies || []}
+        isLoading={isLoading}
+        onEdit={(company) => {
+          setSelectedCompany(company);
+          setIsEditDialogOpen(true);
+        }}
+      />
 
       <AddCompanyDialog
         open={isAddDialogOpen}
@@ -46,6 +56,18 @@ const Companies = () => {
           setIsAddDialogOpen(false);
         }}
       />
+
+      {selectedCompany && (
+        <EditCompanyDialog
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          onSuccess={() => {
+            refetch();
+            setIsEditDialogOpen(false);
+          }}
+          company={selectedCompany}
+        />
+      )}
     </div>
   );
 };

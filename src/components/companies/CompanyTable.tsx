@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, Edit } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -29,9 +30,29 @@ interface CompanyTableProps {
   companies: Company[];
   isLoading: boolean;
   onEdit: (company: Company) => void;
+  selectedRows: string[];
+  onSelectionChange: (selectedIds: string[]) => void;
 }
 
-export function CompanyTable({ companies, isLoading, onEdit }: CompanyTableProps) {
+export function CompanyTable({ companies, isLoading, onEdit, selectedRows, onSelectionChange }: CompanyTableProps) {
+  const allSelected = companies.length > 0 && selectedRows.length === companies.length;
+  const someSelected = selectedRows.length > 0 && selectedRows.length < companies.length;
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      onSelectionChange([]);
+    } else {
+      onSelectionChange(companies.map(c => c.id));
+    }
+  };
+
+  const handleSelectRow = (companyId: string) => {
+    if (selectedRows.includes(companyId)) {
+      onSelectionChange(selectedRows.filter(id => id !== companyId));
+    } else {
+      onSelectionChange([...selectedRows, companyId]);
+    }
+  };
   const getPriorityColor = (tier: string | null) => {
     if (!tier) return "bg-muted";
     if (tier.includes("P1")) return "bg-priority-p1 text-priority-p1-foreground";
@@ -74,6 +95,12 @@ export function CompanyTable({ companies, isLoading, onEdit }: CompanyTableProps
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-12">
+              <Checkbox
+                checked={allSelected || someSelected}
+                onCheckedChange={handleSelectAll}
+              />
+            </TableHead>
             <TableHead>Company Name</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Segment</TableHead>
@@ -86,6 +113,12 @@ export function CompanyTable({ companies, isLoading, onEdit }: CompanyTableProps
         <TableBody>
           {companies.map((company) => (
             <TableRow key={company.id}>
+              <TableCell>
+                <Checkbox
+                  checked={selectedRows.includes(company.id)}
+                  onCheckedChange={() => handleSelectRow(company.id)}
+                />
+              </TableCell>
               <TableCell className="font-medium">{company.company_name}</TableCell>
               <TableCell>
                 <Badge variant="outline">{company.industry_type}</Badge>

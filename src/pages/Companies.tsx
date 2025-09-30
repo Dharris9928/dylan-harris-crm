@@ -3,11 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, X, Search, Settings, Download, Upload, ChevronLeft } from "lucide-react";
+import { Plus, X, Search, Settings, Download, Upload } from "lucide-react";
 import { CompanyTable } from "@/components/companies/CompanyTable";
 import { AddCompanyDialog } from "@/components/companies/AddCompanyDialog";
 import { EditCompanyDialog } from "@/components/companies/EditCompanyDialog";
 import { CompaniesFilterSidebar } from "@/components/companies/CompaniesFilterSidebar";
+import { BulkActionBar } from "@/components/companies/BulkActionBar";
+import { TablePagination } from "@/components/companies/TablePagination";
 import { useSearchParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -26,6 +28,9 @@ const Companies = () => {
   const [selectedCompany, setSelectedCompany] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [selectedRows, setSelectedRows] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
   const [sortBy, setSortBy] = useState(() => {
     return localStorage.getItem("companies-sort") || "lead_score_desc";
   });
@@ -41,6 +46,30 @@ const Companies = () => {
   useEffect(() => {
     localStorage.setItem("companies-sort", sortBy);
   }, [sortBy]);
+
+  // Real-time subscription for companies
+  useEffect(() => {
+    const channel = supabase
+      .channel('companies-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'companies' },
+        () => {
+          refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+    setSelectedRows([]);
+  }, [debouncedSearch, statusFilter, priorityFilter, builderSegmentFilter, contractorSegmentFilter]);
 
   const { data: companies, isLoading, refetch } = useQuery({
     queryKey: ["companies"],
@@ -111,6 +140,15 @@ const Companies = () => {
     
     return filtered;
   }, [companies, debouncedSearch, statusFilter, priorityFilter, builderSegmentFilter, contractorSegmentFilter, sortBy]);
+
+  // Paginated companies
+  const paginatedCompanies = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredAndSortedCompanies.slice(startIndex, endIndex);
+  }, [filteredAndSortedCompanies, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredAndSortedCompanies.length / itemsPerPage);
 
   const clearFilters = () => {
     setSearchParams({});
@@ -256,15 +294,48 @@ const Companies = () => {
         />
 
         {/* Table Area */}
-        <div className="flex-1 overflow-auto p-6">
-          <CompanyTable
-            companies={filteredAndSortedCompanies}
-            isLoading={isLoading}
-            onEdit={(company) => {
-              setSelectedCompany(company);
-              setIsEditDialogOpen(true);
-            }}
-          />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Bulk Action Bar */}
+          {selectedRows.length > 0 && (
+            <BulkActionBar
+              selectedCount={selectedRows.length}
+              selectedIds={selectedRows}
+              onClearSelection={() => setSelectedRows([])}
+              onActionComplete={() => {
+                refetch();
+                setSelectedRows([]);
+              }}
+            />
+          )}
+
+          {/* Table */}
+          <div className="flex-1 overflow-auto p-6">
+            <CompanyTable
+              companies={paginatedCompanies}
+              isLoading={isLoading}
+              onEdit={(company) => {
+                setSelectedCompany(company);
+                setIsEditDialogOpen(true);
+              }}
+              selectedRows={selectedRows}
+              onSelectionChange={setSelectedRows}
+            />
+          </div>
+
+          {/* Pagination */}
+          {filteredAndSortedCompanies.length > 0 && (
+            <TablePagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredAndSortedCompanies.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={(value) => {
+                setItemsPerPage(value);
+                setCurrentPage(1);
+              }}
+            />
+          )}
         </div>
       </div>
 

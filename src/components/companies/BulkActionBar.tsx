@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { X, Trash2, Edit } from "lucide-react";
+import { X, Trash2, Edit, Mail } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -93,6 +93,33 @@ export function BulkActionBar({
     }
   };
 
+  const handleBulkEmail = async () => {
+    try {
+      const { data: companies } = await supabase
+        .from("companies")
+        .select("company_name, primary_phone")
+        .in("id", selectedIds);
+
+      if (companies) {
+        const emailList = companies
+          .map(c => c.company_name)
+          .join(", ");
+        
+        toast({
+          title: "Email Feature",
+          description: `Email campaign would be sent to: ${emailList}`,
+        });
+      }
+    } catch (error) {
+      console.error("Error preparing bulk email:", error);
+      toast({
+        title: "Error",
+        description: "Failed to prepare bulk email",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <>
       <div className="border-b border-border bg-accent/50 px-6 py-3 flex items-center justify-between">
@@ -142,6 +169,15 @@ export function BulkActionBar({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleBulkEmail}
+          >
+            <Mail className="h-4 w-4 mr-2" />
+            Email
+          </Button>
 
           <Button
             variant="destructive"

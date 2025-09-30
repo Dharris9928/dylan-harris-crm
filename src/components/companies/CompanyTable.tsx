@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Edit } from "lucide-react";
+import { ExternalLink, Edit, Star } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { QuickActionsMenu } from "./QuickActionsMenu";
 import {
@@ -10,6 +10,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -36,6 +42,7 @@ interface Company {
   primary_phone: string | null;
   is_franchise: boolean;
   parent_company_id: string | null;
+  is_favorite?: boolean;
 }
 
 interface CompanyTableProps {
@@ -103,6 +110,31 @@ export function CompanyTable({
       });
     }
   };
+
+  const handleFavoriteToggle = async (companyId: string, currentFavorite: boolean) => {
+    try {
+      const { error } = await supabase
+        .from("companies")
+        .update({ is_favorite: !currentFavorite } as any)
+        .eq("id", companyId);
+
+      if (error) throw error;
+
+      toast({
+        title: currentFavorite ? "Removed from Favorites" : "Added to Favorites",
+        description: currentFavorite ? "Company removed from favorites" : "Company added to favorites",
+      });
+
+      onCompanyUpdate();
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update favorite status",
+        variant: "destructive",
+      });
+    }
+  };
   const getPriorityColor = (tier: string | null) => {
     if (!tier) return "bg-muted";
     if (tier.includes("P1")) return "bg-priority-p1 text-priority-p1-foreground";
@@ -141,41 +173,74 @@ export function CompanyTable({
   }
 
   return (
-    <div className="border border-border rounded-lg">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-12">
-              <Checkbox
-                checked={allSelected || someSelected}
-                onCheckedChange={handleSelectAll}
-              />
-            </TableHead>
-            {columnVisibility.companyName && <TableHead>Company Name</TableHead>}
-            {columnVisibility.type && <TableHead>Type</TableHead>}
-            {columnVisibility.segment && <TableHead>Segment</TableHead>}
-            {columnVisibility.status && <TableHead>Status</TableHead>}
-            {columnVisibility.score && <TableHead>Score</TableHead>}
-            {columnVisibility.priority && <TableHead>Priority</TableHead>}
-            {columnVisibility.phone && <TableHead>Phone</TableHead>}
-            {columnVisibility.website && <TableHead>Website</TableHead>}
-            {columnVisibility.franchise && <TableHead>Franchise</TableHead>}
-            <TableHead className="w-12">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {companies.map((company) => (
-            <TableRow key={company.id}>
-              <TableCell>
+    <TooltipProvider>
+      <div className="border border-border rounded-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-12">
                 <Checkbox
-                  checked={selectedRows.includes(company.id)}
-                  onCheckedChange={() => handleSelectRow(company.id)}
+                  checked={allSelected || someSelected}
+                  onCheckedChange={handleSelectAll}
                 />
-              </TableCell>
-              
-              {columnVisibility.companyName && (
-                <TableCell className="font-medium">{company.company_name}</TableCell>
-              )}
+              </TableHead>
+              <TableHead className="w-12"></TableHead>
+              {columnVisibility.companyName && <TableHead>Company Name</TableHead>}
+              {columnVisibility.type && <TableHead>Type</TableHead>}
+              {columnVisibility.segment && <TableHead>Segment</TableHead>}
+              {columnVisibility.status && <TableHead>Status</TableHead>}
+              {columnVisibility.score && <TableHead>Score</TableHead>}
+              {columnVisibility.priority && <TableHead>Priority</TableHead>}
+              {columnVisibility.phone && <TableHead>Phone</TableHead>}
+              {columnVisibility.website && <TableHead>Website</TableHead>}
+              {columnVisibility.franchise && <TableHead>Franchise</TableHead>}
+              <TableHead className="w-12">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {companies.map((company) => (
+              <TableRow key={company.id}>
+                <TableCell>
+                  <Checkbox
+                    checked={selectedRows.includes(company.id)}
+                    onCheckedChange={() => handleSelectRow(company.id)}
+                  />
+                </TableCell>
+                
+                <TableCell>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleFavoriteToggle(company.id, company.is_favorite || false)}
+                      >
+                        <Star
+                          className={`h-4 w-4 ${
+                            company.is_favorite ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"
+                          }`}
+                        />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{company.is_favorite ? "Remove from favorites" : "Add to favorites"}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TableCell>
+                
+                {columnVisibility.companyName && (
+                  <TableCell className="font-medium">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="cursor-default">{company.company_name}</span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Click actions menu to view details</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TableCell>
+                )}
               
               {columnVisibility.type && (
                 <TableCell>
@@ -282,5 +347,6 @@ export function CompanyTable({
         </TableBody>
       </Table>
     </div>
+    </TooltipProvider>
   );
 }

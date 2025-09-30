@@ -459,7 +459,7 @@ const Companies = () => {
             refetch();
             setIsEditDialogOpen(false);
           }}
-          company={selectedCompany}
+          companyId={selectedCompany.id}
         />
       )}
 

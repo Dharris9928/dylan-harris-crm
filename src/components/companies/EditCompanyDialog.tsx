@@ -1,301 +1,534 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { toast } from "sonner";
-import { Checkbox } from "@/components/ui/checkbox";
-
-interface Company {
-  id: string;
-  company_name: string;
-  industry_type: string;
-  builder_segment: string | null;
-  contractor_segment: string | null;
-  status: string;
-  website_url: string | null;
-  primary_phone: string | null;
-  is_franchise: boolean;
-  parent_company_id: string | null;
-  franchise_name?: string | null;
-  owner_name?: string | null;
-  city?: string | null;
-  nest_pro_industry?: string | null;
-  notes?: string | null;
-}
+import { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { updateCompany } from '@/lib/companies/updateCompany';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface EditCompanyDialogProps {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onClose?: () => void;
+  onOpenChange?: (open: boolean) => void;
   onSuccess: () => void;
-  company: Company;
+  companyId: string;
 }
 
-const builderSegments = [
-  "Production/Tract Builders",
-  "Regional Mid-Volume Builders",
-  "Spec Home Builders",
-  "Luxury Custom Builders",
-  "Multi-Family Developers",
-  "Affordable Housing Builders",
-  "Active Adult/55+ Specialists",
-];
-
-const contractorSegments = [
-  "Smart Home Champions",
-  "Customer Experience Innovators",
-  "High-Volume Installers",
-  "Premium Service Specialists",
-  "Regional Growth Contractors",
-  "Specialty HVAC Integrators",
-  "Service-First Traditionalists",
-  "Emergency/Repair Specialists",
-];
-
-const statuses = ["Lead", "Contacted", "Engaged", "Pilot", "Active", "Inactive", "Lost"];
-
-export function EditCompanyDialog({ open, onOpenChange, onSuccess, company }: EditCompanyDialogProps) {
-  const [loading, setLoading] = useState(false);
-  const [companies, setCompanies] = useState<{ id: string; company_name: string }[]>([]);
-  const [formData, setFormData] = useState({
-    company_name: company.company_name,
-    industry_type: company.industry_type as "Builder" | "Contractor",
-    segment: (company.builder_segment || company.contractor_segment) || "",
-    status: company.status,
-    website_url: company.website_url || "",
-    primary_phone: company.primary_phone || "",
-    is_franchise: company.is_franchise,
-    parent_company_id: company.parent_company_id || "",
-    franchise_name: company.franchise_name || "",
-    owner_name: company.owner_name || "",
-    city: company.city || "",
-    nest_pro_industry: company.nest_pro_industry || "",
-    notes: company.notes || "",
-  });
+export function EditCompanyDialog({ open, onClose, onOpenChange, onSuccess, companyId }: EditCompanyDialogProps) {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  
+  const handleClose = () => {
+    if (onClose) onClose();
+    if (onOpenChange) onOpenChange(false);
+  };
+  
+  // Basic Info
+  const [companyName, setCompanyName] = useState('');
+  const [industryType, setIndustryType] = useState<'Builder' | 'Contractor'>('Builder');
+  const [segment, setSegment] = useState('');
+  const [status, setStatus] = useState('Lead');
+  
+  // Business Metrics (For Scoring)
+  const [annualVolume, setAnnualVolume] = useState('');
+  const [annualRevenueRange, setAnnualRevenueRange] = useState('');
+  const [totalEmployees, setTotalEmployees] = useState('');
+  const [yearsInBusiness, setYearsInBusiness] = useState('');
+  
+  // Location (For Scoring)
+  const [addressLine1, setAddressLine1] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [zip, setZip] = useState('');
+  
+  // Contact Info
+  const [primaryPhone, setPrimaryPhone] = useState('');
+  const [primaryEmail, setPrimaryEmail] = useState('');
+  
+  // Digital Presence (For Scoring)
+  const [websiteUrl, setWebsiteUrl] = useState('');
+  const [linkedinCompanyUrl, setLinkedinCompanyUrl] = useState('');
+  
+  // Other
+  const [notes, setNotes] = useState('');
 
   useEffect(() => {
-    if (open) {
-      loadCompanies();
+    if (open && companyId) {
+      loadCompanyData();
     }
-  }, [open]);
+  }, [open, companyId]);
 
-  const loadCompanies = async () => {
-    const { data } = await supabase
-      .from("companies")
-      .select("id, company_name")
-      .neq("id", company.id)
-      .order("company_name");
-    if (data) setCompanies(data);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const loadCompanyData = async () => {
     setLoading(true);
-
     try {
-      const updateData: any = {
-        company_name: formData.company_name,
-        status: formData.status,
-        website_url: formData.website_url || null,
-        primary_phone: formData.primary_phone || null,
-        is_franchise: formData.is_franchise,
-        parent_company_id: formData.parent_company_id || null,
-        franchise_name: formData.franchise_name || null,
-        owner_name: formData.owner_name || null,
-        city: formData.city || null,
-        nest_pro_industry: formData.nest_pro_industry || null,
-        notes: formData.notes || null,
-      };
-
-      if (formData.industry_type === "Builder") {
-        updateData.builder_segment = formData.segment;
-      } else {
-        updateData.contractor_segment = formData.segment;
-      }
-
-      const { error } = await supabase
-        .from("companies")
-        .update(updateData)
-        .eq("id", company.id);
+      const { data: company, error } = await supabase
+        .from('companies')
+        .select('*')
+        .eq('id', companyId)
+        .single();
 
       if (error) throw error;
 
-      toast.success("Company updated successfully!");
-      onSuccess();
+      // Populate all form fields with existing data
+      setCompanyName(company.company_name || '');
+      setIndustryType(company.industry_type || 'Builder');
+      
+      // Get segment from appropriate field
+      if (company.industry_type === 'Builder') {
+        setSegment(company.builder_segment || '');
+      } else {
+        setSegment(company.contractor_segment || '');
+      }
+      
+      setStatus(company.status || 'Lead');
+      setAnnualVolume(company.annual_volume?.toString() || '');
+      setAnnualRevenueRange(company.annual_revenue_range || '');
+      setTotalEmployees(company.total_employees?.toString() || '');
+      setYearsInBusiness(company.years_in_business?.toString() || '');
+      setAddressLine1(company.address_line1 || '');
+      setCity(company.city || '');
+      setState(company.state || '');
+      setZip(company.zip || '');
+      setPrimaryPhone(company.primary_phone || '');
+      setPrimaryEmail(company.primary_email || '');
+      setWebsiteUrl(company.website_url || '');
+      setLinkedinCompanyUrl(company.linkedin_company_url || '');
+      setNotes(company.notes || '');
     } catch (error: any) {
-      toast.error(error.message || "Failed to update company");
+      console.error('Error loading company:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load company data',
+        variant: 'destructive'
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const segments = formData.industry_type === "Builder" ? builderSegments : contractorSegments;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+
+    try {
+      const companyData: any = {
+        company_name: companyName,
+        industry_type: industryType,
+        status: status as any,
+        
+        // Business Metrics
+        annual_volume: annualVolume ? parseInt(annualVolume) : undefined,
+        annual_revenue_range: annualRevenueRange || undefined,
+        total_employees: totalEmployees ? parseInt(totalEmployees) : undefined,
+        years_in_business: yearsInBusiness ? parseInt(yearsInBusiness) : undefined,
+        
+        // Location
+        address_line1: addressLine1 || undefined,
+        city: city || undefined,
+        state: state || undefined,
+        zip: zip || undefined,
+        
+        // Contact
+        primary_phone: primaryPhone || undefined,
+        primary_email: primaryEmail || undefined,
+        
+        // Digital
+        website_url: websiteUrl || undefined,
+        linkedin_company_url: linkedinCompanyUrl || undefined,
+        
+        // Other
+        notes: notes || undefined
+      };
+
+      // Add segment based on industry type
+      if (industryType === 'Builder') {
+        companyData.builder_segment = segment || undefined;
+        companyData.contractor_segment = null;
+      } else {
+        companyData.contractor_segment = segment || undefined;
+        companyData.builder_segment = null;
+      }
+
+      await updateCompany(companyId, companyData);
+
+      toast({
+        title: 'Success',
+        description: 'Company updated and score recalculated'
+      });
+
+      onSuccess();
+      handleClose();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive'
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const BUILDER_SEGMENTS = [
+    { value: 'production_tract', label: 'Production/Tract' },
+    { value: 'regional_mid_volume', label: 'Regional Mid-Volume' },
+    { value: 'spec_home', label: 'Spec Home' },
+    { value: 'luxury_custom', label: 'Luxury Custom' },
+    { value: 'multi_family', label: 'Multi-Family' },
+    { value: 'affordable_housing', label: 'Affordable Housing' },
+    { value: 'active_adult', label: 'Active Adult/55+' }
+  ];
+
+  const CONTRACTOR_SEGMENTS = [
+    { value: 'smart_home_champions', label: 'Smart Home Champions' },
+    { value: 'customer_experience', label: 'Customer Experience Innovators' },
+    { value: 'high_volume', label: 'High-Volume Installers' },
+    { value: 'premium_specialists', label: 'Premium Specialists' },
+    { value: 'regional_growth', label: 'Regional Growth' },
+    { value: 'specialty_integrators', label: 'Specialty Integrators' },
+    { value: 'traditionalists', label: 'Service-First Traditionalists' },
+    { value: 'emergency_repair', label: 'Emergency/Repair Specialists' }
+  ];
+
+  const US_STATES = [
+    { code: 'AL', name: 'Alabama' }, { code: 'AK', name: 'Alaska' }, { code: 'AZ', name: 'Arizona' },
+    { code: 'AR', name: 'Arkansas' }, { code: 'CA', name: 'California' }, { code: 'CO', name: 'Colorado' },
+    { code: 'CT', name: 'Connecticut' }, { code: 'DE', name: 'Delaware' }, { code: 'FL', name: 'Florida' },
+    { code: 'GA', name: 'Georgia' }, { code: 'HI', name: 'Hawaii' }, { code: 'ID', name: 'Idaho' },
+    { code: 'IL', name: 'Illinois' }, { code: 'IN', name: 'Indiana' }, { code: 'IA', name: 'Iowa' },
+    { code: 'KS', name: 'Kansas' }, { code: 'KY', name: 'Kentucky' }, { code: 'LA', name: 'Louisiana' },
+    { code: 'ME', name: 'Maine' }, { code: 'MD', name: 'Maryland' }, { code: 'MA', name: 'Massachusetts' },
+    { code: 'MI', name: 'Michigan' }, { code: 'MN', name: 'Minnesota' }, { code: 'MS', name: 'Mississippi' },
+    { code: 'MO', name: 'Missouri' }, { code: 'MT', name: 'Montana' }, { code: 'NE', name: 'Nebraska' },
+    { code: 'NV', name: 'Nevada' }, { code: 'NH', name: 'New Hampshire' }, { code: 'NJ', name: 'New Jersey' },
+    { code: 'NM', name: 'New Mexico' }, { code: 'NY', name: 'New York' }, { code: 'NC', name: 'North Carolina' },
+    { code: 'ND', name: 'North Dakota' }, { code: 'OH', name: 'Ohio' }, { code: 'OK', name: 'Oklahoma' },
+    { code: 'OR', name: 'Oregon' }, { code: 'PA', name: 'Pennsylvania' }, { code: 'RI', name: 'Rhode Island' },
+    { code: 'SC', name: 'South Carolina' }, { code: 'SD', name: 'South Dakota' }, { code: 'TN', name: 'Tennessee' },
+    { code: 'TX', name: 'Texas' }, { code: 'UT', name: 'Utah' }, { code: 'VT', name: 'Vermont' },
+    { code: 'VA', name: 'Virginia' }, { code: 'WA', name: 'Washington' }, { code: 'WV', name: 'West Virginia' },
+    { code: 'WI', name: 'Wisconsin' }, { code: 'WY', name: 'Wyoming' }
+  ];
+
+  if (loading) {
+    return (
+      <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
+        <DialogContent>
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Company</DialogTitle>
-          <DialogDescription>
-            Update company details and status.
-          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="company_name">Company Name *</Label>
-              <Input
-                id="company_name"
-                value={formData.company_name}
-                onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-                required
-              />
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* SECTION 1: BASIC INFORMATION */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm uppercase text-muted-foreground border-b pb-2">
+              Basic Information
+            </h3>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <Label htmlFor="company_name">
+                  Company Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="company_name"
+                  required
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  placeholder="Premier Builders Inc."
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="industry_type">
+                  Industry Type <span className="text-destructive">*</span>
+                </Label>
+                <Select value={industryType} onValueChange={(v: any) => setIndustryType(v)}>
+                  <SelectTrigger id="industry_type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Builder">Builder</SelectItem>
+                    <SelectItem value="Contractor">Contractor</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="segment">Segment</Label>
+                <Select value={segment} onValueChange={setSegment}>
+                  <SelectTrigger id="segment">
+                    <SelectValue placeholder="Auto-assigned or select..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(industryType === 'Builder' ? BUILDER_SEGMENTS : CONTRACTOR_SEGMENTS).map(seg => (
+                      <SelectItem key={seg.value} value={seg.value}>
+                        {seg.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="status">Status</Label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger id="status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Lead">Lead</SelectItem>
+                    <SelectItem value="Contacted">Contacted</SelectItem>
+                    <SelectItem value="Engaged">Engaged</SelectItem>
+                    <SelectItem value="Pilot">Pilot</SelectItem>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="Inactive">Inactive</SelectItem>
+                    <SelectItem value="Lost">Lost</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="status">Status *</Label>
-              <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {statuses.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {status}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          </div>
+
+          {/* SECTION 2: BUSINESS METRICS */}
+          <div className="space-y-4 bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+            <h3 className="font-semibold text-sm uppercase text-blue-700 dark:text-blue-400 flex items-center gap-2">
+              <span className="text-lg">📊</span> Business Metrics
+              <span className="text-xs font-normal normal-case text-blue-600 dark:text-blue-500">
+                (Used for lead scoring - affects Priority Tier)
+              </span>
+            </h3>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="annual_volume">Annual Volume</Label>
+                <Input
+                  id="annual_volume"
+                  type="number"
+                  value={annualVolume}
+                  onChange={(e) => setAnnualVolume(e.target.value)}
+                  placeholder={industryType === 'Builder' ? 'Homes per year' : 'Service calls per year'}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {industryType === 'Builder' 
+                    ? 'Number of homes built annually' 
+                    : 'Number of service calls annually'}
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="revenue_range">Annual Revenue Range</Label>
+                <Select value={annualRevenueRange} onValueChange={setAnnualRevenueRange}>
+                  <SelectTrigger id="revenue_range">
+                    <SelectValue placeholder="Select range..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="<$500K">Less than $500K</SelectItem>
+                    <SelectItem value="$500K-$999K">$500K - $999K</SelectItem>
+                    <SelectItem value="$1M-$2.9M">$1M - $2.9M</SelectItem>
+                    <SelectItem value="$3M-$5.9M">$3M - $5.9M</SelectItem>
+                    <SelectItem value="$6M-$10M">$6M - $10M</SelectItem>
+                    <SelectItem value="$10M+">$10M+</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="total_employees">Total Employees</Label>
+                <Input
+                  id="total_employees"
+                  type="number"
+                  value={totalEmployees}
+                  onChange={(e) => setTotalEmployees(e.target.value)}
+                  placeholder="Number of employees"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="years_in_business">Years in Business</Label>
+                <Input
+                  id="years_in_business"
+                  type="number"
+                  value={yearsInBusiness}
+                  onChange={(e) => setYearsInBusiness(e.target.value)}
+                  placeholder="How many years?"
+                />
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="segment">Segment *</Label>
-              <Select value={formData.segment} onValueChange={(value) => setFormData({ ...formData, segment: value })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {segments.map((segment) => (
-                    <SelectItem key={segment} value={segment}>
-                      {segment}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          </div>
+
+          {/* SECTION 3: LOCATION */}
+          <div className="space-y-4 bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+            <h3 className="font-semibold text-sm uppercase text-green-700 dark:text-green-400 flex items-center gap-2">
+              <span className="text-lg">📍</span> Location
+              <span className="text-xs font-normal normal-case text-green-600 dark:text-green-500">
+                (City affects geographic scoring - certain markets get higher scores)
+              </span>
+            </h3>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <Label htmlFor="address">Street Address</Label>
+                <Input
+                  id="address"
+                  value={addressLine1}
+                  onChange={(e) => setAddressLine1(e.target.value)}
+                  placeholder="123 Main Street"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="city">City</Label>
+                <Input
+                  id="city"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  placeholder="Austin"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="state">State</Label>
+                <Select value={state} onValueChange={setState}>
+                  <SelectTrigger id="state">
+                    <SelectValue placeholder="Select state..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {US_STATES.map(s => (
+                      <SelectItem key={s.code} value={s.code}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="zip">Zip Code</Label>
+                <Input
+                  id="zip"
+                  value={zip}
+                  onChange={(e) => setZip(e.target.value)}
+                  placeholder="78701"
+                  maxLength={10}
+                />
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="is_franchise"
-                checked={formData.is_franchise}
-                onCheckedChange={(checked) => setFormData({ ...formData, is_franchise: checked as boolean })}
-              />
-              <Label htmlFor="is_franchise" className="cursor-pointer">
-                Part of a franchise or parent company
-              </Label>
+          </div>
+
+          {/* SECTION 4: CONTACT INFORMATION */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm uppercase text-muted-foreground border-b pb-2">
+              Contact Information
+            </h3>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="phone">Primary Phone</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={primaryPhone}
+                  onChange={(e) => setPrimaryPhone(e.target.value)}
+                  placeholder="(555) 123-4567"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="email">Primary Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={primaryEmail}
+                  onChange={(e) => setPrimaryEmail(e.target.value)}
+                  placeholder="contact@company.com"
+                />
+              </div>
             </div>
-            {formData.is_franchise && (
-              <>
-                <div className="grid gap-2">
-                  <Label htmlFor="parent_company_id">Parent Company</Label>
-                  <Select
-                    value={formData.parent_company_id}
-                    onValueChange={(value) => setFormData({ ...formData, parent_company_id: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select parent company" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {companies.map((comp) => (
-                        <SelectItem key={comp.id} value={comp.id}>
-                          {comp.company_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="franchise_name">Franchise Name</Label>
-                  <Input
-                    id="franchise_name"
-                    value={formData.franchise_name}
-                    onChange={(e) => setFormData({ ...formData, franchise_name: e.target.value })}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="owner_name">Owner</Label>
-                  <Input
-                    id="owner_name"
-                    value={formData.owner_name}
-                    onChange={(e) => setFormData({ ...formData, owner_name: e.target.value })}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="city">City</Label>
-                  <Input
-                    id="city"
-                    value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="nest_pro_industry">Nest Pro Industry</Label>
-                  <Input
-                    id="nest_pro_industry"
-                    value={formData.nest_pro_industry}
-                    onChange={(e) => setFormData({ ...formData, nest_pro_industry: e.target.value })}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="notes">Notes</Label>
-                  <Input
-                    id="notes"
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  />
-                </div>
-              </>
-            )}
-            <div className="grid gap-2">
-              <Label htmlFor="website_url">Website URL</Label>
-              <Input
-                id="website_url"
-                type="url"
-                placeholder="https://example.com"
-                value={formData.website_url}
-                onChange={(e) => setFormData({ ...formData, website_url: e.target.value })}
-              />
+          </div>
+
+          {/* SECTION 5: DIGITAL PRESENCE */}
+          <div className="space-y-4 bg-purple-50 dark:bg-purple-950/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+            <h3 className="font-semibold text-sm uppercase text-purple-700 dark:text-purple-400 flex items-center gap-2">
+              <span className="text-lg">🌐</span> Digital Presence
+              <span className="text-xs font-normal normal-case text-purple-600 dark:text-purple-500">
+                (Used for digital engagement scoring - adds up to 30 points)
+              </span>
+            </h3>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="website">Website URL</Label>
+                <Input
+                  id="website"
+                  type="url"
+                  value={websiteUrl}
+                  onChange={(e) => setWebsiteUrl(e.target.value)}
+                  placeholder="https://example.com"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="linkedin">LinkedIn Company Page</Label>
+                <Input
+                  id="linkedin"
+                  type="url"
+                  value={linkedinCompanyUrl}
+                  onChange={(e) => setLinkedinCompanyUrl(e.target.value)}
+                  placeholder="https://linkedin.com/company/example"
+                />
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="primary_phone">Phone Number</Label>
-              <Input
-                id="primary_phone"
-                type="tel"
-                value={formData.primary_phone}
-                onChange={(e) => setFormData({ ...formData, primary_phone: e.target.value })}
+          </div>
+
+          {/* SECTION 6: NOTES */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm uppercase text-muted-foreground border-b pb-2">
+              Additional Notes
+            </h3>
+            
+            <div>
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Any additional information about this company..."
+                rows={4}
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Updating..." : "Update Company"}
-            </Button>
-          </DialogFooter>
+
+          {/* SUBMIT BUTTONS */}
+          <div className="flex justify-between items-center pt-4 border-t bg-muted/50 -mx-6 px-6 py-4 -mb-6">
+            <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+              <span className="text-lg">ℹ️</span>
+              <span>Lead score will be recalculated if scoring fields changed</span>
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={handleClose} disabled={saving}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={saving}>
+                {saving ? 'Saving & Recalculating...' : 'Update Company'}
+              </Button>
+            </div>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

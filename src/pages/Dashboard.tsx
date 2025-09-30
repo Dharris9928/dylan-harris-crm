@@ -27,7 +27,7 @@ const Dashboard = () => {
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'outreach_activities' },
         () => {
-          queryClient.invalidateQueries({ queryKey: ["activities-count"] });
+          queryClient.invalidateQueries({ queryKey: ["monthly-activities"] });
         }
       )
       .on('postgres_changes',

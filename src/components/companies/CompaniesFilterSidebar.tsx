@@ -315,23 +315,20 @@ export function CompaniesFilterSidebar({ isCollapsed, onToggle }: CompaniesFilte
           <div className="space-y-3">
             <div>
               <Label className="text-sm font-medium mb-2 block">State</Label>
-              <Select value={stateFilter} onValueChange={(value) => {
+              <Select value={stateFilter || undefined} onValueChange={(value) => {
                 setStateFilter(value);
+                const newParams = new URLSearchParams(searchParams);
                 if (value) {
-                  const newParams = new URLSearchParams(searchParams);
                   newParams.set("state", value);
-                  setSearchParams(newParams);
                 } else {
-                  const newParams = new URLSearchParams(searchParams);
                   newParams.delete("state");
-                  setSearchParams(newParams);
                 }
+                setSearchParams(newParams);
               }}>
                 <SelectTrigger>
                   <SelectValue placeholder="All States" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All States</SelectItem>
                   {STATES.map(state => (
                     <SelectItem key={state.code} value={state.code}>
                       {state.name}

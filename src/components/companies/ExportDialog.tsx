@@ -2,8 +2,6 @@ import { useState } from "react";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -15,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
-import { Download } from "lucide-react";
+import { Download, FileText, Table } from "lucide-react";
 
 interface ExportDialogProps {
   open: boolean;
@@ -26,23 +24,59 @@ interface ExportDialogProps {
 }
 
 export function ExportDialog({ open, onClose, selectedIds, filters, totalCount }: ExportDialogProps) {
-  const [exportFormat, setExportFormat] = useState<"csv" | "excel">("csv");
+  const [exportFormat, setExportFormat] = useState<"csv" | "xlsx">("xlsx");
   const [exportScope, setExportScope] = useState<"all" | "filtered" | "selected">(
-    selectedIds && selectedIds.length > 0 ? "selected" : "all"
+    selectedIds && selectedIds.length > 0 ? "selected" : "filtered"
   );
-  const [includeColumns, setIncludeColumns] = useState({
-    basic: true,
-    contact: true,
-    segment: true,
-    metrics: true,
+  const [selectedFields, setSelectedFields] = useState<string[]>([
+    'company_name',
+    'website_url',
+    'industry_type',
+    'builder_segment',
+    'contractor_segment',
+    'lead_score',
+    'priority_tier',
+    'status',
+    'primary_phone',
+    'total_employees',
+    'annual_revenue_range'
+  ]);
+  const [includeRelated, setIncludeRelated] = useState({
+    contacts: false,
+    branches: false,
   });
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
 
+  const buildSelectQuery = () => {
+    let query = selectedFields.join(',');
+    
+    if (includeRelated.contacts) {
+      query += ',contacts(first_name,last_name,title,email,phone)';
+    }
+    if (includeRelated.branches) {
+      query += ',company_branches(branch_name,city,state,is_headquarters)';
+    }
+
+    return query;
+  };
+
+  const formatFieldName = (field: string) => {
+    return field
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      let query = supabase.from("companies").select("*");
+      // Build query - use type assertion to avoid deep type instantiation
+      let query: any = supabase.from("companies").select(`
+        *,
+        contacts(first_name, last_name, title, email, phone),
+        company_branches(branch_name, city, state, is_headquarters)
+      `);
 
       // Apply scope
       if (exportScope === "selected" && selectedIds && selectedIds.length > 0) {
@@ -51,8 +85,10 @@ export function ExportDialog({ open, onClose, selectedIds, filters, totalCount }
         // Apply filters
         if (filters.status) query = query.eq("status", filters.status);
         if (filters.priority) query = query.eq("priority_tier", filters.priority);
-        if (filters.builder_segment) query = query.eq("builder_segment", filters.builder_segment);
-        if (filters.contractor_segment) query = query.eq("contractor_segment", filters.contractor_segment);
+        if (filters.builderSegment) query = query.eq("builder_segment", filters.builderSegment);
+        if (filters.contractorSegment) query = query.eq("contractor_segment", filters.contractorSegment);
+        if (filters.industry) query = query.eq("industry_type", filters.industry);
+        if (filters.state) query = query.eq("state", filters.state);
       }
 
       const { data, error } = await query;
@@ -67,37 +103,27 @@ export function ExportDialog({ open, onClose, selectedIds, filters, totalCount }
         return;
       }
 
-      // Filter columns based on selection
-      const exportData = data.map(company => {
+      // Transform data for export
+      const exportData = data.map((company: any) => {
         const row: any = {};
         
-        if (includeColumns.basic) {
-          row["Company Name"] = company.company_name;
-          row["Industry Type"] = company.industry_type;
-          row["Status"] = company.status;
-          row["Is Franchise"] = company.is_franchise ? "Yes" : "No";
+        selectedFields.forEach(field => {
+          row[formatFieldName(field)] = company[field] ?? '';
+        });
+
+        // Add related data if requested
+        if (includeRelated.contacts && Array.isArray(company.contacts)) {
+          row['Contacts'] = company.contacts
+            .map((c: any) => `${c.first_name} ${c.last_name} (${c.title || 'N/A'}) - ${c.email || c.phone || ''}`)
+            .join('; ');
         }
-        
-        if (includeColumns.contact) {
-          row["Website"] = company.website_url || "";
-          row["Phone"] = company.primary_phone || "";
-          row["LinkedIn"] = company.linkedin_company_url || "";
+
+        if (includeRelated.branches && Array.isArray(company.company_branches)) {
+          row['Branches'] = company.company_branches
+            .map((b: any) => `${b.branch_name || 'Branch'} - ${b.city}, ${b.state}${b.is_headquarters ? ' (HQ)' : ''}`)
+            .join('; ');
         }
-        
-        if (includeColumns.segment) {
-          row["Builder Segment"] = company.builder_segment || "";
-          row["Contractor Segment"] = company.contractor_segment || "";
-          row["Segment Confidence"] = company.segment_confidence || "";
-        }
-        
-        if (includeColumns.metrics) {
-          row["Lead Score"] = company.lead_score || 0;
-          row["Priority Tier"] = company.priority_tier || "";
-          row["Years in Business"] = company.years_in_business || "";
-          row["Total Employees"] = company.total_employees || "";
-          row["Annual Revenue Range"] = company.annual_revenue_range || "";
-        }
-        
+
         return row;
       });
 
@@ -112,10 +138,23 @@ export function ExportDialog({ open, onClose, selectedIds, filters, totalCount }
         link.href = URL.createObjectURL(blob);
         link.download = `${filename}.csv`;
         link.click();
+        URL.revokeObjectURL(link.href);
       } else {
         const ws = XLSX.utils.json_to_sheet(exportData);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Companies");
+        
+        // Auto-size columns
+        const maxWidth = 50;
+        const colWidths = Object.keys(exportData[0] || {}).map(key => {
+          const maxLength = Math.max(
+            key.length,
+            ...exportData.map(row => String(row[key] || '').length)
+          );
+          return { wch: Math.min(maxLength + 2, maxWidth) };
+        });
+        ws['!cols'] = colWidths;
+        
         XLSX.writeFile(wb, `${filename}.xlsx`);
       }
 
@@ -137,6 +176,14 @@ export function ExportDialog({ open, onClose, selectedIds, filters, totalCount }
     }
   };
 
+  const toggleField = (field: string) => {
+    if (selectedFields.includes(field)) {
+      setSelectedFields(selectedFields.filter(f => f !== field));
+    } else {
+      setSelectedFields([...selectedFields, field]);
+    }
+  };
+
   const getExportCount = () => {
     if (exportScope === "selected" && selectedIds) return selectedIds.length;
     if (exportScope === "filtered") return totalCount;
@@ -145,127 +192,125 @@ export function ExportDialog({ open, onClose, selectedIds, filters, totalCount }
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Export Companies</DialogTitle>
-          <DialogDescription>
-            Choose export format and options
-          </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* Export Format */}
-          <div className="space-y-3">
-            <Label>Export Format</Label>
-            <RadioGroup value={exportFormat} onValueChange={(value: any) => setExportFormat(value)}>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="csv" id="csv" />
-                <Label htmlFor="csv" className="font-normal cursor-pointer">
-                  CSV (Comma Separated Values)
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="excel" id="excel" />
-                <Label htmlFor="excel" className="font-normal cursor-pointer">
-                  Excel (.xlsx)
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
-
+        <div className="space-y-6">
           {/* Export Scope */}
-          <div className="space-y-3">
-            <Label>Export Scope</Label>
+          <div>
+            <h3 className="font-medium mb-3">What to Export</h3>
             <RadioGroup value={exportScope} onValueChange={(value: any) => setExportScope(value)}>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="all" id="all" />
-                <Label htmlFor="all" className="font-normal cursor-pointer">
-                  All companies ({totalCount})
-                </Label>
-              </div>
               {selectedIds && selectedIds.length > 0 && (
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="selected" id="selected" />
-                  <Label htmlFor="selected" className="font-normal cursor-pointer">
-                    Selected companies ({selectedIds.length})
-                  </Label>
-                </div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <RadioGroupItem value="selected" />
+                  <span>Selected companies ({selectedIds.length})</span>
+                </label>
               )}
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="filtered" id="filtered" />
-                <Label htmlFor="filtered" className="font-normal cursor-pointer">
-                  Current filtered view
-                </Label>
-              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <RadioGroupItem value="filtered" />
+                <span>All filtered companies ({totalCount})</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <RadioGroupItem value="all" />
+                <span>All companies in database</span>
+              </label>
             </RadioGroup>
           </div>
 
-          {/* Column Selection */}
-          <div className="space-y-3">
-            <Label>Include Columns</Label>
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="basic"
-                  checked={includeColumns.basic}
-                  onCheckedChange={(checked) =>
-                    setIncludeColumns({ ...includeColumns, basic: !!checked })
-                  }
-                />
-                <Label htmlFor="basic" className="font-normal cursor-pointer">
-                  Basic Info (Name, Type, Status)
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="contact"
-                  checked={includeColumns.contact}
-                  onCheckedChange={(checked) =>
-                    setIncludeColumns({ ...includeColumns, contact: !!checked })
-                  }
-                />
-                <Label htmlFor="contact" className="font-normal cursor-pointer">
-                  Contact Info (Website, Phone, LinkedIn)
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="segment"
-                  checked={includeColumns.segment}
-                  onCheckedChange={(checked) =>
-                    setIncludeColumns({ ...includeColumns, segment: !!checked })
-                  }
-                />
-                <Label htmlFor="segment" className="font-normal cursor-pointer">
-                  Segmentation Data
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="metrics"
-                  checked={includeColumns.metrics}
-                  onCheckedChange={(checked) =>
-                    setIncludeColumns({ ...includeColumns, metrics: !!checked })
-                  }
-                />
-                <Label htmlFor="metrics" className="font-normal cursor-pointer">
-                  Metrics (Score, Priority, Revenue)
-                </Label>
-              </div>
+          {/* Export Format */}
+          <div>
+            <h3 className="font-medium mb-3">Export Format</h3>
+            <RadioGroup value={exportFormat} onValueChange={(value: any) => setExportFormat(value)}>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <RadioGroupItem value="xlsx" />
+                <Table className="h-4 w-4" />
+                <span>Excel (.xlsx)</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <RadioGroupItem value="csv" />
+                <FileText className="h-4 w-4" />
+                <span>CSV (.csv)</span>
+              </label>
+            </RadioGroup>
+          </div>
+
+          {/* Fields to Export */}
+          <div>
+            <h3 className="font-medium mb-3">Fields to Include</h3>
+            <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded-lg p-3">
+              {AVAILABLE_FIELDS.map(field => (
+                <label key={field.value} className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox
+                    checked={selectedFields.includes(field.value)}
+                    onCheckedChange={() => toggleField(field.value)}
+                  />
+                  <span className="text-sm">{field.label}</span>
+                </label>
+              ))}
             </div>
           </div>
-        </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleExport} disabled={isExporting}>
-            <Download className="h-4 w-4 mr-2" />
-            {isExporting ? "Exporting..." : `Export ${getExportCount()} Companies`}
-          </Button>
-        </DialogFooter>
+          {/* Related Data */}
+          <div>
+            <h3 className="font-medium mb-3">Include Related Data</h3>
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox
+                  checked={includeRelated.contacts}
+                  onCheckedChange={(checked) => 
+                    setIncludeRelated({ ...includeRelated, contacts: checked as boolean })
+                  }
+                />
+                <span className="text-sm">Contacts</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox
+                  checked={includeRelated.branches}
+                  onCheckedChange={(checked) => 
+                    setIncludeRelated({ ...includeRelated, branches: checked as boolean })
+                  }
+                />
+                <span className="text-sm">Branches</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-between pt-4 border-t">
+            <Button variant="outline" onClick={onClose} disabled={isExporting}>
+              Cancel
+            </Button>
+            <Button onClick={handleExport} disabled={selectedFields.length === 0 || isExporting}>
+              <Download className="h-4 w-4 mr-2" />
+              {isExporting ? "Exporting..." : `Export ${getExportCount()} Companies`}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
 }
+
+const AVAILABLE_FIELDS = [
+  { value: 'company_name', label: 'Company Name' },
+  { value: 'website_url', label: 'Website' },
+  { value: 'industry_type', label: 'Industry' },
+  { value: 'builder_segment', label: 'Builder Segment' },
+  { value: 'contractor_segment', label: 'Contractor Segment' },
+  { value: 'segment_confidence', label: 'Segment Confidence' },
+  { value: 'lead_score', label: 'Lead Score' },
+  { value: 'priority_tier', label: 'Priority' },
+  { value: 'status', label: 'Status' },
+  { value: 'primary_phone', label: 'Phone' },
+  { value: 'linkedin_company_url', label: 'LinkedIn' },
+  { value: 'total_employees', label: 'Employees' },
+  { value: 'annual_revenue_range', label: 'Revenue Range' },
+  { value: 'years_in_business', label: 'Years in Business' },
+  { value: 'nest_pro_partner_id', label: 'Nest Pro ID' },
+  { value: 'is_franchise', label: 'Is Franchise' },
+  { value: 'parent_company_id', label: 'Parent Company' },
+  { value: 'created_at', label: 'Created Date' },
+  { value: 'updated_at', label: 'Updated Date' }
+];

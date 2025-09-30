@@ -40,6 +40,7 @@ export type Database = {
           parent_company_id: string | null
           primary_phone: string | null
           priority_tier: Database["public"]["Enums"]["priority_tier"] | null
+          score_calculated_at: string | null
           segment_confidence:
             | Database["public"]["Enums"]["segment_confidence"]
             | null
@@ -76,6 +77,7 @@ export type Database = {
           parent_company_id?: string | null
           primary_phone?: string | null
           priority_tier?: Database["public"]["Enums"]["priority_tier"] | null
+          score_calculated_at?: string | null
           segment_confidence?:
             | Database["public"]["Enums"]["segment_confidence"]
             | null
@@ -112,6 +114,7 @@ export type Database = {
           parent_company_id?: string | null
           primary_phone?: string | null
           priority_tier?: Database["public"]["Enums"]["priority_tier"] | null
+          score_calculated_at?: string | null
           segment_confidence?:
             | Database["public"]["Enums"]["segment_confidence"]
             | null
@@ -614,7 +617,9 @@ export type Database = {
           contractor_premium_score: number | null
           contractor_technology_score: number | null
           contractor_volume_score: number | null
+          decision_authority_score: number | null
           id: string
+          linkedin_professional_score: number | null
           social_media_score: number | null
           technology_adoption_score: number | null
           total_score: number | null
@@ -632,7 +637,9 @@ export type Database = {
           contractor_premium_score?: number | null
           contractor_technology_score?: number | null
           contractor_volume_score?: number | null
+          decision_authority_score?: number | null
           id?: string
+          linkedin_professional_score?: number | null
           social_media_score?: number | null
           technology_adoption_score?: number | null
           total_score?: number | null
@@ -650,7 +657,9 @@ export type Database = {
           contractor_premium_score?: number | null
           contractor_technology_score?: number | null
           contractor_volume_score?: number | null
+          decision_authority_score?: number | null
           id?: string
+          linkedin_professional_score?: number | null
           social_media_score?: number | null
           technology_adoption_score?: number | null
           total_score?: number | null

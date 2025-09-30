@@ -20,6 +20,8 @@ export interface ColumnVisibility {
   phone: boolean;
   website: boolean;
   franchise: boolean;
+  annualVolume: boolean;
+  revenue: boolean;
 }
 
 interface ColumnCustomizationProps {
@@ -35,6 +37,8 @@ export function ColumnCustomization({ visibility, onChange }: ColumnCustomizatio
     { key: "status", label: "Status", required: true },
     { key: "score", label: "Lead Score", required: false },
     { key: "priority", label: "Priority", required: false },
+    { key: "annualVolume", label: "Annual Volume", required: false },
+    { key: "revenue", label: "Revenue", required: false },
     { key: "phone", label: "Phone", required: false },
     { key: "website", label: "Website", required: false },
     { key: "franchise", label: "Franchise", required: false },

@@ -45,6 +45,8 @@ const Companies = () => {
       status: true,
       score: true,
       priority: true,
+      annualVolume: false,
+      revenue: false,
       phone: false,
       website: false,
       franchise: false,

@@ -43,6 +43,8 @@ interface Company {
   is_franchise: boolean;
   parent_company_id: string | null;
   is_favorite?: boolean;
+  annual_volume: number | null;
+  annual_revenue_range: string | null;
 }
 
 interface CompanyTableProps {
@@ -191,6 +193,8 @@ export function CompanyTable({
               {columnVisibility.status && <TableHead>Status</TableHead>}
               {columnVisibility.score && <TableHead>Score</TableHead>}
               {columnVisibility.priority && <TableHead>Priority</TableHead>}
+              {columnVisibility.annualVolume && <TableHead>Annual Volume</TableHead>}
+              {columnVisibility.revenue && <TableHead>Revenue</TableHead>}
               {columnVisibility.phone && <TableHead>Phone</TableHead>}
               {columnVisibility.website && <TableHead>Website</TableHead>}
               {columnVisibility.franchise && <TableHead>Franchise</TableHead>}
@@ -314,6 +318,29 @@ export function CompanyTable({
                 </TableCell>
               )}
 
+              {columnVisibility.annualVolume && (
+                <TableCell>
+                  {company.annual_volume ? (
+                    <span className="text-sm">
+                      {company.annual_volume.toLocaleString()}{' '}
+                      {company.industry_type === 'Builder' ? 'homes' : 'calls'}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+              )}
+
+              {columnVisibility.revenue && (
+                <TableCell>
+                  {company.annual_revenue_range ? (
+                    <span className="text-sm">{company.annual_revenue_range}</span>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+              )}
+
               {columnVisibility.phone && (
                 <TableCell className="text-sm">{company.primary_phone || "-"}</TableCell>
               )}
@@ -326,10 +353,11 @@ export function CompanyTable({
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="text-sm text-primary hover:underline"
+                      onClick={(e) => e.stopPropagation()}
                     >
                       Visit
                     </a>
-                  ) : "-"}
+                  ) : <span className="text-muted-foreground">—</span>}
                 </TableCell>
               )}
 

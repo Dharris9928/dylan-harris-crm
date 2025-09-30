@@ -14,6 +14,9 @@ export interface ColumnVisibility {
   companyName: boolean;
   type: boolean;
   segment: boolean;
+  structure: boolean;
+  parentCompany: boolean;
+  contractorSpecialty: boolean;
   status: boolean;
   score: boolean;
   priority: boolean;
@@ -34,6 +37,9 @@ export function ColumnCustomization({ visibility, onChange }: ColumnCustomizatio
     { key: "companyName", label: "Company Name", required: true },
     { key: "type", label: "Industry Type", required: false },
     { key: "segment", label: "Segment", required: false },
+    { key: "structure", label: "Company Structure", required: false },
+    { key: "parentCompany", label: "Parent Company", required: false },
+    { key: "contractorSpecialty", label: "Contractor Specialty", required: false },
     { key: "status", label: "Status", required: true },
     { key: "score", label: "Lead Score", required: false },
     { key: "priority", label: "Priority", required: false },

@@ -42,6 +42,9 @@ const Companies = () => {
       companyName: true,
       type: true,
       segment: true,
+      structure: false,
+      parentCompany: false,
+      contractorSpecialty: false,
       status: true,
       score: true,
       priority: true,
@@ -117,7 +120,10 @@ const Companies = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("companies")
-        .select("*")
+        .select(`
+          *,
+          parent_company:companies!parent_company_id(id, company_name)
+        `)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;

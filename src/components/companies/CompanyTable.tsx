@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Edit, Star } from "lucide-react";
+import { ExternalLink, Edit, Star, Building2, Users } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { QuickActionsMenu } from "./QuickActionsMenu";
 import {
@@ -42,9 +42,15 @@ interface Company {
   primary_phone: string | null;
   is_franchise: boolean;
   parent_company_id: string | null;
+  company_type: string | null;
+  contractor_specialty: string | null;
   is_favorite?: boolean;
   annual_volume: number | null;
   annual_revenue_range: string | null;
+  parent_company?: {
+    id: string;
+    company_name: string;
+  } | null;
 }
 
 interface CompanyTableProps {
@@ -190,6 +196,9 @@ export function CompanyTable({
               {columnVisibility.companyName && <TableHead>Company Name</TableHead>}
               {columnVisibility.type && <TableHead>Type</TableHead>}
               {columnVisibility.segment && <TableHead>Segment</TableHead>}
+              {columnVisibility.structure && <TableHead>Structure</TableHead>}
+              {columnVisibility.parentCompany && <TableHead>Parent Company</TableHead>}
+              {columnVisibility.contractorSpecialty && <TableHead>Specialty</TableHead>}
               {columnVisibility.status && <TableHead>Status</TableHead>}
               {columnVisibility.score && <TableHead>Score</TableHead>}
               {columnVisibility.priority && <TableHead>Priority</TableHead>}
@@ -255,6 +264,57 @@ export function CompanyTable({
               {columnVisibility.segment && (
                 <TableCell className="text-sm">
                   {company.builder_segment || company.contractor_segment}
+                </TableCell>
+              )}
+              
+              {columnVisibility.structure && (
+                <TableCell>
+                  {company.company_type === 'parent' ? (
+                    <div className="flex items-center gap-1">
+                      <Building2 className="h-3 w-3 text-blue-600" />
+                      <span className="text-xs font-semibold text-blue-600">Parent</span>
+                    </div>
+                  ) : company.company_type === 'subsidiary' ? (
+                    <div className="flex items-center gap-1">
+                      <Users className="h-3 w-3 text-purple-600" />
+                      <span className="text-xs text-purple-600">Subsidiary</span>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+              )}
+              
+              {columnVisibility.parentCompany && (
+                <TableCell>
+                  {company.parent_company ? (
+                    <span className="text-sm text-primary">
+                      {company.parent_company.company_name}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+              )}
+              
+              {columnVisibility.contractorSpecialty && (
+                <TableCell>
+                  {company.industry_type === 'Contractor' && company.contractor_specialty ? (
+                    <div className="max-w-xs">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-sm text-foreground line-clamp-2 cursor-help">
+                            {company.contractor_specialty}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">{company.contractor_specialty}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  ) : company.industry_type === 'Contractor' ? (
+                    <span className="text-muted-foreground text-sm italic">Not specified</span>
+                  ) : null}
                 </TableCell>
               )}
               

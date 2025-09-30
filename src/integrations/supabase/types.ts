@@ -24,15 +24,18 @@ export type Database = {
           builder_segment: Database["public"]["Enums"]["builder_segment"] | null
           city: string | null
           company_name: string
+          company_type: string | null
           contractor_segment:
             | Database["public"]["Enums"]["contractor_segment"]
             | null
+          contractor_specialty: string | null
           created_at: string | null
           created_by: string | null
           franchise_name: string | null
           id: string
           industry_type: Database["public"]["Enums"]["industry_type"]
           is_franchise: boolean | null
+          is_parent_company: boolean | null
           lead_score: number | null
           linkedin_company_url: string | null
           nest_pro_industry: string | null
@@ -66,15 +69,18 @@ export type Database = {
             | null
           city?: string | null
           company_name: string
+          company_type?: string | null
           contractor_segment?:
             | Database["public"]["Enums"]["contractor_segment"]
             | null
+          contractor_specialty?: string | null
           created_at?: string | null
           created_by?: string | null
           franchise_name?: string | null
           id?: string
           industry_type: Database["public"]["Enums"]["industry_type"]
           is_franchise?: boolean | null
+          is_parent_company?: boolean | null
           lead_score?: number | null
           linkedin_company_url?: string | null
           nest_pro_industry?: string | null
@@ -108,15 +114,18 @@ export type Database = {
             | null
           city?: string | null
           company_name?: string
+          company_type?: string | null
           contractor_segment?:
             | Database["public"]["Enums"]["contractor_segment"]
             | null
+          contractor_specialty?: string | null
           created_at?: string | null
           created_by?: string | null
           franchise_name?: string | null
           id?: string
           industry_type?: Database["public"]["Enums"]["industry_type"]
           is_franchise?: boolean | null
+          is_parent_company?: boolean | null
           lead_score?: number | null
           linkedin_company_url?: string | null
           nest_pro_industry?: string | null
@@ -752,7 +761,17 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      company_hierarchy: {
+        Row: {
+          company_name: string | null
+          full_path: string | null
+          id: string | null
+          level: number | null
+          parent_company_id: string | null
+          path: string[] | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never

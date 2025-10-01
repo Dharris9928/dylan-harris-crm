@@ -32,7 +32,7 @@ export interface ContractorScoringBreakdown {
   // Total
   totalScore: number; // 0-100
   priorityTier: 'P1' | 'P2' | 'P3' | 'Unscored';
-  confidence: 'High 90%+' | 'Medium 70-89%' | 'Low <70%';
+  confidence: 'High' | 'Medium' | 'Low';
 }
 
 /**
@@ -70,7 +70,7 @@ export async function calculateContractorScore(companyId: string): Promise<Contr
     contactTotal: 0,
     totalScore: 0,
     priorityTier: 'Unscored',
-    confidence: 'Low <70%'
+    confidence: 'Low'
   };
 
   // ============================================

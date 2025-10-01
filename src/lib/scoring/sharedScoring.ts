@@ -92,7 +92,7 @@ export function calculateLinkedInScore(contacts: any[]): number {
 // CONFIDENCE CALCULATION
 // ============================================
 
-export function calculateConfidence(company: any): 'High 90%+' | 'Medium 70-89%' | 'Low <70%' {
+export function calculateConfidence(company: any): 'High' | 'Medium' | 'Low' {
   let dataPoints = 0;
 
   // Count available data points
@@ -107,9 +107,9 @@ export function calculateConfidence(company: any): 'High 90%+' | 'Medium 70-89%'
 
   const completeness = (dataPoints / 8) * 100;
 
-  if (completeness >= 90) return 'High 90%+';
-  if (completeness >= 70) return 'Medium 70-89%';
-  return 'Low <70%';
+  if (completeness >= 90) return 'High';
+  if (completeness >= 70) return 'Medium';
+  return 'Low';
 }
 
 // ============================================

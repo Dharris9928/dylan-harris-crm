@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Building2, Users } from "lucide-react";
+import { UserManagement } from "@/components/settings/UserManagement";
 
 const Settings = () => {
   const builderSegments = [
@@ -53,6 +54,8 @@ const Settings = () => {
       </div>
 
       <div className="grid gap-6">
+        <UserManagement />
+        
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">

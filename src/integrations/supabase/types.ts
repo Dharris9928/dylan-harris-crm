@@ -14,6 +14,80 @@ export type Database = {
   }
   public: {
     Tables: {
+      builder_scoring_details: {
+        Row: {
+          calculated_at: string | null
+          company_id: string
+          confidence: string | null
+          contact_total: number | null
+          created_at: string | null
+          decision_authority_score: number | null
+          digital_total: number | null
+          firmographic_total: number | null
+          geographic_score: number | null
+          id: string
+          linkedin_professional_score: number | null
+          price_point_score: number | null
+          priority_tier: string | null
+          social_media_score: number | null
+          stability_score: number | null
+          technology_adoption_score: number | null
+          total_score: number | null
+          volume_score: number | null
+          website_quality_score: number | null
+        }
+        Insert: {
+          calculated_at?: string | null
+          company_id: string
+          confidence?: string | null
+          contact_total?: number | null
+          created_at?: string | null
+          decision_authority_score?: number | null
+          digital_total?: number | null
+          firmographic_total?: number | null
+          geographic_score?: number | null
+          id?: string
+          linkedin_professional_score?: number | null
+          price_point_score?: number | null
+          priority_tier?: string | null
+          social_media_score?: number | null
+          stability_score?: number | null
+          technology_adoption_score?: number | null
+          total_score?: number | null
+          volume_score?: number | null
+          website_quality_score?: number | null
+        }
+        Update: {
+          calculated_at?: string | null
+          company_id?: string
+          confidence?: string | null
+          contact_total?: number | null
+          created_at?: string | null
+          decision_authority_score?: number | null
+          digital_total?: number | null
+          firmographic_total?: number | null
+          geographic_score?: number | null
+          id?: string
+          linkedin_professional_score?: number | null
+          price_point_score?: number | null
+          priority_tier?: string | null
+          social_media_score?: number | null
+          stability_score?: number | null
+          technology_adoption_score?: number | null
+          total_score?: number | null
+          volume_score?: number | null
+          website_quality_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "builder_scoring_details_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           address_line1: string | null
@@ -21,6 +95,7 @@ export type Database = {
             | Database["public"]["Enums"]["revenue_range"]
             | null
           annual_volume: number | null
+          average_home_price: number | null
           builder_segment: Database["public"]["Enums"]["builder_segment"] | null
           city: string | null
           company_name: string
@@ -31,6 +106,7 @@ export type Database = {
           contractor_specialty: string | null
           created_at: string | null
           created_by: string | null
+          emergency_service_percentage: number | null
           franchise_name: string | null
           id: string
           industry_type: Database["public"]["Enums"]["industry_type"]
@@ -38,11 +114,13 @@ export type Database = {
           is_parent_company: boolean | null
           lead_score: number | null
           linkedin_company_url: string | null
+          maintenance_contract_percentage: number | null
           nest_pro_industry: string | null
           nest_pro_partner_id: string | null
           notes: string | null
           owner_name: string | null
           parent_company_id: string | null
+          price_point_category: string | null
           primary_email: string | null
           primary_phone: string | null
           priority_tier: Database["public"]["Enums"]["priority_tier"] | null
@@ -50,6 +128,7 @@ export type Database = {
           segment_confidence:
             | Database["public"]["Enums"]["segment_confidence"]
             | null
+          service_area_type: string | null
           state: string | null
           status: Database["public"]["Enums"]["company_status"] | null
           total_employees: number | null
@@ -64,6 +143,7 @@ export type Database = {
             | Database["public"]["Enums"]["revenue_range"]
             | null
           annual_volume?: number | null
+          average_home_price?: number | null
           builder_segment?:
             | Database["public"]["Enums"]["builder_segment"]
             | null
@@ -76,6 +156,7 @@ export type Database = {
           contractor_specialty?: string | null
           created_at?: string | null
           created_by?: string | null
+          emergency_service_percentage?: number | null
           franchise_name?: string | null
           id?: string
           industry_type: Database["public"]["Enums"]["industry_type"]
@@ -83,11 +164,13 @@ export type Database = {
           is_parent_company?: boolean | null
           lead_score?: number | null
           linkedin_company_url?: string | null
+          maintenance_contract_percentage?: number | null
           nest_pro_industry?: string | null
           nest_pro_partner_id?: string | null
           notes?: string | null
           owner_name?: string | null
           parent_company_id?: string | null
+          price_point_category?: string | null
           primary_email?: string | null
           primary_phone?: string | null
           priority_tier?: Database["public"]["Enums"]["priority_tier"] | null
@@ -95,6 +178,7 @@ export type Database = {
           segment_confidence?:
             | Database["public"]["Enums"]["segment_confidence"]
             | null
+          service_area_type?: string | null
           state?: string | null
           status?: Database["public"]["Enums"]["company_status"] | null
           total_employees?: number | null
@@ -109,6 +193,7 @@ export type Database = {
             | Database["public"]["Enums"]["revenue_range"]
             | null
           annual_volume?: number | null
+          average_home_price?: number | null
           builder_segment?:
             | Database["public"]["Enums"]["builder_segment"]
             | null
@@ -121,6 +206,7 @@ export type Database = {
           contractor_specialty?: string | null
           created_at?: string | null
           created_by?: string | null
+          emergency_service_percentage?: number | null
           franchise_name?: string | null
           id?: string
           industry_type?: Database["public"]["Enums"]["industry_type"]
@@ -128,11 +214,13 @@ export type Database = {
           is_parent_company?: boolean | null
           lead_score?: number | null
           linkedin_company_url?: string | null
+          maintenance_contract_percentage?: number | null
           nest_pro_industry?: string | null
           nest_pro_partner_id?: string | null
           notes?: string | null
           owner_name?: string | null
           parent_company_id?: string | null
+          price_point_category?: string | null
           primary_email?: string | null
           primary_phone?: string | null
           priority_tier?: Database["public"]["Enums"]["priority_tier"] | null
@@ -140,6 +228,7 @@ export type Database = {
           segment_confidence?:
             | Database["public"]["Enums"]["segment_confidence"]
             | null
+          service_area_type?: string | null
           state?: string | null
           status?: Database["public"]["Enums"]["company_status"] | null
           total_employees?: number | null
@@ -351,6 +440,83 @@ export type Database = {
             foreignKeyName: "contacts_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contractor_scoring_details: {
+        Row: {
+          business_model_score: number | null
+          calculated_at: string | null
+          company_id: string
+          confidence: string | null
+          contact_total: number | null
+          created_at: string | null
+          decision_authority_score: number | null
+          digital_total: number | null
+          firmographic_total: number | null
+          geographic_score: number | null
+          id: string
+          linkedin_professional_score: number | null
+          priority_tier: string | null
+          revenue_score: number | null
+          social_media_score: number | null
+          stability_score: number | null
+          technology_adoption_score: number | null
+          total_score: number | null
+          volume_score: number | null
+          website_quality_score: number | null
+        }
+        Insert: {
+          business_model_score?: number | null
+          calculated_at?: string | null
+          company_id: string
+          confidence?: string | null
+          contact_total?: number | null
+          created_at?: string | null
+          decision_authority_score?: number | null
+          digital_total?: number | null
+          firmographic_total?: number | null
+          geographic_score?: number | null
+          id?: string
+          linkedin_professional_score?: number | null
+          priority_tier?: string | null
+          revenue_score?: number | null
+          social_media_score?: number | null
+          stability_score?: number | null
+          technology_adoption_score?: number | null
+          total_score?: number | null
+          volume_score?: number | null
+          website_quality_score?: number | null
+        }
+        Update: {
+          business_model_score?: number | null
+          calculated_at?: string | null
+          company_id?: string
+          confidence?: string | null
+          contact_total?: number | null
+          created_at?: string | null
+          decision_authority_score?: number | null
+          digital_total?: number | null
+          firmographic_total?: number | null
+          geographic_score?: number | null
+          id?: string
+          linkedin_professional_score?: number | null
+          priority_tier?: string | null
+          revenue_score?: number | null
+          social_media_score?: number | null
+          stability_score?: number | null
+          technology_adoption_score?: number | null
+          total_score?: number | null
+          volume_score?: number | null
+          website_quality_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contractor_scoring_details_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },

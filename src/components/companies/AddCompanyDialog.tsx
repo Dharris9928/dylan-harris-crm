@@ -477,6 +477,104 @@ export function AddCompanyDialog({ open, onClose, onOpenChange, onSuccess }: Add
                 />
               </div>
             </div>
+
+            {/* BUILDER-SPECIFIC FIELDS */}
+            {industryType === 'Builder' && (
+              <div className="mt-4 pt-4 border-t border-blue-300 space-y-4">
+                <h4 className="font-medium text-sm text-blue-800 dark:text-blue-300">
+                  Builder-Specific Metrics (Used in Scoring)
+                </h4>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="average_home_price">Average Home Price</Label>
+                    <Input
+                      id="average_home_price"
+                      type="number"
+                      value={averageHomePrice}
+                      onChange={(e) => setAverageHomePrice(e.target.value)}
+                      placeholder="e.g., 450000"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Average price of homes built (affects price point scoring)
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="price_category">Price Point Category</Label>
+                    <Select value={priceCategoryState} onValueChange={setPriceCategoryState}>
+                      <SelectTrigger id="price_category">
+                        <SelectValue placeholder="Auto-calculated or select..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Entry-level">Entry-level (Under $250K)</SelectItem>
+                        <SelectItem value="Mid-range">Mid-range ($250K-$500K)</SelectItem>
+                        <SelectItem value="Luxury">Luxury ($500K-$1M)</SelectItem>
+                        <SelectItem value="Ultra-luxury">Ultra-luxury ($1M+)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* CONTRACTOR-SPECIFIC FIELDS */}
+            {industryType === 'Contractor' && (
+              <div className="mt-4 pt-4 border-t border-blue-300 space-y-4">
+                <h4 className="font-medium text-sm text-blue-800 dark:text-blue-300">
+                  Contractor-Specific Metrics (Used in Scoring)
+                </h4>
+                
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="service_area">Service Area Type</Label>
+                    <Select value={serviceAreaType} onValueChange={setServiceAreaType}>
+                      <SelectTrigger id="service_area">
+                        <SelectValue placeholder="Select..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Local">Local (City/County)</SelectItem>
+                        <SelectItem value="Regional">Regional (Multi-county)</SelectItem>
+                        <SelectItem value="Multi-state">Multi-state</SelectItem>
+                        <SelectItem value="National">National</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="maintenance_pct">Maintenance Contracts %</Label>
+                    <Input
+                      id="maintenance_pct"
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={maintenancePercentage}
+                      onChange={(e) => setMaintenancePercentage(e.target.value)}
+                      placeholder="e.g., 30"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      % of business from recurring contracts
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="emergency_pct">Emergency Service %</Label>
+                    <Input
+                      id="emergency_pct"
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={emergencyPercentage}
+                      onChange={(e) => setEmergencyPercentage(e.target.value)}
+                      placeholder="e.g., 20"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      % of business from emergency calls
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* SECTION 3: LOCATION */}

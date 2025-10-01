@@ -97,6 +97,7 @@ export type Database = {
           average_home_price: number | null
           average_home_price_range: string | null
           city: string | null
+          company_logo: string | null
           company_name: string
           company_type: string | null
           contractor_specialty: string | null
@@ -166,6 +167,7 @@ export type Database = {
           average_home_price?: number | null
           average_home_price_range?: string | null
           city?: string | null
+          company_logo?: string | null
           company_name: string
           company_type?: string | null
           contractor_specialty?: string | null
@@ -235,6 +237,7 @@ export type Database = {
           average_home_price?: number | null
           average_home_price_range?: string | null
           city?: string | null
+          company_logo?: string | null
           company_name?: string
           company_type?: string | null
           contractor_specialty?: string | null
@@ -677,56 +680,68 @@ export type Database = {
       outreach_activities: {
         Row: {
           activity_type: Database["public"]["Enums"]["activity_type"]
+          assigned_to: string | null
           branch_id: string | null
           company_id: string
           completed_date: string | null
           contact_id: string | null
           created_at: string | null
           created_by: string
+          duration_minutes: number | null
           id: string
           message_content: string | null
+          next_action: string | null
           notes: string | null
           outcome: Database["public"]["Enums"]["activity_outcome"] | null
           scheduled_date: string | null
           sequence_day: number | null
           sequence_name: string | null
           sequence_phase: string | null
+          status: string | null
           subject_line: string | null
         }
         Insert: {
           activity_type: Database["public"]["Enums"]["activity_type"]
+          assigned_to?: string | null
           branch_id?: string | null
           company_id: string
           completed_date?: string | null
           contact_id?: string | null
           created_at?: string | null
           created_by: string
+          duration_minutes?: number | null
           id?: string
           message_content?: string | null
+          next_action?: string | null
           notes?: string | null
           outcome?: Database["public"]["Enums"]["activity_outcome"] | null
           scheduled_date?: string | null
           sequence_day?: number | null
           sequence_name?: string | null
           sequence_phase?: string | null
+          status?: string | null
           subject_line?: string | null
         }
         Update: {
           activity_type?: Database["public"]["Enums"]["activity_type"]
+          assigned_to?: string | null
           branch_id?: string | null
           company_id?: string
           completed_date?: string | null
           contact_id?: string | null
           created_at?: string | null
           created_by?: string
+          duration_minutes?: number | null
           id?: string
           message_content?: string | null
+          next_action?: string | null
           notes?: string | null
           outcome?: Database["public"]["Enums"]["activity_outcome"] | null
           scheduled_date?: string | null
           sequence_day?: number | null
           sequence_name?: string | null
           sequence_phase?: string | null
+          status?: string | null
           subject_line?: string | null
         }
         Relationships: [
@@ -762,13 +777,17 @@ export type Database = {
       }
       pilot_programs: {
         Row: {
+          actual_end_date: string | null
           actual_installations: number | null
+          assigned_to: string | null
           branch_id: string | null
+          budget: number | null
           company_id: string
           created_at: string
           end_date: string | null
           id: string
           notes: string | null
+          pilot_name: string | null
           program_type: Database["public"]["Enums"]["program_type"]
           roi_data: Json | null
           start_date: string | null
@@ -778,13 +797,17 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          actual_end_date?: string | null
           actual_installations?: number | null
+          assigned_to?: string | null
           branch_id?: string | null
+          budget?: number | null
           company_id: string
           created_at?: string
           end_date?: string | null
           id?: string
           notes?: string | null
+          pilot_name?: string | null
           program_type: Database["public"]["Enums"]["program_type"]
           roi_data?: Json | null
           start_date?: string | null
@@ -794,13 +817,17 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          actual_end_date?: string | null
           actual_installations?: number | null
+          assigned_to?: string | null
           branch_id?: string | null
+          budget?: number | null
           company_id?: string
           created_at?: string
           end_date?: string | null
           id?: string
           notes?: string | null
+          pilot_name?: string | null
           program_type?: Database["public"]["Enums"]["program_type"]
           roi_data?: Json | null
           start_date?: string | null
@@ -873,6 +900,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      saved_views: {
+        Row: {
+          configuration: Json | null
+          created_at: string | null
+          created_by: string | null
+          display_order: number | null
+          id: string
+          is_default: boolean | null
+          is_favorite: boolean | null
+          table_name: string
+          updated_at: string | null
+          view_name: string
+          view_permission_type: string | null
+          view_section: string | null
+          view_type: string
+        }
+        Insert: {
+          configuration?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          display_order?: number | null
+          id?: string
+          is_default?: boolean | null
+          is_favorite?: boolean | null
+          table_name: string
+          updated_at?: string | null
+          view_name: string
+          view_permission_type?: string | null
+          view_section?: string | null
+          view_type: string
+        }
+        Update: {
+          configuration?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          display_order?: number | null
+          id?: string
+          is_default?: boolean | null
+          is_favorite?: boolean | null
+          table_name?: string
+          updated_at?: string | null
+          view_name?: string
+          view_permission_type?: string | null
+          view_section?: string | null
+          view_type?: string
+        }
+        Relationships: []
       }
       scoring_configuration: {
         Row: {
@@ -1034,6 +1109,44 @@ export type Database = {
             columns: ["contact_id"]
             isOneToOne: false
             referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_view_preferences: {
+        Row: {
+          created_at: string | null
+          custom_configuration: Json | null
+          id: string
+          is_favorite: boolean | null
+          last_accessed: string | null
+          saved_view_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          custom_configuration?: Json | null
+          id?: string
+          is_favorite?: boolean | null
+          last_accessed?: string | null
+          saved_view_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          custom_configuration?: Json | null
+          id?: string
+          is_favorite?: boolean | null
+          last_accessed?: string | null
+          saved_view_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_view_preferences_saved_view_id_fkey"
+            columns: ["saved_view_id"]
+            isOneToOne: false
+            referencedRelation: "saved_views"
             referencedColumns: ["id"]
           },
         ]

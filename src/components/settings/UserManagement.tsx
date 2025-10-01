@@ -31,17 +31,16 @@ export function UserManagement() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data: userData } = await supabase.auth.admin.getUserById(user.id);
     const { data: profile } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', user.id)
       .maybeSingle();
     
-    if (profile && userData?.user) {
+    if (profile && user.email) {
       setCurrentUser({
         ...profile,
-        email: userData.user.email!,
+        email: user.email,
       } as UserProfile);
     }
   };
@@ -61,15 +60,23 @@ export function UserManagement() {
         throw error;
       }
 
-      const usersWithEmails = await Promise.all(
-        (profiles || []).map(async (profile) => {
-          const { data: userData } = await supabase.auth.admin.getUserById(profile.id);
-          return {
-            ...profile,
-            email: userData?.user?.email || 'Unknown',
-          } as UserProfile;
-        })
-      );
+      // Get user emails via secure edge function
+      const userIds = (profiles || []).map(p => p.id);
+      
+      const { data: emailData, error: emailError } = await supabase.functions.invoke('get-user-emails', {
+        body: { userIds }
+      });
+
+      if (emailError) {
+        console.error('Error fetching user emails:', emailError);
+        toast.error('Failed to load user emails');
+        return;
+      }
+
+      const usersWithEmails = (profiles || []).map((profile) => ({
+        ...profile,
+        email: emailData?.userEmails?.[profile.id] || 'Unknown',
+      } as UserProfile));
 
       setUsers(usersWithEmails);
     } catch (error) {

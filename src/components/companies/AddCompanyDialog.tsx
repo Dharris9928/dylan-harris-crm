@@ -470,10 +470,11 @@ export function AddCompanyDialog({ open, onClose, onOpenChange, onSuccess }: Add
                         <SelectValue placeholder="Auto-calculated or select..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Entry-level">Entry-level (Under $250K)</SelectItem>
-                        <SelectItem value="Mid-range">Mid-range ($250K-$500K)</SelectItem>
-                        <SelectItem value="Luxury">Luxury ($500K-$1M)</SelectItem>
-                        <SelectItem value="Ultra-luxury">Ultra-luxury ($1M+)</SelectItem>
+                        {PRICE_POINT_CATEGORIES.map((category) => (
+                          <SelectItem key={category.value} value={category.value}>
+                            {category.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>

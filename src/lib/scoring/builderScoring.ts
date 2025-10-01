@@ -139,10 +139,18 @@ export async function calculateBuilderScore(companyId: string): Promise<BuilderS
     scoring.priorityTier = 'Unscored';
   }
 
-  scoring.confidence = calculateConfidence(company);
+  const baseConfidence = calculateConfidence(company);
+  
+  // Format confidence for details table (with percentage range)
+  let formattedConfidence: string;
+  if (baseConfidence === 'High') formattedConfidence = 'High 90%+';
+  else if (baseConfidence === 'Medium') formattedConfidence = 'Medium 70-89%';
+  else formattedConfidence = 'Low <70%';
+  
+  scoring.confidence = baseConfidence;
 
-  // Save to database
-  await saveBuilderScoreToDatabase(companyId, scoring);
+  // Save to database with formatted confidence
+  await saveBuilderScoreToDatabase(companyId, scoring, formattedConfidence);
 
   return scoring;
 }
@@ -203,9 +211,10 @@ function calculateBuilderStabilityScore(data: {
 
 async function saveBuilderScoreToDatabase(
   companyId: string,
-  scoring: BuilderScoringBreakdown
+  scoring: BuilderScoringBreakdown,
+  formattedConfidence: string
 ): Promise<void> {
-  // Save detailed breakdown to builder_scoring_details
+  // Save detailed breakdown to builder_scoring_details (with formatted confidence)
   await supabase
     .from('builder_scoring_details')
     .upsert({
@@ -224,7 +233,7 @@ async function saveBuilderScoreToDatabase(
       contact_total: scoring.contactTotal,
       total_score: scoring.totalScore,
       priority_tier: scoring.priorityTier,
-      confidence: scoring.confidence,
+      confidence: formattedConfidence,
       calculated_at: new Date().toISOString()
     });
 

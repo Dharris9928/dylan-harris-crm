@@ -148,10 +148,18 @@ export async function calculateContractorScore(companyId: string): Promise<Contr
     scoring.priorityTier = 'Unscored';
   }
 
-  scoring.confidence = calculateConfidence(company);
+  const baseConfidence = calculateConfidence(company);
+  
+  // Format confidence for details table (with percentage range)
+  let formattedConfidence: string;
+  if (baseConfidence === 'High') formattedConfidence = 'High 90%+';
+  else if (baseConfidence === 'Medium') formattedConfidence = 'Medium 70-89%';
+  else formattedConfidence = 'Low <70%';
+  
+  scoring.confidence = baseConfidence;
 
-  // Save to database
-  await saveContractorScoreToDatabase(companyId, scoring);
+  // Save to database with formatted confidence
+  await saveContractorScoreToDatabase(companyId, scoring, formattedConfidence);
 
   return scoring;
 }
@@ -235,9 +243,10 @@ function calculateBusinessModelScore(data: {
 
 async function saveContractorScoreToDatabase(
   companyId: string,
-  scoring: ContractorScoringBreakdown
+  scoring: ContractorScoringBreakdown,
+  formattedConfidence: string
 ): Promise<void> {
-  // Save detailed breakdown to contractor_scoring_details
+  // Save detailed breakdown to contractor_scoring_details (with formatted confidence)
   await supabase
     .from('contractor_scoring_details')
     .upsert({
@@ -257,7 +266,7 @@ async function saveContractorScoreToDatabase(
       contact_total: scoring.contactTotal,
       total_score: scoring.totalScore,
       priority_tier: scoring.priorityTier,
-      confidence: scoring.confidence,
+      confidence: formattedConfidence,
       calculated_at: new Date().toISOString()
     });
 

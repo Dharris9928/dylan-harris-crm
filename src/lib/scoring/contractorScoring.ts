@@ -260,26 +260,29 @@ async function saveContractorScoreToDatabase(
   // Save detailed breakdown to contractor_scoring_details (with formatted confidence)
   await supabase
     .from('contractor_scoring_details')
-    .upsert({
-      company_id: companyId,
-      volume_score: scoring.volumeScore,
-      revenue_score: scoring.revenueScore,
-      geographic_score: scoring.geographicScore,
-      stability_score: scoring.stabilityScore,
-      business_model_score: scoring.businessModelScore,
-      firmographic_total: scoring.firmographicTotal,
-      website_quality_score: scoring.websiteQualityScore,
-      social_media_score: scoring.socialMediaScore,
-      technology_adoption_score: scoring.technologyAdoptionScore,
-      digital_total: scoring.digitalTotal,
-      decision_authority_score: scoring.decisionAuthorityScore,
-      linkedin_professional_score: scoring.linkedinProfessionalScore,
-      contact_total: scoring.contactTotal,
-      total_score: scoring.totalScore,
-      priority_tier: scoring.priorityTier,
-      confidence: formattedConfidence,
-      calculated_at: new Date().toISOString()
-    });
+    .upsert(
+      {
+        company_id: companyId,
+        volume_score: scoring.volumeScore,
+        revenue_score: scoring.revenueScore,
+        geographic_score: scoring.geographicScore,
+        stability_score: scoring.stabilityScore,
+        business_model_score: scoring.businessModelScore,
+        firmographic_total: scoring.firmographicTotal,
+        website_quality_score: scoring.websiteQualityScore,
+        social_media_score: scoring.socialMediaScore,
+        technology_adoption_score: scoring.technologyAdoptionScore,
+        digital_total: scoring.digitalTotal,
+        decision_authority_score: scoring.decisionAuthorityScore,
+        linkedin_professional_score: scoring.linkedinProfessionalScore,
+        contact_total: scoring.contactTotal,
+        total_score: scoring.totalScore,
+        priority_tier: scoring.priorityTier,
+        confidence: formattedConfidence,
+        calculated_at: new Date().toISOString()
+      },
+      { onConflict: 'company_id' }
+    );
 
   // Update company with total score
   await supabase

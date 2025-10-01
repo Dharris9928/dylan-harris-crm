@@ -99,7 +99,7 @@ export type Database = {
           company_type: string | null
           contractor_specialty: string | null
           created_at: string | null
-          created_by: string | null
+          created_by: string
           emergency_service_percentage: number | null
           franchise_name: string | null
           id: string
@@ -145,7 +145,7 @@ export type Database = {
           company_type?: string | null
           contractor_specialty?: string | null
           created_at?: string | null
-          created_by?: string | null
+          created_by: string
           emergency_service_percentage?: number | null
           franchise_name?: string | null
           id?: string
@@ -191,7 +191,7 @@ export type Database = {
           company_type?: string | null
           contractor_specialty?: string | null
           created_at?: string | null
-          created_by?: string | null
+          created_by?: string
           emergency_service_percentage?: number | null
           franchise_name?: string | null
           id?: string

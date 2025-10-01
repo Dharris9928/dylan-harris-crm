@@ -415,19 +415,47 @@ export function AddCompanyDialog({ open, onClose, onOpenChange, onSuccess }: Add
             </h3>
             
             <div className="grid grid-cols-2 gap-4">
+              {/* Annual Volume - RANGE DROPDOWN */}
               <div>
-                <Label htmlFor="annual_volume">Annual Volume</Label>
-                <Input
-                  id="annual_volume"
-                  type="number"
-                  value={annualVolume}
-                  onChange={(e) => setAnnualVolume(e.target.value)}
-                  placeholder={industryType === 'Builder' ? 'Homes per year' : 'Service calls per year'}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {industryType === 'Builder' 
-                    ? 'Number of homes built annually' 
-                    : 'Number of service calls annually'}
+                <Label htmlFor="annual_volume_range">
+                  Annual Volume {industryType === 'Builder' ? '(Homes Built)' : '(Service Calls)'} <span className="text-red-500">*</span>
+                </Label>
+                <Select value={annualVolumeRange} onValueChange={setAnnualVolumeRange}>
+                  <SelectTrigger id="annual_volume_range">
+                    <SelectValue placeholder="Select range..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {industryType === 'Builder' ? (
+                      <>
+                        <SelectItem value="1,000+">1,000+ homes/year (15 pts) - Major builder</SelectItem>
+                        <SelectItem value="500-999">500-999 homes/year (14 pts) - Large production</SelectItem>
+                        <SelectItem value="250-499">250-499 homes/year (13 pts) - Production</SelectItem>
+                        <SelectItem value="100-249">100-249 homes/year (12 pts) - Regional production</SelectItem>
+                        <SelectItem value="50-99">50-99 homes/year (10 pts) - Regional mid-volume</SelectItem>
+                        <SelectItem value="25-49">25-49 homes/year (8 pts) - Small to mid-volume</SelectItem>
+                        <SelectItem value="10-24">10-24 homes/year (6 pts) - Spec home</SelectItem>
+                        <SelectItem value="5-9">5-9 homes/year (4 pts) - Small custom</SelectItem>
+                        <SelectItem value="1-4">1-4 homes/year (2 pts) - Very small</SelectItem>
+                      </>
+                    ) : (
+                      <>
+                        <SelectItem value="10,000+">10,000+ calls/year (12 pts) - Very high volume</SelectItem>
+                        <SelectItem value="5,000-9,999">5,000-9,999 calls/year (11 pts) - High volume</SelectItem>
+                        <SelectItem value="3,000-4,999">3,000-4,999 calls/year (10 pts) - High volume</SelectItem>
+                        <SelectItem value="2,000-2,999">2,000-2,999 calls/year (9 pts) - Medium-high</SelectItem>
+                        <SelectItem value="1,500-1,999">1,500-1,999 calls/year (8 pts) - Medium-high</SelectItem>
+                        <SelectItem value="1,000-1,499">1,000-1,499 calls/year (7 pts) - Medium</SelectItem>
+                        <SelectItem value="750-999">750-999 calls/year (6 pts) - Medium</SelectItem>
+                        <SelectItem value="500-749">500-749 calls/year (5 pts) - Small-medium</SelectItem>
+                        <SelectItem value="250-499">250-499 calls/year (4 pts) - Small-medium</SelectItem>
+                        <SelectItem value="100-249">100-249 calls/year (3 pts) - Small</SelectItem>
+                        <SelectItem value="<100">&lt;100 calls/year (1 pt) - Very small</SelectItem>
+                      </>
+                    )}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-blue-600 mt-1">
+                  📈 Select the range that best fits annual {industryType === 'Builder' ? 'home completions' : 'service calls'}
                 </p>
               </div>
 
@@ -448,26 +476,49 @@ export function AddCompanyDialog({ open, onClose, onOpenChange, onSuccess }: Add
                 </Select>
               </div>
 
+              {/* Employees - RANGE DROPDOWN */}
               <div>
-                <Label htmlFor="total_employees">Total Employees</Label>
-                <Input
-                  id="total_employees"
-                  type="number"
-                  value={totalEmployees}
-                  onChange={(e) => setTotalEmployees(e.target.value)}
-                  placeholder="Number of employees"
-                />
+                <Label htmlFor="employees_range">Total Employees</Label>
+                <Select value={totalEmployeesRange} onValueChange={setTotalEmployeesRange}>
+                  <SelectTrigger id="employees_range">
+                    <SelectValue placeholder="Select range..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="500+">500+ employees</SelectItem>
+                    <SelectItem value="250-499">250-499 employees</SelectItem>
+                    <SelectItem value="100-249">100-249 employees</SelectItem>
+                    <SelectItem value="50-99">50-99 employees</SelectItem>
+                    <SelectItem value="25-49">25-49 employees</SelectItem>
+                    <SelectItem value="10-24">10-24 employees</SelectItem>
+                    <SelectItem value="5-9">5-9 employees</SelectItem>
+                    <SelectItem value="1-4">1-4 employees</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-blue-600 mt-1">
+                  📈 Part of stability score (100+ = max points)
+                </p>
               </div>
 
+              {/* Years in Business - RANGE DROPDOWN */}
               <div>
-                <Label htmlFor="years_in_business">Years in Business</Label>
-                <Input
-                  id="years_in_business"
-                  type="number"
-                  value={yearsInBusiness}
-                  onChange={(e) => setYearsInBusiness(e.target.value)}
-                  placeholder="How many years?"
-                />
+                <Label htmlFor="years_range">Years in Business</Label>
+                <Select value={yearsInBusinessRange} onValueChange={setYearsInBusinessRange}>
+                  <SelectTrigger id="years_range">
+                    <SelectValue placeholder="Select range..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="30+">30+ years</SelectItem>
+                    <SelectItem value="20-29">20-29 years</SelectItem>
+                    <SelectItem value="15-19">15-19 years</SelectItem>
+                    <SelectItem value="10-14">10-14 years</SelectItem>
+                    <SelectItem value="6-9">6-9 years</SelectItem>
+                    <SelectItem value="3-5">3-5 years</SelectItem>
+                    <SelectItem value="0-2">0-2 years</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-blue-600 mt-1">
+                  📈 Part of stability score (20+ years = max points)
+                </p>
               </div>
             </div>
 
@@ -479,18 +530,31 @@ export function AddCompanyDialog({ open, onClose, onOpenChange, onSuccess }: Add
                 </h4>
                 
                 <div className="grid grid-cols-2 gap-4">
+                  {/* Average Home Price - RANGE DROPDOWN */}
                   <div>
-                    <Label htmlFor="average_home_price">Average Home Price</Label>
-                    <Input
-                      id="average_home_price"
-                      type="number"
-                      value={averageHomePrice}
-                      onChange={(e) => setAverageHomePrice(e.target.value)}
-                      placeholder="e.g., 450000"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Average price of homes built (affects price point scoring)
-                    </p>
+                    <Label htmlFor="home_price_range">
+                      Average Home Price <span className="text-red-500">*</span>
+                    </Label>
+                    <Select value={averageHomePriceRange} onValueChange={setAverageHomePriceRange}>
+                      <SelectTrigger id="home_price_range">
+                        <SelectValue placeholder="Select price range..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="$3M+">$3M+ (15 pts) - Ultra luxury</SelectItem>
+                        <SelectItem value="$2M-$2.99M">$2M-$2.99M (14 pts) - Ultra luxury</SelectItem>
+                        <SelectItem value="$1.5M-$1.99M">$1.5M-$1.99M (13 pts) - Luxury high</SelectItem>
+                        <SelectItem value="$1M-$1.49M">$1M-$1.49M (12 pts) - Luxury</SelectItem>
+                        <SelectItem value="$800K-$999K">$800K-$999K (11 pts) - Premium high</SelectItem>
+                        <SelectItem value="$600K-$799K">$600K-$799K (10 pts) - Premium</SelectItem>
+                        <SelectItem value="$500K-$599K">$500K-$599K (9 pts) - Move-up high</SelectItem>
+                        <SelectItem value="$400K-$499K">$400K-$499K (8 pts) - Move-up</SelectItem>
+                        <SelectItem value="$300K-$399K">$300K-$399K (7 pts) - Mid-range high</SelectItem>
+                        <SelectItem value="$250K-$299K">$250K-$299K (6 pts) - Mid-range</SelectItem>
+                        <SelectItem value="$200K-$249K">$200K-$249K (4 pts) - Entry-level</SelectItem>
+                        <SelectItem value="$150K-$199K">$150K-$199K (3 pts) - Entry low</SelectItem>
+                        <SelectItem value="<$150K">&lt;$150K (2 pts) - Very affordable</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div>

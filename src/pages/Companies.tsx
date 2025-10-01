@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useDebounce } from "@/hooks/useDebounce";
 
 const Companies = () => {
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -128,6 +130,20 @@ const Companies = () => {
       return data;
     },
   });
+
+  // Handle navigation from reports with editCompanyId
+  useEffect(() => {
+    const state = location.state as { editCompanyId?: string };
+    if (state?.editCompanyId && companies) {
+      const company = companies.find(c => c.id === state.editCompanyId);
+      if (company) {
+        setSelectedCompany(company);
+        setIsEditDialogOpen(true);
+        // Clear the state
+        window.history.replaceState({}, document.title);
+      }
+    }
+  }, [location.state, companies]);
 
   const filteredAndSortedCompanies = useMemo(() => {
     if (!companies) return [];

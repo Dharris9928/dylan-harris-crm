@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import { ExternalLink } from 'lucide-react';
 
 interface ContactScore {
@@ -25,6 +27,7 @@ interface ContactScore {
 export function ContactsScoringReport() {
   const [contactScores, setContactScores] = useState<ContactScore[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchContactScores();
@@ -187,9 +190,23 @@ export function ContactsScoringReport() {
               {contactScores.map((contact) => (
                 <TableRow key={contact.id}>
                   <TableCell className="font-medium">
-                    {contact.first_name} {contact.last_name}
+                    <Button
+                      variant="link"
+                      className="p-0 h-auto font-medium text-primary hover:underline"
+                      onClick={() => navigate('/contacts', { state: { editContactId: contact.id } })}
+                    >
+                      {contact.first_name} {contact.last_name}
+                    </Button>
                   </TableCell>
-                  <TableCell>{contact.company_name}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="link"
+                      className="p-0 h-auto text-primary hover:underline"
+                      onClick={() => navigate('/companies', { state: { editCompanyId: contact.company_id } })}
+                    >
+                      {contact.company_name}
+                    </Button>
+                  </TableCell>
                   <TableCell className="max-w-[200px]">
                     <span className="text-sm">{contact.title || '—'}</span>
                   </TableCell>

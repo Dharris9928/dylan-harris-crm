@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 
 interface CompanyScoring {
   company_id: string;
@@ -34,6 +36,7 @@ interface CompanyScoring {
 export function ScoringBreakdownReport() {
   const [scoringData, setScoringData] = useState<CompanyScoring[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchScoringData();
@@ -187,7 +190,15 @@ export function ScoringBreakdownReport() {
             <TableBody>
               {scoringData.map((company) => (
                 <TableRow key={company.company_id}>
-                  <TableCell className="font-medium">{company.company_name}</TableCell>
+                  <TableCell className="font-medium">
+                    <Button
+                      variant="link"
+                      className="p-0 h-auto font-medium text-primary hover:underline"
+                      onClick={() => navigate('/companies', { state: { editCompanyId: company.company_id } })}
+                    >
+                      {company.company_name}
+                    </Button>
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline">{company.industry_type}</Badge>
                   </TableCell>

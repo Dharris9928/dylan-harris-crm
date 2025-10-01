@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -8,6 +9,7 @@ import { AddContactDialog } from "@/components/contacts/AddContactDialog";
 import { EditContactDialog } from "@/components/contacts/EditContactDialog";
 
 const Contacts = () => {
+  const location = useLocation();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState<any>(null);
@@ -23,6 +25,20 @@ const Contacts = () => {
       return data;
     },
   });
+
+  // Handle navigation from reports with editContactId
+  useEffect(() => {
+    const state = location.state as { editContactId?: string };
+    if (state?.editContactId && contacts) {
+      const contact = contacts.find(c => c.id === state.editContactId);
+      if (contact) {
+        setSelectedContact(contact);
+        setIsEditDialogOpen(true);
+        // Clear the state
+        window.history.replaceState({}, document.title);
+      }
+    }
+  }, [location.state, contacts]);
 
   return (
     <div className="p-6 space-y-6">

@@ -759,6 +759,9 @@ export type Database = {
       }
       profiles: {
         Row: {
+          approval_status: Database["public"]["Enums"]["approval_status"] | null
+          approved_at: string | null
+          approved_by: string | null
           created_at: string | null
           first_name: string | null
           id: string
@@ -767,6 +770,11 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          approval_status?:
+            | Database["public"]["Enums"]["approval_status"]
+            | null
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string | null
           first_name?: string | null
           id: string
@@ -775,6 +783,11 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          approval_status?:
+            | Database["public"]["Enums"]["approval_status"]
+            | null
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string | null
           first_name?: string | null
           id?: string
@@ -782,7 +795,15 @@ export type Database = {
           role?: Database["public"]["Enums"]["app_role"] | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       segmentation_scores: {
         Row: {
@@ -938,6 +959,10 @@ export type Database = {
         Args: { _user_id: string }
         Returns: boolean
       }
+      is_user_approved: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       activity_outcome:
@@ -958,6 +983,7 @@ export type Database = {
         | "Demo"
         | "Training"
       app_role: "admin" | "sales_manager" | "sales_rep" | "read_only"
+      approval_status: "pending" | "approved" | "rejected"
       contact_method: "Email" | "Phone" | "LinkedIn" | "Text"
       decision_tier: "Primary" | "Secondary" | "Influencer"
       product_type:
@@ -1133,6 +1159,7 @@ export const Constants = {
         "Training",
       ],
       app_role: ["admin", "sales_manager", "sales_rep", "read_only"],
+      approval_status: ["pending", "approved", "rejected"],
       contact_method: ["Email", "Phone", "LinkedIn", "Text"],
       decision_tier: ["Primary", "Secondary", "Influencer"],
       product_type: [

@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,7 +8,7 @@ const corsHeaders = {
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
@@ -24,69 +24,40 @@ Deno.serve(async (req) => {
       }
     )
 
-    // Get the current user from the request
-    const authHeader = req.headers.get('Authorization')!
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token)
-    
-    if (userError || !user) {
-      console.error('Auth error:', userError)
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Check if user is an admin
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (profileError || profile?.role !== 'admin') {
-      console.error('Not an admin:', profileError)
-      return new Response(
-        JSON.stringify({ error: 'Forbidden: Admin access required' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Get the list of user IDs from the request body
     const { userIds } = await req.json()
 
-    if (!Array.isArray(userIds)) {
-      return new Response(
-        JSON.stringify({ error: 'userIds must be an array' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    if (!userIds || !Array.isArray(userIds)) {
+      throw new Error('userIds must be an array')
     }
 
-    // Fetch user emails for the provided user IDs
-    const userEmails: Record<string, string> = {}
+    // Fetch user data from auth.users using admin client
+    const emails: Record<string, string> = {}
     
     for (const userId of userIds) {
-      const { data: userData, error: fetchError } = await supabaseAdmin.auth.admin.getUserById(userId)
+      const { data: { user }, error } = await supabaseAdmin.auth.admin.getUserById(userId)
       
-      if (!fetchError && userData?.user?.email) {
-        userEmails[userId] = userData.user.email
-      } else {
-        console.error(`Error fetching user ${userId}:`, fetchError)
-        userEmails[userId] = 'Unknown'
+      if (!error && user?.email) {
+        emails[userId] = user.email
       }
     }
 
     return new Response(
-      JSON.stringify({ userEmails }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ emails }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200 
+      }
     )
 
   } catch (error) {
-    console.error('Error in get-user-emails function:', error)
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred'
+    console.error('Error fetching user emails:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
     return new Response(
       JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400
+      }
     )
   }
 })

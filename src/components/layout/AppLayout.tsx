@@ -14,6 +14,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [approvalStatus, setApprovalStatus] = useState<string | null>(null);
 
   useEffect(() => {
     // Set up auth state listener
@@ -24,6 +25,11 @@ export function AppLayout({ children }: AppLayoutProps) {
         
         if (!session) {
           navigate("/auth");
+        } else {
+          // Check approval status when user logs in
+          setTimeout(() => {
+            checkApprovalStatus(session.user.id);
+          }, 0);
         }
       }
     );
@@ -36,11 +42,25 @@ export function AppLayout({ children }: AppLayoutProps) {
       
       if (!session) {
         navigate("/auth");
+      } else {
+        checkApprovalStatus(session.user.id);
       }
     });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  const checkApprovalStatus = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('approval_status')
+      .eq('id', userId)
+      .single();
+    
+    if (!error && data) {
+      setApprovalStatus(data.approval_status);
+    }
+  };
 
   if (loading) {
     return (
@@ -52,6 +72,48 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   if (!user) {
     return null;
+  }
+
+  // Show pending approval message
+  if (approvalStatus === 'pending') {
+    return (
+      <div className="flex h-screen items-center justify-center p-4">
+        <div className="max-w-md text-center space-y-4">
+          <div className="text-4xl">⏳</div>
+          <h1 className="text-2xl font-bold">Account Pending Approval</h1>
+          <p className="text-muted-foreground">
+            Your account is awaiting admin approval. You'll be able to access the system once an administrator reviews and approves your registration.
+          </p>
+          <button
+            onClick={() => supabase.auth.signOut()}
+            className="mt-4 text-sm text-primary hover:underline"
+          >
+            Sign Out
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show rejected message
+  if (approvalStatus === 'rejected') {
+    return (
+      <div className="flex h-screen items-center justify-center p-4">
+        <div className="max-w-md text-center space-y-4">
+          <div className="text-4xl">❌</div>
+          <h1 className="text-2xl font-bold">Account Not Approved</h1>
+          <p className="text-muted-foreground">
+            Your account registration was not approved. Please contact your administrator for more information.
+          </p>
+          <button
+            onClick={() => supabase.auth.signOut()}
+            className="mt-4 text-sm text-primary hover:underline"
+          >
+            Sign Out
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

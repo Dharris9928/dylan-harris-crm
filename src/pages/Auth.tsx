@@ -56,8 +56,8 @@ const Auth = () => {
 
       if (error) throw error;
 
-      toast.success("Account created successfully!");
-      navigate("/");
+      toast.success("Account created! Awaiting admin approval before you can access the system.");
+      // Don't navigate - users need approval first
     } catch (error: any) {
       toast.error(error.message || "Failed to create account");
     } finally {

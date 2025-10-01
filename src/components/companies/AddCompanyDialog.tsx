@@ -10,6 +10,7 @@ import { createCompany } from '@/lib/companies/createCompany';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Building2, Users } from 'lucide-react';
+import { DigitalEngagementSection } from './DigitalEngagementSection';
 import { 
   BUILDER_SEGMENTS, 
   CONTRACTOR_SEGMENTS, 
@@ -49,11 +50,11 @@ export function AddCompanyDialog({ open, onClose, onOpenChange, onSuccess }: Add
   // Contractor Specialty (only for contractors)
   const [contractorSpecialty, setContractorSpecialty] = useState('');
   
-  // Business Metrics (For Scoring)
-  const [annualVolume, setAnnualVolume] = useState('');
+  // Business Metrics (For Scoring) - NOW USING RANGES
+  const [annualVolumeRange, setAnnualVolumeRange] = useState('');
   const [annualRevenueRange, setAnnualRevenueRange] = useState('');
-  const [totalEmployees, setTotalEmployees] = useState('');
-  const [yearsInBusiness, setYearsInBusiness] = useState('');
+  const [totalEmployeesRange, setTotalEmployeesRange] = useState('');
+  const [yearsInBusinessRange, setYearsInBusinessRange] = useState('');
   
   // Location (For Scoring)
   const [addressLine1, setAddressLine1] = useState('');
@@ -65,15 +66,26 @@ export function AddCompanyDialog({ open, onClose, onOpenChange, onSuccess }: Add
   const [primaryPhone, setPrimaryPhone] = useState('');
   const [primaryEmail, setPrimaryEmail] = useState('');
   
-  // Digital Presence (For Scoring)
+  // Digital Presence (For Scoring) - ENHANCED
   const [websiteUrl, setWebsiteUrl] = useState('');
+  const [websiteQuality, setWebsiteQuality] = useState('');
+  const [websiteHasSmartContent, setWebsiteHasSmartContent] = useState(false);
   const [linkedinCompanyUrl, setLinkedinCompanyUrl] = useState('');
+  const [linkedinActivityLevel, setLinkedinActivityLevel] = useState('');
+  const [facebookUrl, setFacebookUrl] = useState('');
+  const [instagramUrl, setInstagramUrl] = useState('');
+  const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [technologyAdoptionLevel, setTechnologyAdoptionLevel] = useState('');
+  const [nestInstallationVolume, setNestInstallationVolume] = useState('');
+  const [offersSmartThermostats, setOffersSmartThermostats] = useState(false);
+  const [offersSmartSecurity, setOffersSmartSecurity] = useState(false);
+  const [offersHomeAutomation, setOffersHomeAutomation] = useState(false);
   
   // Other
   const [notes, setNotes] = useState('');
 
-  // Builder-specific fields
-  const [averageHomePrice, setAverageHomePrice] = useState('');
+  // Builder-specific fields - NOW USING RANGE
+  const [averageHomePriceRange, setAverageHomePriceRange] = useState('');
   const [priceCategoryState, setPriceCategoryState] = useState('');
 
   // Contractor-specific fields
@@ -113,11 +125,11 @@ export function AddCompanyDialog({ open, onClose, onOpenChange, onSuccess }: Add
         industry_type: industryType,
         status: status as any,
         
-        // Business Metrics
-        annual_volume: annualVolume ? parseInt(annualVolume) : undefined,
+        // Business Metrics - NOW USING RANGES
+        annual_volume_range: annualVolumeRange || undefined,
         annual_revenue_range: annualRevenueRange || undefined,
-        total_employees: totalEmployees ? parseInt(totalEmployees) : undefined,
-        years_in_business: yearsInBusiness ? parseInt(yearsInBusiness) : undefined,
+        total_employees_range: totalEmployeesRange || undefined,
+        years_in_business_range: yearsInBusinessRange || undefined,
         
         // Location
         address_line1: addressLine1 || undefined,
@@ -129,13 +141,24 @@ export function AddCompanyDialog({ open, onClose, onOpenChange, onSuccess }: Add
         primary_phone: primaryPhone || undefined,
         primary_email: primaryEmail || undefined,
         
-        // Digital
+        // Digital - ENHANCED
         website_url: websiteUrl || undefined,
+        website_quality: websiteQuality || undefined,
+        website_has_smart_home_content: websiteHasSmartContent,
         linkedin_company_url: linkedinCompanyUrl || undefined,
+        linkedin_activity_level: linkedinActivityLevel || undefined,
+        facebook_url: facebookUrl || undefined,
+        instagram_url: instagramUrl || undefined,
+        youtube_url: youtubeUrl || undefined,
+        technology_adoption_level: technologyAdoptionLevel || undefined,
+        nest_installation_volume_range: nestInstallationVolume || undefined,
+        offers_smart_thermostats: offersSmartThermostats,
+        offers_smart_security: offersSmartSecurity,
+        offers_home_automation: offersHomeAutomation,
         
-        // Builder-specific
-        average_home_price: industryType === 'Builder' && averageHomePrice 
-          ? parseInt(averageHomePrice) 
+        // Builder-specific - NOW USING RANGE
+        average_home_price_range: industryType === 'Builder' 
+          ? averageHomePriceRange || undefined 
           : undefined,
         price_point_category: industryType === 'Builder' 
           ? priceCategoryState || undefined 
@@ -170,11 +193,7 @@ export function AddCompanyDialog({ open, onClose, onOpenChange, onSuccess }: Add
       handleClose();
       
       // Reset form
-      setCompanyName('');
-      setIndustryType('Builder');
-      setSegment('');
-      setStatus('Lead');
-      setAnnualVolume('');
+      resetForm();
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -193,10 +212,10 @@ export function AddCompanyDialog({ open, onClose, onOpenChange, onSuccess }: Add
     setCompanyType('standalone');
     setParentCompanyId('');
     setContractorSpecialty('');
-    setAnnualVolume('');
+    setAnnualVolumeRange('');
     setAnnualRevenueRange('');
-    setTotalEmployees('');
-    setYearsInBusiness('');
+    setTotalEmployeesRange('');
+    setYearsInBusinessRange('');
     setAddressLine1('');
     setCity('');
     setState('');
@@ -204,9 +223,20 @@ export function AddCompanyDialog({ open, onClose, onOpenChange, onSuccess }: Add
     setPrimaryPhone('');
     setPrimaryEmail('');
     setWebsiteUrl('');
+    setWebsiteQuality('');
+    setWebsiteHasSmartContent(false);
     setLinkedinCompanyUrl('');
+    setLinkedinActivityLevel('');
+    setFacebookUrl('');
+    setInstagramUrl('');
+    setYoutubeUrl('');
+    setTechnologyAdoptionLevel('');
+    setNestInstallationVolume('');
+    setOffersSmartThermostats(false);
+    setOffersSmartSecurity(false);
+    setOffersHomeAutomation(false);
     setNotes('');
-    setAverageHomePrice('');
+    setAverageHomePriceRange('');
     setPriceCategoryState('');
     setServiceAreaType('');
     setMaintenancePercentage('');
@@ -631,39 +661,36 @@ export function AddCompanyDialog({ open, onClose, onOpenChange, onSuccess }: Add
             </div>
           </div>
 
-          {/* SECTION 5: DIGITAL PRESENCE */}
-          <div className="space-y-4 bg-purple-50 dark:bg-purple-950/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
-            <h3 className="font-semibold text-sm uppercase text-purple-700 dark:text-purple-400 flex items-center gap-2">
-              <span className="text-lg">🌐</span> Digital Presence
-              <span className="text-xs font-normal normal-case text-purple-600 dark:text-purple-500">
-                (Used for digital engagement scoring - adds up to 30 points)
-              </span>
-            </h3>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="website">Website URL</Label>
-                <Input
-                  id="website"
-                  type="url"
-                  value={websiteUrl}
-                  onChange={(e) => setWebsiteUrl(e.target.value)}
-                  placeholder="https://example.com"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="linkedin">LinkedIn Company Page</Label>
-                <Input
-                  id="linkedin"
-                  type="url"
-                  value={linkedinCompanyUrl}
-                  onChange={(e) => setLinkedinCompanyUrl(e.target.value)}
-                  placeholder="https://linkedin.com/company/example"
-                />
-              </div>
-            </div>
-          </div>
+          {/* SECTION 5: DIGITAL ENGAGEMENT */}
+          <DigitalEngagementSection
+            industryType={industryType}
+            websiteUrl={websiteUrl}
+            onWebsiteUrlChange={setWebsiteUrl}
+            websiteQuality={websiteQuality}
+            onWebsiteQualityChange={setWebsiteQuality}
+            websiteHasSmartContent={websiteHasSmartContent}
+            onWebsiteHasSmartContentChange={setWebsiteHasSmartContent}
+            linkedinUrl={linkedinCompanyUrl}
+            onLinkedinUrlChange={setLinkedinCompanyUrl}
+            linkedinActivityLevel={linkedinActivityLevel}
+            onLinkedinActivityLevelChange={setLinkedinActivityLevel}
+            facebookUrl={facebookUrl}
+            onFacebookUrlChange={setFacebookUrl}
+            instagramUrl={instagramUrl}
+            onInstagramUrlChange={setInstagramUrl}
+            youtubeUrl={youtubeUrl}
+            onYoutubeUrlChange={setYoutubeUrl}
+            technologyAdoptionLevel={technologyAdoptionLevel}
+            onTechnologyAdoptionLevelChange={setTechnologyAdoptionLevel}
+            nestInstallationVolume={nestInstallationVolume}
+            onNestInstallationVolumeChange={setNestInstallationVolume}
+            offersSmartThermostats={offersSmartThermostats}
+            onOffersSmartThermostatsChange={setOffersSmartThermostats}
+            offersSmartSecurity={offersSmartSecurity}
+            onOffersSmartSecurityChange={setOffersSmartSecurity}
+            offersHomeAutomation={offersHomeAutomation}
+            onOffersHomeAutomationChange={setOffersHomeAutomation}
+          />
 
           {/* SECTION 6: NOTES */}
           <div className="space-y-4">

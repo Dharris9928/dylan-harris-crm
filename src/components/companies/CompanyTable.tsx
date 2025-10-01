@@ -47,6 +47,7 @@ interface Company {
   is_favorite?: boolean;
   annual_volume: number | null;
   annual_revenue_range: string | null;
+  average_home_price?: number | null;
   parent_company?: {
     id: string;
     company_name: string;
@@ -203,7 +204,7 @@ export function CompanyTable({
               {columnVisibility.score && <TableHead>Score</TableHead>}
               {columnVisibility.priority && <TableHead>Priority</TableHead>}
               {columnVisibility.annualVolume && <TableHead>Annual Volume</TableHead>}
-              {columnVisibility.revenue && <TableHead>Revenue</TableHead>}
+              {columnVisibility.revenue && <TableHead>Price/Revenue</TableHead>}
               {columnVisibility.phone && <TableHead>Phone</TableHead>}
               {columnVisibility.website && <TableHead>Website</TableHead>}
               {columnVisibility.franchise && <TableHead>Franchise</TableHead>}
@@ -381,10 +382,12 @@ export function CompanyTable({
               {columnVisibility.annualVolume && (
                 <TableCell>
                   {company.annual_volume ? (
-                    <span className="text-sm">
-                      {company.annual_volume.toLocaleString()}{' '}
-                      {company.industry_type === 'Builder' ? 'homes' : 'calls'}
-                    </span>
+                    <div className="text-sm">
+                      <span className="font-semibold">{company.annual_volume.toLocaleString()}</span>
+                      <span className="text-muted-foreground ml-1">
+                        {company.industry_type === 'Builder' ? 'homes' : 'calls'}/yr
+                      </span>
+                    </div>
                   ) : (
                     <span className="text-muted-foreground">—</span>
                   )}
@@ -393,7 +396,14 @@ export function CompanyTable({
 
               {columnVisibility.revenue && (
                 <TableCell>
-                  {company.annual_revenue_range ? (
+                  {company.industry_type === 'Builder' && company.average_home_price ? (
+                    <div className="text-sm">
+                      <span className="font-semibold">
+                        ${(company.average_home_price / 1000).toFixed(0)}K
+                      </span>
+                      <span className="text-muted-foreground ml-1">avg</span>
+                    </div>
+                  ) : company.industry_type === 'Contractor' && company.annual_revenue_range ? (
                     <span className="text-sm">{company.annual_revenue_range}</span>
                   ) : (
                     <span className="text-muted-foreground">—</span>

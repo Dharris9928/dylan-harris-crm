@@ -19,10 +19,18 @@ import { useSearchParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useDebounce } from "@/hooks/useDebounce";
+import { ViewSelector, ViewType } from "@/components/views/ViewSelector";
+import { KanbanView } from "@/components/views/KanbanView";
+import { CalendarView } from "@/components/views/CalendarView";
+import { GalleryView } from "@/components/views/GalleryView";
+import { ListView } from "@/components/views/ListView";
+import { FormView } from "@/components/views/FormView";
+import { useToast } from "@/hooks/use-toast";
 
 const Companies = () => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
@@ -35,6 +43,7 @@ const Companies = () => {
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
+  const [currentView, setCurrentView] = useState<ViewType>('grid');
   const [sortBy, setSortBy] = useState(() => {
     return localStorage.getItem("companies-sort") || "lead_score_desc";
   });
@@ -129,6 +138,23 @@ const Companies = () => {
       if (error) throw error;
       return data;
     },
+  });
+
+  // Fetch activities for calendar view
+  const { data: activities } = useQuery({
+    queryKey: ["outreach_activities"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("outreach_activities")
+        .select(`
+          *,
+          company:companies(company_name)
+        `)
+        .order("scheduled_date", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    enabled: currentView === 'calendar',
   });
 
   // Handle navigation from reports with editCompanyId
@@ -277,6 +303,55 @@ const Companies = () => {
     setSearchParams(newParams);
   };
 
+  const handleUpdateCompany = async (id: string, updates: any) => {
+    try {
+      const { error } = await supabase
+        .from("companies")
+        .update(updates)
+        .eq("id", id);
+      
+      if (error) throw error;
+      
+      await refetch();
+      toast({
+        title: "Success",
+        description: "Company updated successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update company",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleFormSubmit = async (data: any) => {
+    try {
+      const { data: user } = await supabase.auth.getUser();
+      
+      const { error } = await supabase
+        .from("companies")
+        .insert([{
+          company_name: data.company_name,
+          industry_type: data.industry_type,
+          state: data.state,
+          primary_email: data.email,
+          primary_phone: data.phone,
+          website_url: data.website,
+          notes: data.notes,
+          status: 'Lead',
+          created_by: user.user?.id,
+        }]);
+      
+      if (error) throw error;
+      
+      await refetch();
+    } catch (error) {
+      throw error;
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen">
       {/* Top Bar */}
@@ -326,6 +401,12 @@ const Companies = () => {
             </Select>
           </div>
 
+          {/* View Selector */}
+          <ViewSelector 
+            currentView={currentView} 
+            onViewChange={setCurrentView}
+          />
+
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
             <SavedFilters
@@ -333,10 +414,12 @@ const Companies = () => {
               onApplyFilter={applyFilters}
             />
 
-            <ColumnCustomization
-              visibility={columnVisibility}
-              onChange={setColumnVisibility}
-            />
+            {currentView === 'grid' && (
+              <ColumnCustomization
+                visibility={columnVisibility}
+                onChange={setColumnVisibility}
+              />
+            )}
 
             <Button 
               variant="outline" 
@@ -423,24 +506,86 @@ const Companies = () => {
             />
           )}
 
-          {/* Table */}
+          {/* View Content */}
           <div className="flex-1 overflow-auto p-6">
-            <CompanyTable
-              companies={paginatedCompanies}
-              isLoading={isLoading}
-              onEdit={(company) => {
-                setSelectedCompany(company);
-                setIsEditDialogOpen(true);
-              }}
-              selectedRows={selectedRows}
-              onSelectionChange={setSelectedRows}
-              onCompanyUpdate={refetch}
-              columnVisibility={columnVisibility}
-            />
+            {currentView === 'grid' && (
+              <CompanyTable
+                companies={paginatedCompanies}
+                isLoading={isLoading}
+                onEdit={(company) => {
+                  setSelectedCompany(company);
+                  setIsEditDialogOpen(true);
+                }}
+                selectedRows={selectedRows}
+                onSelectionChange={setSelectedRows}
+                onCompanyUpdate={refetch}
+                columnVisibility={columnVisibility}
+              />
+            )}
+
+            {currentView === 'kanban' && (
+              <KanbanView 
+                data={filteredAndSortedCompanies}
+                onUpdate={handleUpdateCompany}
+                stackByField="status"
+              />
+            )}
+
+            {currentView === 'calendar' && (
+              <CalendarView 
+                activities={activities || []}
+              />
+            )}
+
+            {currentView === 'gallery' && (
+              <GalleryView 
+                data={filteredAndSortedCompanies}
+                onSelectItem={(item) => {
+                  setSelectedCompany(item);
+                  setIsEditDialogOpen(true);
+                }}
+              />
+            )}
+
+            {currentView === 'list' && (
+              <ListView 
+                data={filteredAndSortedCompanies}
+                onSelectItem={(item) => {
+                  setSelectedCompany(item);
+                  setIsEditDialogOpen(true);
+                }}
+              />
+            )}
+
+            {currentView === 'form' && (
+              <FormView
+                formTitle="New Company Inquiry"
+                formDescription="Submit your information to get started with Google Nest Pro"
+                fields={[
+                  { name: 'company_name', label: 'Company Name', type: 'text', required: true, maxLength: 255 },
+                  { 
+                    name: 'industry_type', 
+                    label: 'Industry', 
+                    type: 'select', 
+                    required: true, 
+                    options: [
+                      { value: 'Builder', label: 'Builder' },
+                      { value: 'Contractor', label: 'Contractor' }
+                    ]
+                  },
+                  { name: 'email', label: 'Email', type: 'email', required: true, maxLength: 255 },
+                  { name: 'phone', label: 'Phone', type: 'phone', maxLength: 20 },
+                  { name: 'state', label: 'State', type: 'text', required: true, maxLength: 2 },
+                  { name: 'website', label: 'Website', type: 'text', maxLength: 500 },
+                  { name: 'notes', label: 'Additional Information', type: 'textarea', maxLength: 1000 }
+                ]}
+                onSubmit={handleFormSubmit}
+              />
+            )}
           </div>
 
-          {/* Pagination */}
-          {filteredAndSortedCompanies.length > 0 && (
+          {/* Pagination - only show for grid view */}
+          {currentView === 'grid' && filteredAndSortedCompanies.length > 0 && (
             <TablePagination
               currentPage={currentPage}
               totalPages={totalPages}

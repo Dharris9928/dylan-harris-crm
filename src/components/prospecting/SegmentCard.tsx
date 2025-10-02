@@ -9,6 +9,7 @@ import { Search, Plus, Building2, Users, DollarSign, MapPin, TrendingUp } from '
 
 interface SegmentConfig {
   name: string;
+  displayName: string;
   description: string;
   icon: React.ReactNode;
   apolloFilters: {
@@ -18,6 +19,7 @@ interface SegmentConfig {
     states?: string[];
   };
   color: string;
+  industryType: 'Builder' | 'Contractor';
 }
 
 interface ProspectCompany {
@@ -80,7 +82,7 @@ export function SegmentCard({ segment }: SegmentCardProps) {
       
       toast({
         title: 'Search Complete',
-        description: `Found ${data.companies?.length || 0} companies for ${segment.name}`,
+        description: `Found ${data.companies?.length || 0} companies for ${segment.displayName}`,
       });
     } catch (error: any) {
       console.error('Segment search error:', error);
@@ -124,7 +126,7 @@ export function SegmentCard({ segment }: SegmentCardProps) {
         annual_revenue_range: company.revenueRange,
         years_in_business: company.foundedYear ? new Date().getFullYear() - company.foundedYear : null,
         years_in_business_range: company.yearsRange,
-        industry_type: company.keywords.some(k => k.toLowerCase().includes('builder')) ? 'Builder' : 'Contractor',
+        industry_type: segment.industryType,
         segment: segment.name,
         status: 'Lead',
         notes: company.description,
@@ -138,7 +140,7 @@ export function SegmentCard({ segment }: SegmentCardProps) {
 
       toast({
         title: 'Companies Imported',
-        description: `${selected.length} companies added to ${segment.name} segment`,
+        description: `${selected.length} companies added to ${segment.displayName} segment`,
       });
 
       setCompanies(companies.filter(c => !selectedCompanies.has(c.apolloId)));
@@ -162,7 +164,7 @@ export function SegmentCard({ segment }: SegmentCardProps) {
           <div className="flex items-center gap-3">
             {segment.icon}
             <div>
-              <CardTitle className="text-xl">{segment.name}</CardTitle>
+              <CardTitle className="text-xl">{segment.displayName}</CardTitle>
               <CardDescription className="mt-1">{segment.description}</CardDescription>
             </div>
           </div>

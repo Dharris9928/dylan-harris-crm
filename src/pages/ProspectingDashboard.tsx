@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 
 const SEGMENT_CONFIGS = [
   {
-    name: 'Premium Builders',
+    name: 'luxury_custom',
+    displayName: 'Premium Builders',
     description: 'High-volume luxury home builders with premium price points',
     icon: <Award className="h-6 w-6 text-primary" />,
     apolloFilters: {
@@ -14,10 +15,12 @@ const SEGMENT_CONFIGS = [
       revenueRange: '10M-50M',
       states: undefined
     },
-    color: 'border-l-primary'
+    color: 'border-l-primary',
+    industryType: 'Builder' as const
   },
   {
-    name: 'Production Builders',
+    name: 'production_tract',
+    displayName: 'Production Builders',
     description: 'High-volume production builders focused on scale',
     icon: <Building2 className="h-6 w-6 text-blue-500" />,
     apolloFilters: {
@@ -26,10 +29,12 @@ const SEGMENT_CONFIGS = [
       revenueRange: '50M-100M',
       states: undefined
     },
-    color: 'border-l-blue-500'
+    color: 'border-l-blue-500',
+    industryType: 'Builder' as const
   },
   {
-    name: 'Smart Home Leaders',
+    name: 'smart_home_champions',
+    displayName: 'Smart Home Leaders',
     description: 'Contractors already embracing smart home technology',
     icon: <Zap className="h-6 w-6 text-yellow-500" />,
     apolloFilters: {
@@ -38,10 +43,12 @@ const SEGMENT_CONFIGS = [
       revenueRange: '1M-10M',
       states: undefined
     },
-    color: 'border-l-yellow-500'
+    color: 'border-l-yellow-500',
+    industryType: 'Contractor' as const
   },
   {
-    name: 'Premium HVAC',
+    name: 'premium_specialists',
+    displayName: 'Premium HVAC',
     description: 'High-end HVAC contractors serving upscale markets',
     icon: <TrendingUp className="h-6 w-6 text-green-500" />,
     apolloFilters: {
@@ -50,10 +57,12 @@ const SEGMENT_CONFIGS = [
       revenueRange: '1M-10M',
       states: undefined
     },
-    color: 'border-l-green-500'
+    color: 'border-l-green-500',
+    industryType: 'Contractor' as const
   },
   {
-    name: 'Growth Contractors',
+    name: 'regional_growth',
+    displayName: 'Growth Contractors',
     description: 'Fast-growing contractors ready for technology adoption',
     icon: <Wrench className="h-6 w-6 text-purple-500" />,
     apolloFilters: {
@@ -62,10 +71,12 @@ const SEGMENT_CONFIGS = [
       revenueRange: '1M-10M',
       states: undefined
     },
-    color: 'border-l-purple-500'
+    color: 'border-l-purple-500',
+    industryType: 'Contractor' as const
   },
   {
-    name: 'Regional Builders',
+    name: 'regional_mid_volume',
+    displayName: 'Regional Builders',
     description: 'Mid-size builders with strong regional presence',
     icon: <Home className="h-6 w-6 text-orange-500" />,
     apolloFilters: {
@@ -74,7 +85,8 @@ const SEGMENT_CONFIGS = [
       revenueRange: '10M-50M',
       states: undefined
     },
-    color: 'border-l-orange-500'
+    color: 'border-l-orange-500',
+    industryType: 'Builder' as const
   }
 ];
 

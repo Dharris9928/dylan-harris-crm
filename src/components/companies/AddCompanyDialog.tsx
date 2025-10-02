@@ -460,20 +460,47 @@ export function AddCompanyDialog({ open, onClose, onOpenChange, onSuccess }: Add
               </div>
 
               <div>
-                <Label htmlFor="revenue_range">Annual Revenue Range</Label>
+                <Label htmlFor="revenue_range">
+                  Annual Revenue Range
+                  {industryType === 'Contractor' && (
+                    <span className="ml-2 text-blue-600 text-xs">
+                      📈 Affects revenue score (0-12 pts)
+                    </span>
+                  )}
+                </Label>
                 <Select value={annualRevenueRange} onValueChange={setAnnualRevenueRange}>
                   <SelectTrigger id="revenue_range">
                     <SelectValue placeholder="Select range..." />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="<$500K">Less than $500K</SelectItem>
-                    <SelectItem value="$500K-$999K">$500K - $999K</SelectItem>
-                    <SelectItem value="$1M-$2.9M">$1M - $2.9M</SelectItem>
-                    <SelectItem value="$3M-$5.9M">$3M - $5.9M</SelectItem>
-                    <SelectItem value="$6M-$10M">$6M - $10M</SelectItem>
-                    <SelectItem value="$10M+">$10M+</SelectItem>
+                  <SelectContent className="bg-background z-50">
+                    {industryType === 'Contractor' ? (
+                      <>
+                        <SelectItem value="$50M+">$50M+ (12 pts) - Very large</SelectItem>
+                        <SelectItem value="$25M-$49M">$25M-$49M (11 pts) - Large</SelectItem>
+                        <SelectItem value="$10M-$24M">$10M-$24M (10 pts) - Large</SelectItem>
+                        <SelectItem value="$5M-$9M">$5M-$9M (8 pts) - Medium-large</SelectItem>
+                        <SelectItem value="$2M-$4M">$2M-$4M (6 pts) - Medium</SelectItem>
+                        <SelectItem value="$1M-$1.9M">$1M-$1.9M (4 pts) - Small-medium</SelectItem>
+                        <SelectItem value="<$1M">&lt;$1M (2 pts) - Small</SelectItem>
+                      </>
+                    ) : (
+                      <>
+                        <SelectItem value="$100M+">$100M+ (12 pts) - Major national</SelectItem>
+                        <SelectItem value="$50M-$99M">$50M-$99M (11 pts) - Large production</SelectItem>
+                        <SelectItem value="$25M-$49M">$25M-$49M (10 pts) - Large regional</SelectItem>
+                        <SelectItem value="$10M-$24M">$10M-$24M (8 pts) - Regional</SelectItem>
+                        <SelectItem value="$5M-$9M">$5M-$9M (6 pts) - Small-medium</SelectItem>
+                        <SelectItem value="$2M-$4M">$2M-$4M (4 pts) - Small</SelectItem>
+                        <SelectItem value="<$2M">&lt;$2M (2 pts) - Very small</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-gray-600 mt-1">
+                  {industryType === 'Contractor' 
+                    ? 'Higher revenue = higher scoring potential'
+                    : 'Revenue used for general business assessment'}
+                </p>
               </div>
 
               {/* Employees - RANGE DROPDOWN */}

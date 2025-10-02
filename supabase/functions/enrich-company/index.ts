@@ -6,6 +6,23 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Normalize various enum-like values to database-accepted values
+function normalizeTechAdoption(value: any): string | undefined {
+  if (value === undefined || value === null) return undefined;
+  const v = String(value).trim().toLowerCase();
+  const map: Record<string, string> = {
+    'laggard': 'Traditional',
+    'conservative': 'Late Adopter',
+    'mainstream': 'Mainstream',
+    'progressive': 'Early Adopter',
+    'early adopter': 'Early Adopter',
+    'industry leader': 'Industry Leader',
+    'traditional': 'Traditional',
+    'late adopter': 'Late Adopter',
+  };
+  return map[v] ?? undefined;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -235,6 +252,13 @@ serve(async (req) => {
         const retry = await tryUpdate();
         updatedCompany = retry.data;
         updateError = retry.error as any;
+      } else if (msg.includes('companies_technology_adoption_level_check') && 'technology_adoption_level' in updates) {
+        // If technology_adoption_level constraint fails, drop it and retry once
+        failedFields.push('technology_adoption_level');
+        delete updates.technology_adoption_level;
+        const retry2 = await tryUpdate();
+        updatedCompany = retry2.data;
+        updateError = retry2.error as any;
       }
     }
 
@@ -406,7 +430,7 @@ Research the company thoroughly using the website and LinkedIn URLs provided. Be
               youtube_url: { type: 'string', description: 'YouTube channel URL if found' },
               social_media_presence: { type: 'string', enum: ['None', 'Limited', 'Moderate', 'Active', 'Very Active'] },
               
-              technology_adoption_level: { type: 'string', enum: ['Laggard', 'Conservative', 'Mainstream', 'Progressive', 'Early Adopter'] },
+              technology_adoption_level: { type: 'string', enum: ['Traditional', 'Late Adopter', 'Mainstream', 'Early Adopter', 'Industry Leader'] },
               has_google_business_profile: { type: 'boolean', description: 'Company has Google Business Profile' },
               online_review_rating: { type: 'number', description: 'Average online review rating (0-5)' },
               online_review_count_range: { type: 'string', enum: ['None', '<10', '10-24', '25-49', '50-99', '100+'] },
@@ -470,7 +494,10 @@ Research the company thoroughly using the website and LinkedIn URLs provided. Be
   if (enrichedData.youtube_url) companyUpdates.youtube_url = enrichedData.youtube_url;
   if (enrichedData.social_media_presence) companyUpdates.social_media_presence = enrichedData.social_media_presence;
   
-  if (enrichedData.technology_adoption_level) companyUpdates.technology_adoption_level = enrichedData.technology_adoption_level;
+  if (enrichedData.technology_adoption_level) {
+    const tech = normalizeTechAdoption(enrichedData.technology_adoption_level);
+    if (tech) companyUpdates.technology_adoption_level = tech;
+  }
   if (enrichedData.has_google_business_profile !== undefined) companyUpdates.has_google_business_profile = enrichedData.has_google_business_profile;
   if (enrichedData.online_review_rating) companyUpdates.online_review_rating = enrichedData.online_review_rating;
   if (enrichedData.online_review_count_range) companyUpdates.online_review_count_range = enrichedData.online_review_count_range;
@@ -593,7 +620,7 @@ Fill as many fields as possible with accurate data.`;
             youtube_url: { type: 'string' },
             social_media_presence: { type: 'string', enum: ['None', 'Limited', 'Moderate', 'Active', 'Very Active'] },
             
-            technology_adoption_level: { type: 'string', enum: ['Laggard', 'Conservative', 'Mainstream', 'Progressive', 'Early Adopter'] },
+            technology_adoption_level: { type: 'string', enum: ['Traditional', 'Late Adopter', 'Mainstream', 'Early Adopter', 'Industry Leader'] },
             has_google_business_profile: { type: 'boolean' },
             online_review_rating: { type: 'number' },
             online_review_count_range: { type: 'string', enum: ['None', '<10', '10-24', '25-49', '50-99', '100+'] },
@@ -657,7 +684,10 @@ Fill as many fields as possible with accurate data.`;
   if (enrichedData.youtube_url) companyUpdates.youtube_url = enrichedData.youtube_url;
   if (enrichedData.social_media_presence) companyUpdates.social_media_presence = enrichedData.social_media_presence;
   
-  if (enrichedData.technology_adoption_level) companyUpdates.technology_adoption_level = enrichedData.technology_adoption_level;
+  if (enrichedData.technology_adoption_level) {
+    const tech = normalizeTechAdoption(enrichedData.technology_adoption_level);
+    if (tech) companyUpdates.technology_adoption_level = tech;
+  }
   if (enrichedData.has_google_business_profile !== undefined) companyUpdates.has_google_business_profile = enrichedData.has_google_business_profile;
   if (enrichedData.online_review_rating) companyUpdates.online_review_rating = enrichedData.online_review_rating;
   if (enrichedData.online_review_count_range) companyUpdates.online_review_count_range = enrichedData.online_review_count_range;

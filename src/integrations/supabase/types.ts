@@ -14,6 +14,46 @@ export type Database = {
   }
   public: {
     Tables: {
+      approval_audit_log: {
+        Row: {
+          approved_by: string | null
+          created_at: string | null
+          id: string
+          ip_address: unknown | null
+          new_status: Database["public"]["Enums"]["approval_status"]
+          notes: string | null
+          previous_status: Database["public"]["Enums"]["approval_status"] | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          approved_by?: string | null
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          new_status: Database["public"]["Enums"]["approval_status"]
+          notes?: string | null
+          previous_status?:
+            | Database["public"]["Enums"]["approval_status"]
+            | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          approved_by?: string | null
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          new_status?: Database["public"]["Enums"]["approval_status"]
+          notes?: string | null
+          previous_status?:
+            | Database["public"]["Enums"]["approval_status"]
+            | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       builder_scoring_details: {
         Row: {
           calculated_at: string | null
@@ -1316,6 +1356,10 @@ export type Database = {
       }
       is_user_approved: {
         Args: { _user_id: string }
+        Returns: boolean
+      }
+      user_approved_with_grace_period: {
+        Args: { _hours?: number; _user_id: string }
         Returns: boolean
       }
     }

@@ -7,6 +7,7 @@ import { Building2, Users } from "lucide-react";
 import { UserManagement } from "@/components/settings/UserManagement";
 import { UserApprovalPanel } from "@/components/settings/UserApprovalPanel";
 import { DeletionApprovalPanel } from "@/components/settings/DeletionApprovalPanel";
+import { ApprovalAuditLog } from "@/components/settings/ApprovalAuditLog";
 
 const Settings = () => {
   const builderSegments = [
@@ -61,6 +62,8 @@ const Settings = () => {
         <DeletionApprovalPanel />
         
         <UserManagement />
+        
+        <ApprovalAuditLog />
         
         <Card>
           <CardHeader>

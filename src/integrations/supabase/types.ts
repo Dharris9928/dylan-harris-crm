@@ -632,6 +632,45 @@ export type Database = {
           },
         ]
       }
+      deletion_requests: {
+        Row: {
+          created_at: string | null
+          id: string
+          reason: string | null
+          record_details: Json | null
+          record_id: string
+          requested_by: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          table_name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          reason?: string | null
+          record_details?: Json | null
+          record_id: string
+          requested_by: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          table_name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          reason?: string | null
+          record_details?: Json | null
+          record_id?: string
+          requested_by?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          table_name?: string
+        }
+        Relationships: []
+      }
       installation_history: {
         Row: {
           branch_id: string | null

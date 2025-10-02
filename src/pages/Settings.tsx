@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Building2, Users } from "lucide-react";
 import { UserManagement } from "@/components/settings/UserManagement";
 import { UserApprovalPanel } from "@/components/settings/UserApprovalPanel";
+import { DeletionApprovalPanel } from "@/components/settings/DeletionApprovalPanel";
 
 const Settings = () => {
   const builderSegments = [
@@ -56,6 +57,8 @@ const Settings = () => {
 
       <div className="grid gap-6">
         <UserApprovalPanel />
+        
+        <DeletionApprovalPanel />
         
         <UserManagement />
         

@@ -38,7 +38,6 @@ const Dashboard = () => {
           queryClient.invalidateQueries({ queryKey: ["companies-by-status"] });
           queryClient.invalidateQueries({ queryKey: ["companies-by-priority"] });
           queryClient.invalidateQueries({ queryKey: ["recent-companies"] });
-          queryClient.invalidateQueries({ queryKey: ["pipeline-value"] });
           queryClient.invalidateQueries({ queryKey: ["segment-performance"] });
         }
       )
@@ -57,8 +56,7 @@ const Dashboard = () => {
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'pilot_programs' },
         () => {
-          queryClient.invalidateQueries({ queryKey: ["pilot-programs-count"] });
-          queryClient.invalidateQueries({ queryKey: ["pipeline-value"] });
+          // Pilot programs tracking removed from dashboard
         }
       )
       .subscribe();
@@ -156,85 +154,6 @@ const Dashboard = () => {
     });
   }, []);
 
-  const pilotProgramsCount = useQuery({
-    queryKey: ["pilot-programs-count"],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("pilot_programs")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "Active");
-      if (error) throw error;
-      return count || 0;
-    },
-  });
-
-  const pipelineData = useQuery({
-    queryKey: ["pipeline-value"],
-    queryFn: async () => {
-      const OPEN_STATUSES: Array<'Lead' | 'Contacted' | 'Engaged' | 'Pilot'> = ['Lead', 'Contacted', 'Engaged', 'Pilot'];
-      
-      // Get all companies with open status
-      const { data: openCompanies, error: companiesError } = await supabase
-        .from("companies")
-        .select("id, status, annual_revenue_range")
-        .in("status", OPEN_STATUSES);
-      
-      if (companiesError) throw companiesError;
-      if (!openCompanies) return { totalValue: 0, byStatus: {} };
-
-      const companyIds = openCompanies.map(c => c.id);
-      
-      // Get pilot programs for these companies
-      const { data: pilots, error: pilotsError } = await supabase
-        .from("pilot_programs")
-        .select("company_id, target_installations, status")
-        .in("company_id", companyIds)
-        .in("status", ['Proposed', 'Approved', 'Active']);
-      
-      if (pilotsError) throw pilotsError;
-
-      // Revenue estimates for companies without pilots
-      const revenueEstimates: Record<string, number> = {
-        '<$500K': 5000,
-        '$500K-$999K': 10000,
-        '$1M-$2.9M': 20000,
-        '$3M-$5.9M': 35000,
-        '$6M-$10M': 50000,
-        '$10M+': 75000
-      };
-
-      let totalPipelineValue = 0;
-      const byStatus: Record<string, number> = {
-        'Lead': 0,
-        'Contacted': 0,
-        'Engaged': 0,
-        'Pilot': 0
-      };
-
-      openCompanies.forEach(company => {
-        const companyPilots = pilots?.filter(p => p.company_id === company.id) || [];
-        let companyValue = 0;
-
-        if (companyPilots.length > 0) {
-          // Sum pilot program values ($200 per installation)
-          companyPilots.forEach(pilot => {
-            companyValue += (pilot.target_installations || 0) * 200;
-          });
-        } else {
-          // Estimate based on company revenue range
-          companyValue = revenueEstimates[company.annual_revenue_range || ''] || 10000;
-        }
-
-        totalPipelineValue += companyValue;
-        byStatus[company.status] += companyValue;
-      });
-
-      return { totalValue: totalPipelineValue, byStatus };
-    },
-  });
-
-  const pipelineValue = pipelineData.data?.totalValue || 0;
-  const pipelineByStatus = pipelineData.data?.byStatus || {};
 
   const companiesByStatus = useQuery({
     queryKey: ["companies-by-status"],
@@ -454,104 +373,6 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Pipeline Value & Pilot Programs Card */}
-        <Card 
-          className="cursor-pointer hover:shadow-lg hover:bg-accent/50 transition-all duration-200 col-span-1 lg:col-span-2"
-          onClick={() => navigate('/reports')}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div>
-              <CardTitle className="text-sm font-medium">Pipeline Value & Pilots</CardTitle>
-              <p className="text-xs text-muted-foreground mt-1">All open opportunities</p>
-            </div>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {pipelineData.isLoading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-8 w-32" />
-                <Skeleton className="h-8 w-32" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-full" />
-              </div>
-            ) : pipelineData.isError ? (
-              <div className="space-y-2">
-                <Alert variant="destructive" className="py-2">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription className="text-xs">Failed to load pipeline data</AlertDescription>
-                </Alert>
-                <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); pipelineData.refetch(); }}>
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                  Retry
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <div className="flex items-center gap-1">
-                      <p className="text-2xl font-bold animate-in fade-in duration-300">
-                        ${pipelineValue.toLocaleString()}
-                      </p>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                            <p className="text-xs">
-                              Pipeline value includes estimated revenue from all companies in 
-                              Lead, Contacted, Engaged, and Pilot status. Active companies 
-                              (closed won) and Lost/Inactive companies (closed lost) are not included.
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    <p className="text-xs text-muted-foreground">Pipeline Value</p>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold animate-in fade-in duration-300">{pilotProgramsCount.data}</p>
-                    <p className="text-xs text-muted-foreground">Active Pilots</p>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">Breakdown by Status:</p>
-                  <div className="space-y-1">
-                    {Object.entries(pipelineByStatus).map(([status, value]) => {
-                      const percentage = pipelineValue > 0 
-                        ? Math.round((value / pipelineValue) * 100) 
-                        : 0;
-                      return (
-                        <div
-                          key={status}
-                          className="flex items-center justify-between text-sm cursor-pointer hover:bg-accent/50 p-2 rounded transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/companies?status=${status}`);
-                          }}
-                        >
-                          <span className="text-muted-foreground">{status}</span>
-                          <span className="font-semibold">
-                            ${value.toLocaleString()} ({percentage}%)
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-border">
-                  <p className="text-xs text-muted-foreground">
-                    💡 Includes: Lead, Contacted, Engaged, Pilot statuses. 
-                    Excludes: Active (won), Lost/Inactive (closed).
-                  </p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -653,7 +474,6 @@ const Dashboard = () => {
           queryClient.invalidateQueries({ queryKey: ["companies-by-status"] });
           queryClient.invalidateQueries({ queryKey: ["companies-by-priority"] });
           queryClient.invalidateQueries({ queryKey: ["recent-companies"] });
-          queryClient.invalidateQueries({ queryKey: ["pipeline-value"] });
           queryClient.invalidateQueries({ queryKey: ["segment-performance"] });
           setIsAddCompanyOpen(false);
         }}

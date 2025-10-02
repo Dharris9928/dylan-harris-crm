@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,8 +11,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -19,6 +28,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { contactSchema, type ContactFormData } from "@/lib/validation/schemas";
+import { createContact } from "@/lib/contacts/createContact";
 
 interface AddContactDialogProps {
   open: boolean;
@@ -30,24 +41,29 @@ const decisionTiers = ["Primary", "Secondary", "Influencer"];
 const contactMethods = ["Email", "Phone", "LinkedIn", "Text"];
 
 export function AddContactDialog({ open, onOpenChange, onSuccess }: AddContactDialogProps) {
-  const [loading, setLoading] = useState(false);
   const [companies, setCompanies] = useState<{ id: string; company_name: string }[]>([]);
-  const [formData, setFormData] = useState({
-    first_name: "",
-    last_name: "",
-    title: "",
-    company_id: "",
-    email: "",
-    phone: "",
-    mobile: "",
-    linkedin_url: "",
-    decision_tier: "Influencer",
-    preferred_contact_method: "Email",
+
+  const form = useForm<ContactFormData>({
+    resolver: zodResolver(contactSchema),
+    defaultValues: {
+      first_name: "",
+      last_name: "",
+      title: "",
+      company_id: "",
+      email: "",
+      phone: "",
+      mobile: "",
+      linkedin_url: "",
+      decision_tier: "Influencer",
+      preferred_contact_method: "Email",
+      notes: "",
+    },
   });
 
   useEffect(() => {
     if (open) {
       loadCompanies();
+      form.reset();
     }
   }, [open]);
 
@@ -59,46 +75,15 @@ export function AddContactDialog({ open, onOpenChange, onSuccess }: AddContactDi
     if (data) setCompanies(data);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
+  const onSubmit = async (data: ContactFormData) => {
     try {
-      const contactData = {
-        first_name: formData.first_name,
-        last_name: formData.last_name,
-        title: formData.title || null,
-        company_id: formData.company_id,
-        email: formData.email || null,
-        phone: formData.phone || null,
-        mobile: formData.mobile || null,
-        linkedin_url: formData.linkedin_url || null,
-        decision_tier: formData.decision_tier as "Primary" | "Secondary" | "Influencer",
-        preferred_contact_method: formData.preferred_contact_method as "Email" | "Phone" | "LinkedIn" | "Text",
-      };
-
-      const { error } = await supabase.from("contacts").insert([contactData]);
-
-      if (error) throw error;
-
+      await createContact(data);
       toast.success("Contact added successfully!");
-      setFormData({
-        first_name: "",
-        last_name: "",
-        title: "",
-        company_id: "",
-        email: "",
-        phone: "",
-        mobile: "",
-        linkedin_url: "",
-        decision_tier: "Influencer",
-        preferred_contact_method: "Email",
-      });
+      form.reset();
       onSuccess();
+      onOpenChange(false);
     } catch (error: any) {
       toast.error(error.message || "Failed to add contact");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -111,139 +96,194 @@ export function AddContactDialog({ open, onOpenChange, onSuccess }: AddContactDi
             Enter contact details and associate with a company.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="first_name">First Name *</Label>
-                <Input
-                  id="first_name"
-                  value={formData.first_name}
-                  onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                  required
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="first_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First Name *</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="last_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last Name *</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="last_name">Last Name *</Label>
-                <Input
-                  id="last_name"
-                  value={formData.last_name}
-                  onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                  required
+              
+              <FormField
+                control={form.control}
+                name="company_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Company *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a company" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {companies.map((company) => (
+                          <SelectItem key={company.id} value={company.id}>
+                            {company.company_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Job Title</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value || ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="decision_tier"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Decision Tier</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {decisionTiers.map((tier) => (
+                          <SelectItem key={tier} value={tier}>
+                            {tier}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" {...field} value={field.value || ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone</FormLabel>
+                      <FormControl>
+                        <Input type="tel" {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="mobile"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Mobile</FormLabel>
+                      <FormControl>
+                        <Input type="tel" {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="company_id">Company *</Label>
-              <Select
-                value={formData.company_id}
-                onValueChange={(value) => setFormData({ ...formData, company_id: value })}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a company" />
-                </SelectTrigger>
-                <SelectContent>
-                  {companies.map((company) => (
-                    <SelectItem key={company.id} value={company.id}>
-                      {company.company_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="title">Job Title</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              
+              <FormField
+                control={form.control}
+                name="linkedin_url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>LinkedIn URL</FormLabel>
+                    <FormControl>
+                      <Input type="url" {...field} value={field.value || ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="preferred_contact_method"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Preferred Contact Method</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {contactMethods.map((method) => (
+                          <SelectItem key={method} value={method}>
+                            {method}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="decision_tier">Decision Tier</Label>
-              <Select
-                value={formData.decision_tier}
-                onValueChange={(value) => setFormData({ ...formData, decision_tier: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {decisionTiers.map((tier) => (
-                    <SelectItem key={tier} value={tier}>
-                      {tier}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="phone">Phone</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="mobile">Mobile</Label>
-                <Input
-                  id="mobile"
-                  type="tel"
-                  value={formData.mobile}
-                  onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="linkedin_url">LinkedIn URL</Label>
-              <Input
-                id="linkedin_url"
-                type="url"
-                value={formData.linkedin_url}
-                onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="preferred_contact_method">Preferred Contact Method</Label>
-              <Select
-                value={formData.preferred_contact_method}
-                onValueChange={(value) => setFormData({ ...formData, preferred_contact_method: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {contactMethods.map((method) => (
-                    <SelectItem key={method} value={method}>
-                      {method}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading || !formData.company_id}>
-              {loading ? "Adding..." : "Add Contact"}
-            </Button>
-          </DialogFooter>
-        </form>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? "Adding..." : "Add Contact"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

@@ -37,10 +37,18 @@ export function UserManagement() {
       .eq('id', user.id)
       .maybeSingle();
     
+    // Get role from user_roles table
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    
     if (profile && user.email) {
       setCurrentUser({
         ...profile,
         email: user.email,
+        role: roleData?.role || 'sales_rep',
       } as UserProfile);
     }
   };
@@ -73,9 +81,25 @@ export function UserManagement() {
         return;
       }
 
+      // Get roles from user_roles table
+      const { data: rolesData, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .in('user_id', userIds);
+
+      if (rolesError) {
+        console.error('Error fetching user roles:', rolesError);
+      }
+
+      const rolesMap = (rolesData || []).reduce((acc, { user_id, role }) => {
+        acc[user_id] = role;
+        return acc;
+      }, {} as Record<string, string>);
+
       const usersWithEmails = (profiles || []).map((profile) => ({
         ...profile,
         email: emailData?.userEmails?.[profile.id] || 'Unknown',
+        role: rolesMap[profile.id] || 'sales_rep',
       } as UserProfile));
 
       setUsers(usersWithEmails);
@@ -89,10 +113,15 @@ export function UserManagement() {
 
   const updateUserRole = async (userId: string, newRole: 'admin' | 'sales_manager' | 'sales_rep' | 'read_only') => {
     try {
+      // Update in user_roles table (separate from profiles for security)
       const { error } = await supabase
-        .from('profiles')
-        .update({ role: newRole })
-        .eq('id', userId);
+        .from('user_roles')
+        .upsert({ 
+          user_id: userId, 
+          role: newRole 
+        }, {
+          onConflict: 'user_id'
+        });
 
       if (error) throw error;
 

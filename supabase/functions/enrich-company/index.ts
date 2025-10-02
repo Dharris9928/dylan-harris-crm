@@ -403,6 +403,9 @@ CRITICAL PRIORITIES - Fill ALL possible fields:
 4. Annual installation/project volume
 5. Average project/home price
 6. Price point positioning (economy/mid-market/premium/luxury)
+7. Revenue growth trend - assess year-over-year growth
+8. Profitability level - estimate profit margins
+9. Overall financial health rating
 
 **DIGITAL ENGAGEMENT (HIGH PRIORITY):**
 1. Website quality and professionalism level
@@ -453,6 +456,11 @@ Research the company thoroughly using the website and LinkedIn URLs provided. Be
               average_home_price: { type: 'integer', description: 'Average project/home price in dollars' },
               average_home_price_range: { type: 'string', enum: ['<$150K', '$150K-$199K', '$200K-$249K', '$250K-$299K', '$300K-$399K', '$400K-$499K', '$500K-$599K', '$600K-$799K', '$800K-$999K', '$1M-$1.49M', '$1.5M-$1.99M', '$2M-$2.99M', '$3M+'] },
               price_point_category: { type: 'string', enum: ['economy', 'mid-market', 'premium', 'luxury'] },
+              
+              // Financial Stability Indicators
+              revenue_growth_trend: { type: 'string', enum: ['Rapid Growth (>20% YoY)', 'Strong Growth (10-20% YoY)', 'Moderate Growth (5-10% YoY)', 'Stable (0-5% YoY)', 'Declining (<0% YoY)', 'Unknown'] },
+              profitability_level: { type: 'string', enum: ['Highly Profitable (>15% margin)', 'Profitable (8-15% margin)', 'Moderately Profitable (5-8% margin)', 'Break-even (0-5% margin)', 'Unprofitable (<0% margin)', 'Unknown'] },
+              financial_health_rating: { type: 'string', enum: ['Excellent', 'Good', 'Fair', 'Poor', 'At Risk', 'Unknown'] },
               
               // Digital Engagement
               website_url: { type: 'string', description: 'Company website if found' },
@@ -518,6 +526,11 @@ Research the company thoroughly using the website and LinkedIn URLs provided. Be
   if (enrichedData.average_home_price_range) companyUpdates.average_home_price_range = enrichedData.average_home_price_range;
   if (enrichedData.price_point_category) companyUpdates.price_point_category = enrichedData.price_point_category;
   
+  // Financial stability indicators
+  if (enrichedData.revenue_growth_trend && enrichedData.revenue_growth_trend !== 'Unknown') companyUpdates.revenue_growth_trend = enrichedData.revenue_growth_trend;
+  if (enrichedData.profitability_level && enrichedData.profitability_level !== 'Unknown') companyUpdates.profitability_level = enrichedData.profitability_level;
+  if (enrichedData.financial_health_rating && enrichedData.financial_health_rating !== 'Unknown') companyUpdates.financial_health_rating = enrichedData.financial_health_rating;
+  
   // Digital engagement
   if (enrichedData.website_url) companyUpdates.website_url = enrichedData.website_url;
   if (enrichedData.website_quality) companyUpdates.website_quality = enrichedData.website_quality;
@@ -581,6 +594,9 @@ CRITICAL PRIORITIES - Research and fill ALL possible fields:
 - Annual installation/project volume
 - Average project/home price
 - Price positioning (economy/mid-market/premium/luxury)
+- Revenue growth trend (year-over-year analysis)
+- Profitability level and margins
+- Overall financial health assessment
 
 **DIGITAL ENGAGEMENT (HIGHEST PRIORITY):**
 - Website quality, professionalism, content depth
@@ -610,7 +626,7 @@ LinkedIn: ${company.linkedin_company_url || 'Not provided'}
 Current data: ${JSON.stringify(company, null, 2)}
 
 PRIORITIES:
-1. Business metrics: employees, revenue, years in business, volume, pricing
+1. Business metrics: employees, revenue, years in business, volume, pricing, growth trends, profitability, financial health
 2. Digital engagement: website quality, social media URLs and activity, LinkedIn presence, online reviews
 3. Technology adoption and smart home readiness
 
@@ -643,6 +659,11 @@ Fill as many fields as possible with accurate data.`;
             average_home_price: { type: 'integer' },
             average_home_price_range: { type: 'string', enum: ['<$150K', '$150K-$199K', '$200K-$249K', '$250K-$299K', '$300K-$399K', '$400K-$499K', '$500K-$599K', '$600K-$799K', '$800K-$999K', '$1M-$1.49M', '$1.5M-$1.99M', '$2M-$2.99M', '$3M+'] },
             price_point_category: { type: 'string', enum: ['economy', 'mid-market', 'premium', 'luxury'] },
+            
+            // Financial Stability Indicators
+            revenue_growth_trend: { type: 'string', enum: ['Rapid Growth (>20% YoY)', 'Strong Growth (10-20% YoY)', 'Moderate Growth (5-10% YoY)', 'Stable (0-5% YoY)', 'Declining (<0% YoY)', 'Unknown'] },
+            profitability_level: { type: 'string', enum: ['Highly Profitable (>15% margin)', 'Profitable (8-15% margin)', 'Moderately Profitable (5-8% margin)', 'Break-even (0-5% margin)', 'Unprofitable (<0% margin)', 'Unknown'] },
+            financial_health_rating: { type: 'string', enum: ['Excellent', 'Good', 'Fair', 'Poor', 'At Risk', 'Unknown'] },
             
             // Digital Engagement
             website_url: { type: 'string' },
@@ -707,6 +728,11 @@ Fill as many fields as possible with accurate data.`;
   if (enrichedData.average_home_price) companyUpdates.average_home_price = enrichedData.average_home_price;
   if (enrichedData.average_home_price_range) companyUpdates.average_home_price_range = enrichedData.average_home_price_range;
   if (enrichedData.price_point_category) companyUpdates.price_point_category = enrichedData.price_point_category;
+  
+  // Financial stability indicators
+  if (enrichedData.revenue_growth_trend && enrichedData.revenue_growth_trend !== 'Unknown') companyUpdates.revenue_growth_trend = enrichedData.revenue_growth_trend;
+  if (enrichedData.profitability_level && enrichedData.profitability_level !== 'Unknown') companyUpdates.profitability_level = enrichedData.profitability_level;
+  if (enrichedData.financial_health_rating && enrichedData.financial_health_rating !== 'Unknown') companyUpdates.financial_health_rating = enrichedData.financial_health_rating;
   
   // Digital engagement
   if (enrichedData.website_url) companyUpdates.website_url = enrichedData.website_url;

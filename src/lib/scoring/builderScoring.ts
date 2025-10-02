@@ -95,29 +95,54 @@ export async function calculateBuilderScore(companyId: string): Promise<BuilderS
   // 3. Geographic Score (0-10 points)
   scoring.geographicScore = calculateGeographicScore(company.state);
   
-  // 4. Stability Score (0-10 points) - Employees (5pts) + Years (5pts)
+  // 4. Stability Score (0-10 points) - Employees (3pts) + Years (3pts) + Financial Health (4pts)
   let stabilityScore = 0;
   
-  // Employees component (0-5 points) - FROM RANGE
+  // Employees component (0-3 points) - FROM RANGE
   if (company.total_employees_range) {
     const employeeScore = await getScoreForRange(
       'total_employees_range',
       company.total_employees_range,
       'Builder'
     );
-    stabilityScore += Math.min(employeeScore, 5);
+    stabilityScore += Math.min(Math.round(employeeScore * 0.6), 3);
   }
   
-  // Years component (0-5 points) - FROM RANGE
+  // Years component (0-3 points) - FROM RANGE
   if (company.years_in_business_range) {
     const yearsScore = await getScoreForRange(
       'years_in_business_range',
       company.years_in_business_range,
       'Builder'
     );
-    stabilityScore += Math.min(yearsScore, 5);
+    stabilityScore += Math.min(Math.round(yearsScore * 0.6), 3);
   }
   
+  // Financial Health component (0-4 points)
+  let financialScore = 0;
+  
+  // Revenue Growth Trend (0-1.5 points)
+  if (company.revenue_growth_trend === 'Rapid Growth (>20% YoY)') financialScore += 1.5;
+  else if (company.revenue_growth_trend === 'Strong Growth (10-20% YoY)') financialScore += 1.2;
+  else if (company.revenue_growth_trend === 'Moderate Growth (5-10% YoY)') financialScore += 0.8;
+  else if (company.revenue_growth_trend === 'Stable (0-5% YoY)') financialScore += 0.5;
+  else if (company.revenue_growth_trend === 'Declining (<0% YoY)') financialScore += 0;
+  
+  // Profitability Level (0-1.5 points)
+  if (company.profitability_level === 'Highly Profitable (>15% margin)') financialScore += 1.5;
+  else if (company.profitability_level === 'Profitable (8-15% margin)') financialScore += 1.2;
+  else if (company.profitability_level === 'Moderately Profitable (5-8% margin)') financialScore += 0.8;
+  else if (company.profitability_level === 'Break-even (0-5% margin)') financialScore += 0.5;
+  else if (company.profitability_level === 'Unprofitable (<0% margin)') financialScore += 0;
+  
+  // Financial Health Rating (0-1 point)
+  if (company.financial_health_rating === 'Excellent') financialScore += 1;
+  else if (company.financial_health_rating === 'Good') financialScore += 0.75;
+  else if (company.financial_health_rating === 'Fair') financialScore += 0.5;
+  else if (company.financial_health_rating === 'Poor') financialScore += 0.25;
+  else if (company.financial_health_rating === 'At Risk') financialScore += 0;
+  
+  stabilityScore += Math.min(financialScore, 4);
   scoring.stabilityScore = Math.min(stabilityScore, 10);
 
   scoring.firmographicTotal = 

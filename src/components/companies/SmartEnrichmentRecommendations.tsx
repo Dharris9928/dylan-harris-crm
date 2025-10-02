@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { EnrichmentConfirmDialog } from './EnrichmentConfirmDialog';
 
 interface SmartEnrichmentRecommendationsProps {
   onEnrichCompany: (companyId: string) => void;
@@ -15,6 +16,9 @@ interface SmartEnrichmentRecommendationsProps {
 export function SmartEnrichmentRecommendations({ onEnrichCompany }: SmartEnrichmentRecommendationsProps) {
   const { toast } = useToast();
   const [enriching, setEnriching] = useState<string | null>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [previewData, setPreviewData] = useState<any>(null);
+  const [pendingCompanyId, setPendingCompanyId] = useState<string | null>(null);
 
   const recommendations = useQuery({
     queryKey: ['enrichment-recommendations'],
@@ -69,15 +73,46 @@ export function SmartEnrichmentRecommendations({ onEnrichCompany }: SmartEnrichm
   const handleEnrich = async (companyId: string) => {
     setEnriching(companyId);
     try {
+      // First, get preview of what would be changed
+      const { data: preview, error: previewError } = await supabase.functions.invoke('enrich-company', {
+        body: { companyId, deepEnrich: false, previewOnly: true }
+      });
+
+      if (previewError) throw previewError;
+
+      // If there are fields to overwrite, show confirmation
+      if (preview.fieldsToOverwrite && Object.keys(preview.fieldsToOverwrite).length > 0) {
+        setPreviewData(preview);
+        setPendingCompanyId(companyId);
+        setShowConfirmDialog(true);
+        setEnriching(null);
+      } else {
+        // No conflicts, proceed directly
+        await executeEnrichment(companyId);
+      }
+    } catch (error) {
+      console.error('Enrichment error:', error);
+      toast({
+        title: 'Enrichment Failed',
+        description: error.message || 'Failed to enrich company',
+        variant: 'destructive'
+      });
+      setEnriching(null);
+    }
+  };
+
+  const executeEnrichment = async (companyId: string) => {
+    setEnriching(companyId);
+    try {
       const { error } = await supabase.functions.invoke('enrich-company', {
-        body: { companyId, deepEnrich: false }
+        body: { companyId, deepEnrich: false, previewOnly: false }
       });
 
       if (error) throw error;
 
       toast({
-        title: 'Enrichment Started',
-        description: 'Company data is being enriched...',
+        title: 'Enrichment Complete',
+        description: 'Company data has been enriched successfully.',
       });
 
       // Refetch recommendations after enrichment
@@ -94,6 +129,7 @@ export function SmartEnrichmentRecommendations({ onEnrichCompany }: SmartEnrichm
       });
     } finally {
       setEnriching(null);
+      setShowConfirmDialog(false);
     }
   };
 
@@ -132,60 +168,73 @@ export function SmartEnrichmentRecommendations({ onEnrichCompany }: SmartEnrichm
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-primary" />
-          Smart Enrichment Recommendations
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {recommendations.data.map((company) => (
-            <div 
-              key={company.id}
-              className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors"
-            >
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <p className="font-medium">{company.company_name}</p>
-                  <Badge 
-                    className={
-                      company.priority_tier === 'P1' ? 'bg-priority-p1 text-priority-p1-foreground' :
-                      'bg-priority-p2 text-priority-p2-foreground'
-                    }
-                  >
-                    {company.priority_tier}
-                  </Badge>
-                  {!company.isEnriched && (
-                    <Badge variant="outline" className="text-xs">
-                      Not Enriched
-                    </Badge>
-                  )}
-                </div>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <span>Score: {company.lead_score}</span>
-                  {company.missingFieldsCount > 0 && (
-                    <span className="flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {company.missingFieldsCount} fields missing
-                    </span>
-                  )}
-                </div>
-              </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleEnrich(company.id)}
-                disabled={enriching === company.id}
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            Smart Enrichment Recommendations
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {recommendations.data.map((company) => (
+              <div 
+                key={company.id}
+                className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors"
               >
-                <Sparkles className={`h-4 w-4 mr-2 ${enriching === company.id ? 'animate-pulse' : ''}`} />
-                {enriching === company.id ? 'Enriching...' : 'Enrich'}
-              </Button>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="font-medium">{company.company_name}</p>
+                    <Badge 
+                      className={
+                        company.priority_tier === 'P1' ? 'bg-priority-p1 text-priority-p1-foreground' :
+                        'bg-priority-p2 text-priority-p2-foreground'
+                      }
+                    >
+                      {company.priority_tier}
+                    </Badge>
+                    {!company.isEnriched && (
+                      <Badge variant="outline" className="text-xs">
+                        Not Enriched
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <span>Score: {company.lead_score}</span>
+                    {company.missingFieldsCount > 0 && (
+                      <span className="flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {company.missingFieldsCount} fields missing
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleEnrich(company.id)}
+                  disabled={enriching === company.id}
+                >
+                  <Sparkles className={`h-4 w-4 mr-2 ${enriching === company.id ? 'animate-pulse' : ''}`} />
+                  {enriching === company.id ? 'Enriching...' : 'Enrich'}
+                </Button>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {previewData && pendingCompanyId && (
+        <EnrichmentConfirmDialog
+          open={showConfirmDialog}
+          onOpenChange={setShowConfirmDialog}
+          onConfirm={() => executeEnrichment(pendingCompanyId)}
+          fieldsToOverwrite={previewData.fieldsToOverwrite}
+          fieldsEnriched={previewData.fieldsEnriched}
+          isConfirming={enriching === pendingCompanyId}
+        />
+      )}
+    </>
   );
 }

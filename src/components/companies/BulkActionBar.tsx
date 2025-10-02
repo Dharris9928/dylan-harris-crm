@@ -19,6 +19,7 @@ import {
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { EnrichmentConfirmDialog } from "./EnrichmentConfirmDialog";
 
 interface BulkActionBarProps {
   selectedCount: number;
@@ -37,6 +38,8 @@ export function BulkActionBar({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEnriching, setIsEnriching] = useState(false);
   const [enrichProgress, setEnrichProgress] = useState({ current: 0, total: 0 });
+  const [showEnrichConfirm, setShowEnrichConfirm] = useState(false);
+  const [bulkEnrichPreviews, setBulkEnrichPreviews] = useState<any[]>([]);
   const { toast } = useToast();
 
   const handleBulkStatusChange = async (status: "Lead" | "Contacted" | "Engaged" | "Pilot" | "Active" | "Inactive" | "Lost") => {
@@ -124,6 +127,46 @@ export function BulkActionBar({
 
   const handleBulkEnrich = async () => {
     setIsEnriching(true);
+    
+    try {
+      // First, get previews for all companies
+      const previews = [];
+      for (const companyId of selectedIds) {
+        const { data, error } = await supabase.functions.invoke('enrich-company', {
+          body: { companyId, deepEnrich: false, previewOnly: true }
+        });
+        if (!error && data) {
+          previews.push({ companyId, ...data });
+        }
+      }
+
+      // Check if any have fields to overwrite
+      const hasOverwrites = previews.some(p => 
+        p.fieldsToOverwrite && Object.keys(p.fieldsToOverwrite).length > 0
+      );
+
+      if (hasOverwrites) {
+        // Show aggregate confirmation
+        setBulkEnrichPreviews(previews);
+        setShowEnrichConfirm(true);
+        setIsEnriching(false);
+      } else {
+        // No conflicts, proceed directly
+        await executeBulkEnrichment();
+      }
+    } catch (error) {
+      console.error('Error preparing bulk enrichment:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to prepare bulk enrichment',
+        variant: 'destructive'
+      });
+      setIsEnriching(false);
+    }
+  };
+
+  const executeBulkEnrichment = async () => {
+    setIsEnriching(true);
     setEnrichProgress({ current: 0, total: selectedIds.length });
 
     let successCount = 0;
@@ -135,7 +178,7 @@ export function BulkActionBar({
 
       try {
         const { error } = await supabase.functions.invoke('enrich-company', {
-          body: { companyId, deepEnrich: false }
+          body: { companyId, deepEnrich: false, previewOnly: false }
         });
 
         if (error) throw error;
@@ -153,6 +196,7 @@ export function BulkActionBar({
 
     setIsEnriching(false);
     setEnrichProgress({ current: 0, total: 0 });
+    setShowEnrichConfirm(false);
 
     toast({
       title: 'Bulk Enrichment Complete',
@@ -265,6 +309,22 @@ export function BulkActionBar({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {bulkEnrichPreviews.length > 0 && (
+        <EnrichmentConfirmDialog
+          open={showEnrichConfirm}
+          onOpenChange={setShowEnrichConfirm}
+          onConfirm={executeBulkEnrichment}
+          fieldsToOverwrite={bulkEnrichPreviews.reduce((acc, preview) => {
+            Object.entries(preview.fieldsToOverwrite || {}).forEach(([field, value]) => {
+              if (!acc[field]) acc[field] = value;
+            });
+            return acc;
+          }, {})}
+          fieldsEnriched={bulkEnrichPreviews[0]?.fieldsEnriched || []}
+          isConfirming={isEnriching}
+        />
+      )}
     </>
   );
 }

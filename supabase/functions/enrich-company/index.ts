@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { companyId, deepEnrich = false } = await req.json();
+    const { companyId, deepEnrich = false, previewOnly = false } = await req.json();
 
     if (!companyId) {
       return new Response(
@@ -108,6 +108,31 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'No enrichment result' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // If preview mode, return what would be changed without updating
+    if (previewOnly) {
+      const fieldsToOverwrite: Record<string, { current: any; new: any }> = {};
+      
+      for (const [key, newValue] of Object.entries(enrichmentResult.companyUpdates)) {
+        const currentValue = company[key];
+        if (currentValue !== null && currentValue !== undefined && currentValue !== '' && newValue !== currentValue) {
+          fieldsToOverwrite[key] = { current: currentValue, new: newValue };
+        }
+      }
+
+      return new Response(
+        JSON.stringify({
+          preview: true,
+          provider,
+          confidence: enrichmentResult.confidence,
+          fieldsEnriched: enrichmentResult.fieldsEnriched,
+          fieldsToOverwrite,
+          companyUpdates: enrichmentResult.companyUpdates,
+          insights: enrichmentResult.insights
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 

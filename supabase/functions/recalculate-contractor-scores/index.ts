@@ -278,14 +278,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if user has elevated access (admin or sales_manager)
-    const { data: profile } = await supabaseClient
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+    // Check if user has elevated access using secure RPC function
+    const { data: hasAccess, error: accessError } = await supabaseClient
+      .rpc('has_elevated_access', { _user_id: user.id });
 
-    if (!profile || !['admin', 'sales_manager'].includes(profile.role)) {
+    if (accessError || !hasAccess) {
       return new Response(
         JSON.stringify({ error: 'Insufficient permissions. Admin or Sales Manager role required.' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

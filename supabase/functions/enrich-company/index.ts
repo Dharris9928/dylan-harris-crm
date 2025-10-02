@@ -177,15 +177,87 @@ serve(async (req) => {
       );
     }
 
-    // Update company with enriched data
-    const { error: updateError } = await supabase
-      .from('companies')
-      .update(enrichmentResult.companyUpdates)
-      .eq('id', companyId);
+    // Normalize and sanitize updates (trim strings, fix URLs)
+    const sanitize = (obj: Record<string, any>) => {
+      const out: Record<string, any> = {};
+      for (const [k, v] of Object.entries(obj)) {
+        if (v === undefined) continue;
+        if (typeof v === 'string') {
+          out[k] = v.trim();
+        } else {
+          out[k] = v;
+        }
+      }
+      return out;
+    };
+
+    let updates = sanitize(enrichmentResult.companyUpdates);
+
+    // If nothing to update, still log and return success
+    if (Object.keys(updates).length === 0) {
+      await supabase.from('enrichment_logs').insert({
+        company_id: companyId,
+        provider,
+        enrichment_type: deepEnrich ? 'deep' : 'standard',
+        status: 'success',
+        confidence_score: enrichmentResult.confidence,
+        fields_enriched: [],
+        created_by: user.id
+      });
+      return new Response(
+        JSON.stringify({ success: true, provider, apolloEnriched: !!apolloData, confidence: enrichmentResult.confidence, fieldsEnriched: [], insights: enrichmentResult.insights, scoreRecalculationTriggered: false }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Attempt update with graceful degradation for constraint failures
+    let persistedRow: any = null;
+    let failedFields: string[] = [];
+    const tryUpdate = async () => {
+      const { data, error } = await supabase
+        .from('companies')
+        .update(updates)
+        .eq('id', companyId)
+        .select('*')
+        .single();
+      return { data, error };
+    };
+
+    let { data: updatedCompany, error: updateError } = await tryUpdate();
 
     if (updateError) {
       console.error('Failed to update company:', updateError);
+      const msg = (updateError as any).message || '';
+      // If social_media_presence constraint fails, drop it and retry once
+      if (msg.includes('companies_social_media_presence_check') && 'social_media_presence' in updates) {
+        failedFields.push('social_media_presence');
+        delete updates.social_media_presence;
+        const retry = await tryUpdate();
+        updatedCompany = retry.data;
+        updateError = retry.error as any;
+      }
     }
+
+    if (updateError) {
+      // Log failure with attempted fields
+      await supabase.from('enrichment_logs').insert({
+        company_id: companyId,
+        provider,
+        enrichment_type: deepEnrich ? 'deep' : 'standard',
+        status: 'failed',
+        confidence_score: enrichmentResult.confidence,
+        fields_enriched: Object.keys(updates),
+        error_message: (updateError as any).message || 'Update failed',
+        created_by: user.id
+      });
+
+      return new Response(
+        JSON.stringify({ error: 'Update failed', details: (updateError as any).message || 'Unknown error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    persistedRow = updatedCompany;
 
     // Upsert AI insights with proper conflict handling
     const { error: insightsError } = await supabase
@@ -203,19 +275,23 @@ serve(async (req) => {
       console.error('Failed to save insights:', insightsError);
     }
 
-    // Log successful enrichment
+    // Compute persisted fields: keys that exist in updates and changed from original company
+    const persistedFields = Object.keys(updates).filter((key) => {
+      return company[key] !== persistedRow[key];
+    });
+
+    // Log enrichment with only persisted fields
     await supabase.from('enrichment_logs').insert({
       company_id: companyId,
       provider,
       enrichment_type: deepEnrich ? 'deep' : 'standard',
       status: 'success',
       confidence_score: enrichmentResult.confidence,
-      fields_enriched: enrichmentResult.fieldsEnriched,
+      fields_enriched: persistedFields,
       created_by: user.id
     });
 
     // Trigger score recalculation by updating company timestamp
-    // This will cause client-side recalculation triggers to fire
     await supabase
       .from('companies')
       .update({ updated_at: new Date().toISOString() })
@@ -227,9 +303,9 @@ serve(async (req) => {
         provider,
         apolloEnriched: !!apolloData,
         confidence: enrichmentResult.confidence,
-        fieldsEnriched: enrichmentResult.fieldsEnriched,
+        fieldsEnriched: persistedFields,
         insights: enrichmentResult.insights,
-        scoreRecalculationTriggered: true
+        scoreRecalculationTriggered: true,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

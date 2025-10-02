@@ -31,7 +31,7 @@ export function EnrichCompanyButton({ companyId, onComplete }: EnrichCompanyButt
 
       toast({
         title: deepEnrich ? 'Deep Enrichment Complete' : 'Enrichment Complete',
-        description: `${data.fieldsEnriched.length} fields updated using ${data.provider === 'lovable_ai' ? 'Gemini AI' : 'Claude AI'} (${data.confidence}% confidence)`,
+        description: `${data.fieldsEnriched.length} fields updated using ${data.provider === 'lovable_ai' ? 'Gemini AI' : 'Claude AI'} (${data.confidence} confidence). Score recalculation triggered.`,
       });
       
       if (onComplete) onComplete();

@@ -146,13 +146,21 @@ serve(async (req) => {
       created_by: user.id
     });
 
+    // Trigger score recalculation by updating company timestamp
+    // This will cause client-side recalculation triggers to fire
+    await supabase
+      .from('companies')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', companyId);
+
     return new Response(
       JSON.stringify({
         success: true,
         provider,
         confidence: enrichmentResult.confidence,
         fieldsEnriched: enrichmentResult.fieldsEnriched,
-        insights: enrichmentResult.insights
+        insights: enrichmentResult.insights,
+        scoreRecalculationTriggered: true
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

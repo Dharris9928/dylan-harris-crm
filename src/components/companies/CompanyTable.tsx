@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink, Edit, Star, Building2, Users } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { QuickActionsMenu } from "./QuickActionsMenu";
+import { EnrichmentStatusBadge } from "./EnrichmentStatusBadge";
 import {
   Select,
   SelectContent,
@@ -194,6 +195,7 @@ export function CompanyTable({
               </TableHead>
               <TableHead className="w-12"></TableHead>
               {columnVisibility.companyName && <TableHead>Company Name</TableHead>}
+              <TableHead>AI Status</TableHead>
               {columnVisibility.type && <TableHead>Type</TableHead>}
               {columnVisibility.segment && <TableHead>Segment</TableHead>}
               {columnVisibility.structure && <TableHead>Structure</TableHead>}
@@ -254,6 +256,10 @@ export function CompanyTable({
                     </Tooltip>
                   </TableCell>
                 )}
+
+                <TableCell>
+                  <EnrichmentStatusBadge companyId={company.id} />
+                </TableCell>
               
               {columnVisibility.type && (
                 <TableCell>

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { X, Trash2, Edit, Mail } from "lucide-react";
+import { X, Trash2, Edit, Mail, Sparkles } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,6 +35,8 @@ export function BulkActionBar({
 }: BulkActionBarProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isEnriching, setIsEnriching] = useState(false);
+  const [enrichProgress, setEnrichProgress] = useState({ current: 0, total: 0 });
   const { toast } = useToast();
 
   const handleBulkStatusChange = async (status: "Lead" | "Contacted" | "Engaged" | "Pilot" | "Active" | "Inactive" | "Lost") => {
@@ -120,6 +122,48 @@ export function BulkActionBar({
     }
   };
 
+  const handleBulkEnrich = async () => {
+    setIsEnriching(true);
+    setEnrichProgress({ current: 0, total: selectedIds.length });
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < selectedIds.length; i++) {
+      const companyId = selectedIds[i];
+      setEnrichProgress({ current: i + 1, total: selectedIds.length });
+
+      try {
+        const { error } = await supabase.functions.invoke('enrich-company', {
+          body: { companyId, deepEnrich: false }
+        });
+
+        if (error) throw error;
+        successCount++;
+      } catch (error) {
+        console.error(`Error enriching company ${companyId}:`, error);
+        failCount++;
+      }
+
+      // Small delay to avoid rate limiting
+      if (i < selectedIds.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+
+    setIsEnriching(false);
+    setEnrichProgress({ current: 0, total: 0 });
+
+    toast({
+      title: 'Bulk Enrichment Complete',
+      description: `${successCount} companies enriched successfully${failCount > 0 ? `, ${failCount} failed` : ''}`,
+      variant: failCount > 0 ? 'destructive' : 'default'
+    });
+
+    onClearSelection();
+    onActionComplete();
+  };
+
   return (
     <>
       <div className="border-b border-border bg-accent/50 px-6 py-3 flex items-center justify-between">
@@ -138,6 +182,16 @@ export function BulkActionBar({
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleBulkEnrich}
+            disabled={isEnriching}
+          >
+            <Sparkles className={`h-4 w-4 mr-2 ${isEnriching ? 'animate-pulse' : ''}`} />
+            {isEnriching ? `Enriching ${enrichProgress.current}/${enrichProgress.total}...` : 'Enrich All'}
+          </Button>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">

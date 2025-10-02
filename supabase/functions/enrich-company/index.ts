@@ -65,7 +65,35 @@ serve(async (req) => {
     let provider = 'lovable_ai';
     let fallbackUsed = false;
 
-    // Try Lovable AI (Gemini) first for standard enrichment
+    // First, try Apollo for accurate business data
+    let apolloData = null;
+    try {
+      console.log('Attempting Apollo enrichment first for business metrics...');
+      const apolloResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/apollo-enrich`, {
+        method: 'POST',
+        headers: {
+          'Authorization': authHeader,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          companyName: company.company_name,
+          websiteUrl: company.website_url,
+          linkedinUrl: company.linkedin_company_url
+        })
+      });
+
+      if (apolloResponse.ok) {
+        const apolloResult = await apolloResponse.json();
+        if (apolloResult.found) {
+          apolloData = apolloResult;
+          console.log(`Apollo found data: ${apolloResult.fieldsEnriched?.length || 0} fields`);
+        }
+      }
+    } catch (error) {
+      console.log('Apollo enrichment skipped:', error instanceof Error ? error.message : 'Unknown error');
+    }
+
+    // Try Lovable AI (Gemini) for comprehensive enrichment
     if (!deepEnrich) {
       try {
         enrichmentResult = await enrichWithLovableAI(company);
@@ -111,6 +139,19 @@ serve(async (req) => {
       );
     }
 
+    // Merge Apollo data with AI enrichment (Apollo takes precedence for business metrics)
+    if (apolloData && apolloData.companyUpdates) {
+      console.log('Merging Apollo business data with AI enrichment...');
+      enrichmentResult.companyUpdates = {
+        ...enrichmentResult.companyUpdates,
+        ...apolloData.companyUpdates  // Apollo data overwrites AI data for business metrics
+      };
+      enrichmentResult.fieldsEnriched = Array.from(new Set([
+        ...enrichmentResult.fieldsEnriched,
+        ...apolloData.fieldsEnriched
+      ]));
+    }
+
     // If preview mode, return what would be changed without updating
     if (previewOnly) {
       const fieldsToOverwrite: Record<string, { current: any; new: any }> = {};
@@ -146,7 +187,7 @@ serve(async (req) => {
       console.error('Failed to update company:', updateError);
     }
 
-    // Upsert AI insights
+    // Upsert AI insights with proper conflict handling
     const { error: insightsError } = await supabase
       .from('company_ai_insights')
       .upsert({
@@ -154,6 +195,8 @@ serve(async (req) => {
         ...enrichmentResult.insights,
         enriched_by: user.id,
         last_enriched_at: new Date().toISOString()
+      }, {
+        onConflict: 'company_id'
       });
 
     if (insightsError) {
@@ -182,6 +225,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         provider,
+        apolloEnriched: !!apolloData,
         confidence: enrichmentResult.confidence,
         fieldsEnriched: enrichmentResult.fieldsEnriched,
         insights: enrichmentResult.insights,
@@ -262,7 +306,7 @@ Research the company thoroughly using the website and LinkedIn URLs provided. Be
               // Business Metrics
               total_employees: { type: 'integer', description: 'Exact number of employees' },
               total_employees_range: { type: 'string', enum: ['1-5', '6-10', '11-25', '26-50', '51-100', '101-250', '251-500', '500+'] },
-              annual_revenue_range: { type: 'string', enum: ['<$500K', '$500K-$999K', '$1M-$4.9M', '$5M-$9.9M', '$10M+'] },
+              annual_revenue_range: { type: 'string', enum: ['<$500K', '$500K-$999K', '$1M-$2.9M', '$3M-$5.9M', '$6M-$10M', '$10M+'] },
               years_in_business: { type: 'integer', description: 'Years company has been operating' },
               years_in_business_range: { type: 'string', enum: ['<5', '5-10', '11-20', '21-30', '30+'] },
               annual_volume: { type: 'integer', description: 'Annual installation/project volume' },
@@ -449,7 +493,7 @@ Fill as many fields as possible with accurate data.`;
             // Business Metrics
             total_employees: { type: 'integer', description: 'Exact employee count' },
             total_employees_range: { type: 'string', enum: ['1-5', '6-10', '11-25', '26-50', '51-100', '101-250', '251-500', '500+'] },
-            annual_revenue_range: { type: 'string', enum: ['<$500K', '$500K-$999K', '$1M-$4.9M', '$5M-$9.9M', '$10M+'] },
+            annual_revenue_range: { type: 'string', enum: ['<$500K', '$500K-$999K', '$1M-$2.9M', '$3M-$5.9M', '$6M-$10M', '$10M+'] },
             years_in_business: { type: 'integer' },
             years_in_business_range: { type: 'string', enum: ['<5', '5-10', '11-20', '21-30', '30+'] },
             annual_volume: { type: 'integer' },

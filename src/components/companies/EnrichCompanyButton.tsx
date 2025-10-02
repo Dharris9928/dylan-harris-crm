@@ -66,7 +66,7 @@ export function EnrichCompanyButton({ companyId, onComplete }: EnrichCompanyButt
 
       toast({
         title: deepEnrich ? 'Deep Enrichment Complete' : 'Enrichment Complete',
-        description: `${data.fieldsEnriched.length} fields updated using ${data.provider === 'lovable_ai' ? 'Gemini AI' : 'Claude AI'} (${data.confidence} confidence). Score recalculation triggered.`,
+        description: `${data.fieldsEnriched.length} fields updated${data.apolloEnriched ? ' (including Apollo business data)' : ''} using ${data.provider === 'lovable_ai' ? 'Gemini AI' : 'Claude AI'}.`,
       });
       
       if (onComplete) onComplete();

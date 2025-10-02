@@ -11,3 +11,6 @@ verify_jwt = true
 
 [functions.apollo-contact-search]
 verify_jwt = true
+
+[functions.apollo-enrich]
+verify_jwt = true

@@ -104,7 +104,7 @@ export function SmartEnrichmentRecommendations({ onEnrichCompany }: SmartEnrichm
   const executeEnrichment = async (companyId: string) => {
     setEnriching(companyId);
     try {
-      const { error } = await supabase.functions.invoke('enrich-company', {
+      const { data, error } = await supabase.functions.invoke('enrich-company', {
         body: { companyId, deepEnrich: false, previewOnly: false }
       });
 
@@ -112,7 +112,7 @@ export function SmartEnrichmentRecommendations({ onEnrichCompany }: SmartEnrichm
 
       toast({
         title: 'Enrichment Complete',
-        description: 'Company data has been enriched successfully.',
+        description: `Company data has been enriched${data?.apolloEnriched ? ' (including Apollo business data)' : ''}.`,
       });
 
       // Refetch recommendations after enrichment

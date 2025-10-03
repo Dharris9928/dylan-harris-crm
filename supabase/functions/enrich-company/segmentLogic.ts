@@ -51,44 +51,76 @@ const SEGMENT_DEFINITIONS: SegmentCriteria[] = [
     priority: 4
   },
   
-  // Contractor Segments
+  // Contractor Segments (Priority: 30%, 25%, 20%, 10%, 8%, 4%, 3%)
   {
     name: 'smart_home_champions',
     industryType: 'Contractor',
-    employeeMin: 11,
-    employeeMax: 200,
-    revenueMin: 1,
-    revenueMax: 10,
-    keywords: ['smart home', 'automation', 'technology', 'connected', 'iot'],
-    priority: 1
-  },
-  {
-    name: 'premium_specialists',
-    industryType: 'Contractor',
-    employeeMin: 11,
-    employeeMax: 100,
-    revenueMin: 1,
-    revenueMax: 10,
-    keywords: ['premium', 'luxury', 'high-end', 'upscale'],
-    priority: 2
-  },
-  {
-    name: 'regional_growth',
-    industryType: 'Contractor',
-    employeeMin: 11,
+    employeeMin: 15,
     employeeMax: 50,
-    revenueMin: 1,
-    revenueMax: 10,
-    priority: 3
+    revenueMin: 2,
+    revenueMax: 8,
+    keywords: ['smart home', 'home automation', 'smart living', 'connected home', 'google nest', 'nest certified', 'technology integration', 'iot', 'voice control', 'whole home automation'],
+    priority: 1  // 30% allocation
+  },
+  {
+    name: 'customer_experience',
+    industryType: 'Contractor',
+    employeeMin: 10,
+    employeeMax: 40,
+    revenueMin: 1.5,
+    revenueMax: 6,
+    keywords: ['white-glove', 'customer satisfaction', 'peace of mind', 'trusted', 'reliable', 'family-owned', 'customer-first', 'service excellence', 'relationship', 'maintenance plans'],
+    priority: 2  // 25% allocation
   },
   {
     name: 'high_volume',
     industryType: 'Contractor',
     employeeMin: 25,
-    employeeMax: 200,
-    revenueMin: 3,
-    revenueMax: 10,
-    priority: 4
+    employeeMax: 100,
+    revenueMin: 5,
+    revenueMax: 25,
+    keywords: ['builder services', 'new construction', 'volume', 'fleet', 'commercial residential', 'multi-family', 'developer', 'licensed and insured'],
+    priority: 3  // 20% allocation
+  },
+  {
+    name: 'premium_specialists',
+    industryType: 'Contractor',
+    employeeMin: 5,
+    employeeMax: 25,
+    revenueMin: 1,
+    revenueMax: 5,
+    keywords: ['luxury', 'estate', 'custom', 'bespoke', 'premier', 'exclusive', 'high-end', 'premium', 'sophisticated', 'concierge', 'white-glove', 'architectural'],
+    priority: 4  // 10% allocation
+  },
+  {
+    name: 'regional_growth',
+    industryType: 'Contractor',
+    employeeMin: 8,
+    employeeMax: 30,
+    revenueMin: 1,
+    revenueMax: 4,
+    keywords: ['now serving', 'expanding to', 'recently opened', 'new location', 'growing', 'opening soon', 'now hiring', 'join our team', 'career opportunities'],
+    priority: 5  // 8% allocation
+  },
+  {
+    name: 'specialty_integrators',
+    industryType: 'Contractor',
+    employeeMin: 5,
+    employeeMax: 20,
+    revenueMin: 1,
+    revenueMax: 4,
+    keywords: ['building automation', 'bms', 'controls', 'integration', 'smart building', 'commercial hvac', 'systems integration', 'automation controls', 'ddc', 'leed', 'energy management', 'bacnet', 'modbus'],
+    priority: 6  // 4% allocation
+  },
+  {
+    name: 'traditionalists',
+    industryType: 'Contractor',
+    employeeMin: 3,
+    employeeMax: 15,
+    revenueMin: 0.5,
+    revenueMax: 2,
+    keywords: ['trusted', 'family-owned', 'since', 'local', 'reliable', 'honest', 'fair', 'dependable', 'established', 'traditional', '24/7', 'emergency service'],
+    priority: 7  // 3% allocation
   }
 ];
 
@@ -177,16 +209,30 @@ export function determineSegment(company: any, updates: any): string | null {
     }
   }
   
-  // Default fallback based on size if no specific match
-  if (employees) {
+  // Default fallback based on size and revenue if no keyword match
+  if (employees || revenue) {
     if (industryType === 'Builder') {
-      if (employees >= 201) return 'production_tract';
-      if (employees >= 51) return 'regional_mid_volume';
+      if (employees >= 201 || (revenue && revenue >= 50)) return 'production_tract';
+      if (employees >= 51 || (revenue && revenue >= 10)) return 'regional_mid_volume';
       return 'spec_home'; // Small builders
     } else if (industryType === 'Contractor') {
-      if (employees >= 50) return 'premium_specialists';
-      if (employees >= 25) return 'high_volume';
-      if (employees >= 11) return 'regional_growth';
+      // High volume: 25-100+ employees, $5M+ revenue
+      if (employees >= 25 && revenue && revenue >= 5) return 'high_volume';
+      
+      // Smart home champions: 15-50 employees, $2M-$8M revenue
+      if (employees >= 15 && employees <= 50 && revenue && revenue >= 2) return 'smart_home_champions';
+      
+      // Customer experience: 10-40 employees, $1.5M-$6M revenue
+      if (employees >= 10 && employees <= 40 && revenue && revenue >= 1.5) return 'customer_experience';
+      
+      // Regional growth: 8-30 employees, $1M-$4M revenue
+      if (employees >= 8 && employees <= 30 && revenue && revenue >= 1) return 'regional_growth';
+      
+      // Premium specialists: 5-25 employees, $1M-$5M revenue
+      if (employees >= 5 && employees <= 25) return 'premium_specialists';
+      
+      // Traditionalists: 3-15 employees, $500K-$2M revenue (smallest)
+      if (employees >= 3) return 'traditionalists';
     }
   }
   

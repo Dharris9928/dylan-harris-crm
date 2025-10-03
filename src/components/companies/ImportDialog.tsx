@@ -430,7 +430,11 @@ export function ImportDialog({ open, onClose, onImportComplete }: ImportDialogPr
                         <SelectItem value="builder_segment">Builder Segment</SelectItem>
                         <SelectItem value="contractor_segment">Contractor Segment</SelectItem>
                         <SelectItem value="primary_phone">Phone</SelectItem>
+                        <SelectItem value="address_line1">Street Address</SelectItem>
+                        <SelectItem value="address_line2">Street Address 2</SelectItem>
                         <SelectItem value="city">City</SelectItem>
+                        <SelectItem value="state">State/Region</SelectItem>
+                        <SelectItem value="zip">Postal Code</SelectItem>
                         <SelectItem value="linkedin_company_url">LinkedIn URL</SelectItem>
                         <SelectItem value="status">Status</SelectItem>
                         <SelectItem value="priority_tier">Priority Tier</SelectItem>

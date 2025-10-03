@@ -518,7 +518,7 @@ Return ONLY factual information you can verify. If you cannot find accurate info
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'llama-3.1-sonar-large-128k-online',
+      model: 'sonar-pro',
       messages: [
         {
           role: 'system',
@@ -529,9 +529,8 @@ Return ONLY factual information you can verify. If you cannot find accurate info
           content: prompt
         }
       ],
-      temperature: 0.1,
-      max_tokens: 1000,
-      return_related_questions: false
+      temperature: 0.2,
+      max_tokens: 1000
     }),
   });
 

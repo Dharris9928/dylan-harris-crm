@@ -54,7 +54,6 @@ serve(async (req) => {
     console.log(`Searching Apollo for: ${companyName}`);
     
     const searchPayload: any = {
-      api_key: APOLLO_API_KEY,
       q_organization_name: companyName,
       page: 1,
       per_page: 1
@@ -68,6 +67,7 @@ serve(async (req) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-Api-Key': APOLLO_API_KEY,
         'Cache-Control': 'no-cache'
       },
       body: JSON.stringify(searchPayload)

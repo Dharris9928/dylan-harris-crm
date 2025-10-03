@@ -130,22 +130,59 @@ serve(async (req) => {
         console.log('Claude enrichment successful');
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.error('Claude enrichment failed:', errorMessage);
+        console.error('Claude enrichment failed, trying Perplexity as final fallback:', errorMessage);
         
-        // Log failure
-        await supabase.from('enrichment_logs').insert({
-          company_id: companyId,
-          provider,
-          enrichment_type: deepEnrich ? 'deep' : 'standard',
-          status: 'failed',
-          error_message: errorMessage,
-          created_by: user.id
-        });
+        // Try Perplexity as complete fallback when Claude fails
+        try {
+          console.log('Attempting Perplexity as primary enrichment source...');
+          provider = 'perplexity';
+          
+          // Identify all potentially enrichable fields
+          const allMissingFields = [
+            'website_url', 'linkedin_company_url', 'primary_phone',
+            'total_employees', 'total_employees_range', 'annual_revenue_range',
+            'years_in_business', 'city', 'state', 'facebook_url', 'instagram_url',
+            'technology_adoption_level', 'online_review_rating'
+          ].filter(field => !company[field] || company[field] === '');
+          
+          const perplexityData = await enrichWithPerplexity(company, allMissingFields);
+          
+          if (perplexityData && Object.keys(perplexityData).length > 0) {
+            console.log(`Perplexity enriched ${Object.keys(perplexityData).length} fields as primary source`);
+            enrichmentResult = {
+              companyUpdates: perplexityData,
+              fieldsEnriched: Object.keys(perplexityData),
+              confidence: 60,
+              insights: null
+            };
+          } else {
+            throw new Error('Perplexity returned no data');
+          }
+        } catch (perplexityError) {
+          const perplexityMessage = perplexityError instanceof Error ? perplexityError.message : 'Unknown error';
+          console.error('Perplexity fallback also failed:', perplexityMessage);
+          
+          // Log complete failure
+          await supabase.from('enrichment_logs').insert({
+            company_id: companyId,
+            provider: 'claude',
+            enrichment_type: deepEnrich ? 'deep' : 'standard',
+            status: 'failed',
+            error_message: `Claude: ${errorMessage}; Perplexity: ${perplexityMessage}`,
+            created_by: user.id
+          });
 
-        return new Response(
-          JSON.stringify({ error: 'Enrichment failed', details: errorMessage }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+          return new Response(
+            JSON.stringify({ 
+              error: 'All enrichment providers failed', 
+              details: {
+                claude: errorMessage,
+                perplexity: perplexityMessage
+              }
+            }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
       }
     }
 

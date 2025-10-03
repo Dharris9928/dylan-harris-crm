@@ -16,6 +16,7 @@ import {
   type ImportResult,
   type CompanyWithContacts
 } from '@/lib/prospecting/importApolloCSV';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ApolloCSVImportDialogProps {
   open: boolean;
@@ -123,6 +124,30 @@ export function ApolloCSVImportDialog({
 
       setImportResults(results);
       setStep('complete');
+
+      // Log the import activity
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        try {
+          const totalRecords = groupedData.reduce((sum, g) => sum + g.contacts.length + 1, 0);
+          await supabase.from('import_export_logs').insert({
+            user_id: user.id,
+            activity_type: 'import',
+            table_name: 'companies',
+            record_count: totalRecords,
+            successful_count: results.companiesCreated + results.contactsCreated,
+            failed_count: results.errors.length,
+            duplicate_count: results.duplicatesSkipped,
+            file_format: file?.name.split('.').pop()?.toUpperCase(),
+            error_summary: results.errors.length > 0 
+              ? `${results.errors.length} errors occurred` 
+              : null,
+            detailed_errors: results.errors.length > 0 ? results.errors : null
+          });
+        } catch (error) {
+          console.error('Failed to log import activity:', error);
+        }
+      }
 
       if (results.companiesCreated > 0 || results.contactsCreated > 0) {
         onImportComplete();

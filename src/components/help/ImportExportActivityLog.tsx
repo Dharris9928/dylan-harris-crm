@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, Download, CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import { Upload, Download, CheckCircle2, AlertCircle, Clock, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 
 interface ImportExportLog {
@@ -15,12 +15,14 @@ interface ImportExportLog {
   duplicate_count: number;
   file_format: string | null;
   error_summary: string | null;
+  detailed_errors: string[] | null;
   created_at: string;
 }
 
 export function ImportExportActivityLog() {
   const [logs, setLogs] = useState<ImportExportLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchLogs();
@@ -148,9 +150,26 @@ export function ImportExportActivityLog() {
                     </div>
                     
                     {log.error_summary && (
-                      <p className="text-xs text-destructive mt-1">
-                        {log.error_summary}
-                      </p>
+                      <div className="mt-2">
+                        <div 
+                          className="p-2 bg-destructive/10 border border-destructive/20 rounded text-xs text-destructive cursor-pointer hover:bg-destructive/20 transition-colors flex items-center justify-between"
+                          onClick={() => setExpandedLogId(expandedLogId === log.id ? null : log.id)}
+                        >
+                          <span>{log.error_summary}</span>
+                          {log.detailed_errors && log.detailed_errors.length > 0 && (
+                            <ChevronRight className={`h-4 w-4 transition-transform ${expandedLogId === log.id ? 'rotate-90' : ''}`} />
+                          )}
+                        </div>
+                        {expandedLogId === log.id && log.detailed_errors && log.detailed_errors.length > 0 && (
+                          <div className="mt-2 p-3 bg-muted border border-border rounded text-xs max-h-64 overflow-y-auto space-y-1">
+                            {log.detailed_errors.map((error, idx) => (
+                              <div key={idx} className="text-muted-foreground font-mono">
+                                {error}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>

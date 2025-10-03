@@ -381,7 +381,8 @@ export function ImportDialog({ open, onClose, onImportComplete }: ImportDialogPr
           file_format: file?.name.split('.').pop()?.toUpperCase(),
           error_summary: results.errors.length > 0 
             ? `${results.errors.length} errors occurred` 
-            : null
+            : null,
+          detailed_errors: results.errors.length > 0 ? results.errors : null
         });
       } catch (error) {
         console.error('Failed to log import activity:', error);

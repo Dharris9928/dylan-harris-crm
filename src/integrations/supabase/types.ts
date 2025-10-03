@@ -908,6 +908,7 @@ export type Database = {
         Row: {
           activity_type: string
           created_at: string
+          detailed_errors: Json | null
           duplicate_count: number
           error_summary: string | null
           failed_count: number
@@ -922,6 +923,7 @@ export type Database = {
         Insert: {
           activity_type: string
           created_at?: string
+          detailed_errors?: Json | null
           duplicate_count?: number
           error_summary?: string | null
           failed_count?: number
@@ -936,6 +938,7 @@ export type Database = {
         Update: {
           activity_type?: string
           created_at?: string
+          detailed_errors?: Json | null
           duplicate_count?: number
           error_summary?: string | null
           failed_count?: number

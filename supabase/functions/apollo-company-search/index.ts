@@ -27,6 +27,7 @@ serve(async (req) => {
       employeeRange,
       revenueRange,
       states,
+      countries,
       technologies,
       page = 1
     } = await req.json();
@@ -59,6 +60,13 @@ serve(async (req) => {
     // Add location filter
     if (states && states.length > 0) {
       searchPayload.organization_locations = states;
+    }
+
+    // Add country filter
+    if (countries && countries.length > 0) {
+      searchPayload.organization_not_locations = countries.map((c: string) => c);
+      // For Apollo API, use person_locations for country-level filtering
+      searchPayload.organization_locations = countries;
     }
 
     // Add employee range

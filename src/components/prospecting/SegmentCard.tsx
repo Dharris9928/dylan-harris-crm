@@ -17,6 +17,7 @@ interface SegmentConfig {
     employeeRange?: string;
     revenueRange?: string;
     states?: string[];
+    countries?: string[];
   };
   color: string;
   industryType: 'Builder' | 'Contractor';
@@ -70,6 +71,7 @@ export function SegmentCard({ segment }: SegmentCardProps) {
           employeeRange: segment.apolloFilters.employeeRange,
           revenueRange: segment.apolloFilters.revenueRange,
           states: segment.apolloFilters.states,
+          countries: segment.apolloFilters.countries,
           page: 1
         }
       });

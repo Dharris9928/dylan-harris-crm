@@ -13,7 +13,8 @@ const SEGMENT_CONFIGS = [
       keywords: ['home builder', 'custom homes', 'luxury homes'],
       employeeRange: '51,500',
       revenueRange: '10M-50M',
-      states: undefined
+      states: undefined,
+      countries: ['United States', 'Canada']
     },
     color: 'border-l-primary',
     industryType: 'Builder' as const
@@ -27,7 +28,8 @@ const SEGMENT_CONFIGS = [
       keywords: ['home builder', 'production builder', 'residential construction'],
       employeeRange: '201,1000',
       revenueRange: '50M-100M',
-      states: undefined
+      states: undefined,
+      countries: ['United States', 'Canada']
     },
     color: 'border-l-blue-500',
     industryType: 'Builder' as const
@@ -41,7 +43,8 @@ const SEGMENT_CONFIGS = [
       keywords: ['smart home', 'home automation', 'hvac contractor', 'electrical contractor'],
       employeeRange: '11,200',
       revenueRange: '1M-10M',
-      states: undefined
+      states: undefined,
+      countries: ['United States', 'Canada']
     },
     color: 'border-l-yellow-500',
     industryType: 'Contractor' as const
@@ -55,7 +58,8 @@ const SEGMENT_CONFIGS = [
       keywords: ['hvac', 'air conditioning', 'heating cooling'],
       employeeRange: '11,100',
       revenueRange: '1M-10M',
-      states: undefined
+      states: undefined,
+      countries: ['United States', 'Canada']
     },
     color: 'border-l-green-500',
     industryType: 'Contractor' as const
@@ -69,7 +73,8 @@ const SEGMENT_CONFIGS = [
       keywords: ['hvac contractor', 'plumbing contractor', 'electrical contractor'],
       employeeRange: '11,50',
       revenueRange: '1M-10M',
-      states: undefined
+      states: undefined,
+      countries: ['United States', 'Canada']
     },
     color: 'border-l-purple-500',
     industryType: 'Contractor' as const
@@ -83,7 +88,8 @@ const SEGMENT_CONFIGS = [
       keywords: ['home builder', 'residential builder'],
       employeeRange: '51,200',
       revenueRange: '10M-50M',
-      states: undefined
+      states: undefined,
+      countries: ['United States', 'Canada']
     },
     color: 'border-l-orange-500',
     industryType: 'Builder' as const

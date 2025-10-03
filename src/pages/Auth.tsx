@@ -18,7 +18,7 @@ const passwordSchema = z.string()
   .regex(/[!@#$%^&*(),.?":{}|<>]/, "Password must contain at least one special character");
 
 const ALLOWED_DOMAINS = ['@google.com', '@gfieldsales.com', '@nestprorep.com'];
-const ADMIN_EXCEPTION = 'dharris9928@gmail.com';
+const ADMIN_EXCEPTION = import.meta.env.VITE_ADMIN_EMAIL || 'dharris9928@gmail.com';
 
 const validateEmailDomain = (email: string): boolean => {
   if (email.toLowerCase() === ADMIN_EXCEPTION.toLowerCase()) {

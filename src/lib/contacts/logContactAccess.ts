@@ -32,8 +32,10 @@ export async function logContactAccess(
 
     await supabase.from('contact_access_logs').insert(logs);
 
-    // Log to console for debugging (remove in production if needed)
-    console.log(`[Audit] User ${user.email} performed ${action} on ${contacts.length} contact(s)`, metadata);
+    // Log to console in development only
+    if (import.meta.env.DEV) {
+      console.log(`[Audit] User ${user.email} performed ${action} on ${contacts.length} contact(s)`, metadata);
+    }
   } catch (error) {
     // Log error but don't throw - audit logging should never break the UI
     console.error('[Audit] Failed to log contact access:', error);

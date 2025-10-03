@@ -483,8 +483,8 @@ export function ImportDialog({ open, onClose, onImportComplete }: ImportDialogPr
               <table className="w-full text-sm">
                 <thead className="bg-muted">
                   <tr>
-                    {Object.entries(columnMapping).filter(([_, v]) => v && v !== 'skip').map(([_, field]) => (
-                      <th key={field} className="px-4 py-2 text-left font-medium">
+                    {Object.entries(columnMapping).filter(([_, v]) => v && v !== 'skip').map(([fileCol, field]) => (
+                      <th key={fileCol} className="px-4 py-2 text-left font-medium">
                         {field}
                       </th>
                     ))}

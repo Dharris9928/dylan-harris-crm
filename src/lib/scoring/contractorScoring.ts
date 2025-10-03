@@ -126,7 +126,7 @@ export async function calculateContractorScore(companyId: string): Promise<Contr
       company.total_employees_range,
       'Contractor'
     );
-    stabilityScore += Math.min(employeeScore * 0.5, 2);
+    stabilityScore += Math.min(Math.round(employeeScore * 0.5), 2);
   }
   
   // Years component (0-2 points) - FROM RANGE
@@ -136,7 +136,7 @@ export async function calculateContractorScore(companyId: string): Promise<Contr
       company.years_in_business_range,
       'Contractor'
     );
-    stabilityScore += Math.min(yearsScore * 0.5, 2);
+    stabilityScore += Math.min(Math.round(yearsScore * 0.5), 2);
   }
   
   // Financial Health component (0-2.5 points)
@@ -163,7 +163,7 @@ export async function calculateContractorScore(companyId: string): Promise<Contr
   else if (company.financial_health_rating === 'Poor') financialScore += 0.25;
   else if (company.financial_health_rating === 'At Risk') financialScore += 0;
   
-  stabilityScore += Math.min(financialScore, 2.5);
+  stabilityScore += Math.min(Math.round(financialScore), 2);
   
   // Financial Stability Rubric - 15-point binary system scaled to 1.5 points (0-1.5 points)
   let rubricScore = 0;
@@ -172,16 +172,17 @@ export async function calculateContractorScore(companyId: string): Promise<Contr
   if (company.industry_awards_recognition) rubricScore += 3; // 3 pts
   if (company.positive_reviews_reputation) rubricScore += 2; // 2 pts
   // Scale 15-point rubric to 1.5 points: (rubricScore / 15) * 1.5
-  stabilityScore += Math.min((rubricScore / 15) * 1.5, 1.5);
+  stabilityScore += Math.min(Math.round((rubricScore / 15) * 1.5), 2);
   
-  scoring.stabilityScore = Math.min(stabilityScore, 8);
+  scoring.stabilityScore = Math.min(Math.round(stabilityScore), 8);
 
-  scoring.firmographicTotal = 
+  scoring.firmographicTotal = Math.round(
     scoring.volumeScore +
     scoring.revenueScore +
     scoring.businessModelScore +
     scoring.geographicScore +
-    scoring.stabilityScore;
+    scoring.stabilityScore
+  );
 
   // ============================================
   // DIGITAL ENGAGEMENT (30 points)
@@ -223,10 +224,11 @@ export async function calculateContractorScore(companyId: string): Promise<Contr
   
   scoring.technologyAdoptionScore = Math.min(techScore, 10);
   
-  scoring.digitalTotal = 
+  scoring.digitalTotal = Math.round(
     scoring.websiteQualityScore +
     scoring.linkedinActivityScore +
-    scoring.technologyAdoptionScore;
+    scoring.technologyAdoptionScore
+  );
 
   // ============================================
   // CONTACT QUALITY (20 points)
@@ -273,18 +275,20 @@ export async function calculateContractorScore(companyId: string): Promise<Contr
   scoring.decisionAuthorityScore = maxRoleScore;
   scoring.linkedinProfessionalScore = Math.min(maxLinkedInScore, 10);
   
-  scoring.contactTotal = 
+  scoring.contactTotal = Math.round(
     scoring.decisionAuthorityScore +
-    scoring.linkedinProfessionalScore;
+    scoring.linkedinProfessionalScore
+  );
 
   // ============================================
   // TOTAL SCORE
   // ============================================
   
-  scoring.totalScore = 
+  scoring.totalScore = Math.round(
     scoring.firmographicTotal +
     scoring.digitalTotal +
-    scoring.contactTotal;
+    scoring.contactTotal
+  );
 
   scoring.priorityTier = assignPriorityTier(scoring.totalScore);
   scoring.confidence = calculateConfidence(company);
@@ -294,7 +298,7 @@ export async function calculateContractorScore(companyId: string): Promise<Contr
   await supabase
     .from('companies')
     .update({
-      lead_score: scoring.totalScore,
+      lead_score: Math.round(scoring.totalScore),
       priority_tier: scoring.priorityTier,
       segment_confidence: scoring.confidence,
       score_calculated_at: new Date().toISOString()
@@ -310,20 +314,20 @@ async function saveContractorScore(companyId: string, scoring: ContractorScoring
     .upsert(
       {
         company_id: companyId,
-        volume_score: scoring.volumeScore,
-        revenue_score: scoring.revenueScore,
-        business_model_score: scoring.businessModelScore,
-        geographic_score: scoring.geographicScore,
-        stability_score: scoring.stabilityScore,
-        firmographic_total: scoring.firmographicTotal,
-        website_quality_score: scoring.websiteQualityScore,
-        social_media_score: scoring.linkedinActivityScore,
-        technology_adoption_score: scoring.technologyAdoptionScore,
-        digital_total: scoring.digitalTotal,
-        decision_authority_score: scoring.decisionAuthorityScore,
-        linkedin_professional_score: scoring.linkedinProfessionalScore,
-        contact_total: scoring.contactTotal,
-        total_score: scoring.totalScore,
+        volume_score: Math.round(scoring.volumeScore),
+        revenue_score: Math.round(scoring.revenueScore),
+        business_model_score: Math.round(scoring.businessModelScore),
+        geographic_score: Math.round(scoring.geographicScore),
+        stability_score: Math.round(scoring.stabilityScore),
+        firmographic_total: Math.round(scoring.firmographicTotal),
+        website_quality_score: Math.round(scoring.websiteQualityScore),
+        social_media_score: Math.round(scoring.linkedinActivityScore),
+        technology_adoption_score: Math.round(scoring.technologyAdoptionScore),
+        digital_total: Math.round(scoring.digitalTotal),
+        decision_authority_score: Math.round(scoring.decisionAuthorityScore),
+        linkedin_professional_score: Math.round(scoring.linkedinProfessionalScore),
+        contact_total: Math.round(scoring.contactTotal),
+        total_score: Math.round(scoring.totalScore),
         priority_tier: scoring.priorityTier,
         confidence: mapConfidenceToDbFormat(scoring.confidence),
         calculated_at: new Date().toISOString()

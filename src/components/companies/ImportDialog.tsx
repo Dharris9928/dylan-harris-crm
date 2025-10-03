@@ -162,10 +162,19 @@ export function ImportDialog({ open, onClose, onImportComplete }: ImportDialogPr
         const mappedData: any = {};
         Object.entries(columnMapping).forEach(([fileCol, crmField]) => {
           if (crmField && row[fileCol] !== undefined && row[fileCol] !== null && row[fileCol] !== '') {
-            // Handle industry_specialties as comma-separated array
+            // Handle industry_specialties as comma-separated array with value mapping
             if (crmField === 'industry_specialties') {
               const value = String(row[fileCol]).trim();
-              mappedData[crmField] = value.split(',').map(s => s.trim()).filter(s => s);
+              const valueMap: Record<string, string> = {
+                'HVAC_PROFESSIONAL': 'HVAC',
+                'Electrician': 'Electrical',
+                'Plumber': 'Plumbing',
+                'Both Garage Door and/or Smart Home': 'General Contracting'
+              };
+              mappedData[crmField] = value.split(',').map(s => {
+                const trimmed = s.trim();
+                return valueMap[trimmed] || trimmed;
+              }).filter(s => s);
             } else {
               mappedData[crmField] = row[fileCol];
             }

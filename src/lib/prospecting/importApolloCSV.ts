@@ -89,6 +89,7 @@ export function getApolloFieldMapping(): Record<string, string> {
 
 /**
  * Parse employee count/range to format expected by CRM
+ * Database expects: "1-4", "5-9", "10-24", "25-49", "50-99", "100-249", "250-499", "500+"
  */
 function parseEmployeeRange(value: string | number): string | null {
   if (!value) return null;
@@ -96,31 +97,23 @@ function parseEmployeeRange(value: string | number): string | null {
   // Convert to string if it's a number
   const strValue = String(value).trim();
   
-  const rangeMap: Record<string, string> = {
-    '1-10': '1-10',
-    '11-50': '11-50',
-    '51-200': '51-200',
-    '201-500': '201-500',
-    '501-1000': '501-1000',
-    '1001-5000': '1001-5000',
-    '5001-10000': '5001-10000',
-    '10000+': '10000+'
-  };
-
+  // Valid database ranges
+  const validRanges = ['1-4', '5-9', '10-24', '25-49', '50-99', '100-249', '250-499', '500+'];
+  
   // Try exact match
-  if (rangeMap[strValue]) return rangeMap[strValue];
+  if (validRanges.includes(strValue)) return strValue;
 
   // Parse as number (handles both "29" and 29)
   const num = parseInt(strValue);
   if (!isNaN(num)) {
-    if (num <= 10) return '1-10';
-    if (num <= 50) return '11-50';
-    if (num <= 200) return '51-200';
-    if (num <= 500) return '201-500';
-    if (num <= 1000) return '501-1000';
-    if (num <= 5000) return '1001-5000';
-    if (num <= 10000) return '5001-10000';
-    return '10000+';
+    if (num <= 4) return '1-4';
+    if (num <= 9) return '5-9';
+    if (num <= 24) return '10-24';
+    if (num <= 49) return '25-49';
+    if (num <= 99) return '50-99';
+    if (num <= 249) return '100-249';
+    if (num <= 499) return '250-499';
+    return '500+';
   }
 
   return null;

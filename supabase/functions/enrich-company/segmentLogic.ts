@@ -12,43 +12,76 @@ interface SegmentCriteria {
 }
 
 const SEGMENT_DEFINITIONS: SegmentCriteria[] = [
-  // Builder Segments
+  // Builder Segments (Priority: 40%, 25%, 15%, 8%, 7%, 3%, 2%)
   {
     name: 'production_tract',
     industryType: 'Builder',
     employeeMin: 201,
     employeeMax: 1000,
     revenueMin: 50,
-    revenueMax: 100,
-    priority: 1
-  },
-  {
-    name: 'luxury_custom',
-    industryType: 'Builder',
-    employeeMin: 51,
-    employeeMax: 500,
-    revenueMin: 10,
-    revenueMax: 50,
-    keywords: ['luxury', 'custom', 'premium', 'high-end'],
-    priority: 2
+    revenueMax: 2000,  // Up to $2B
+    keywords: ['production builder', 'home builder', 'new communities', 'master planned', 'subdivisions', 'model homes', 'multiple communities', 'communities'],
+    priority: 1  // 40% allocation
   },
   {
     name: 'regional_mid_volume',
     industryType: 'Builder',
-    employeeMin: 51,
+    employeeMin: 11,
     employeeMax: 200,
     revenueMin: 10,
     revenueMax: 50,
-    priority: 3
+    keywords: ['custom builder', 'semi-custom', 'design center', 'premium homes', 'luxury builder', 'move-up', 'customization', 'upgrade packages'],
+    priority: 2  // 25% allocation
+  },
+  {
+    name: 'spec_home',
+    industryType: 'Builder',
+    employeeMin: 5,
+    employeeMax: 50,
+    revenueMin: 3,
+    revenueMax: 15,
+    keywords: ['spec homes', 'inventory homes', 'move-in ready', 'available homes', 'quick close', 'under construction', 'nearly complete'],
+    priority: 3  // 15% allocation
+  },
+  {
+    name: 'luxury_custom',
+    industryType: 'Builder',
+    employeeMin: 5,
+    employeeMax: 50,
+    revenueMin: 5,
+    revenueMax: 25,
+    keywords: ['custom luxury', 'estate homes', 'luxury builder', 'architecture', 'design-build', 'bespoke', 'white-glove', 'architectural design', 'ultra-premium'],
+    priority: 4  // 8% allocation
   },
   {
     name: 'multi_family',
     industryType: 'Builder',
     employeeMin: 51,
     employeeMax: 500,
-    revenueMin: 10,
-    keywords: ['multi-family', 'apartment', 'multifamily'],
-    priority: 4
+    revenueMin: 25,
+    revenueMax: 200,
+    keywords: ['multi-family', 'apartment', 'mixed-use', 'community', 'development', 'residential communities', 'condo', 'townhome', 'urban lifestyle'],
+    priority: 5  // 7% allocation
+  },
+  {
+    name: 'affordable_housing',
+    industryType: 'Builder',
+    employeeMin: 5,
+    employeeMax: 100,
+    revenueMin: 5,
+    revenueMax: 20,
+    keywords: ['affordable housing', 'workforce housing', 'first-time buyer', 'community development', 'hud', 'usda', 'income-qualified', 'green building'],
+    priority: 6  // 3% allocation
+  },
+  {
+    name: 'active_adult',
+    industryType: 'Builder',
+    employeeMin: 10,
+    employeeMax: 200,
+    revenueMin: 15,
+    revenueMax: 40,
+    keywords: ['active adult', '55+', 'retirement community', 'age-restricted', 'senior living', 'maintenance-free', 'resort lifestyle'],
+    priority: 7  // 2% allocation
   },
   
   // Contractor Segments (Priority: 30%, 25%, 20%, 10%, 8%, 4%, 3%)
@@ -212,9 +245,29 @@ export function determineSegment(company: any, updates: any): string | null {
   // Default fallback based on size and revenue if no keyword match
   if (employees || revenue) {
     if (industryType === 'Builder') {
+      // Production/Tract: 201-1000+ employees, $50M+ revenue
       if (employees >= 201 || (revenue && revenue >= 50)) return 'production_tract';
-      if (employees >= 51 || (revenue && revenue >= 10)) return 'regional_mid_volume';
-      return 'spec_home'; // Small builders
+      
+      // Multi-Family: 51-500 employees, $25M+ revenue (check before regional mid-volume)
+      if (employees >= 51 && revenue && revenue >= 25) return 'multi_family';
+      
+      // Regional Mid-Volume: 11-200 employees, $10M-$50M revenue
+      if (employees >= 11 && employees <= 200 && revenue && revenue >= 10 && revenue <= 50) return 'regional_mid_volume';
+      
+      // Active Adult: 10-200 employees, $15M-$40M revenue
+      if (employees >= 10 && employees <= 200 && revenue && revenue >= 15 && revenue <= 40) return 'active_adult';
+      
+      // Luxury Custom: 5-50 employees, $5M-$25M revenue
+      if (employees >= 5 && employees <= 50 && revenue && revenue >= 5 && revenue <= 25) return 'luxury_custom';
+      
+      // Affordable Housing: 5-100 employees, $5M-$20M revenue
+      if (employees >= 5 && employees <= 100 && revenue && revenue >= 5 && revenue <= 20) return 'affordable_housing';
+      
+      // Spec Home: 5-50 employees, $3M-$15M revenue (smallest builders)
+      if (employees >= 5 && employees <= 50 && revenue && revenue >= 3) return 'spec_home';
+      
+      // Fallback for small builders
+      return 'spec_home';
     } else if (industryType === 'Contractor') {
       // High volume: 25-100+ employees, $5M+ revenue
       if (employees >= 25 && revenue && revenue >= 5) return 'high_volume';

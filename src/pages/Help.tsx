@@ -1191,10 +1191,22 @@ const Help = () => {
         </CardContent>
       </Card>
 
-      {/* Admin-Only Section: Enrichment Errors */}
+      {/* Activity Logs Section */}
       <div className="mt-8 space-y-6">
-        <ImportExportActivityLog />
-        <EnrichmentErrorLog />
+        <div className="border-b pb-2">
+          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <Clock className="h-6 w-6 text-primary" />
+            System Activity Logs
+          </h2>
+          <p className="text-muted-foreground mt-1">
+            Track and monitor all import, export, and enrichment activities
+          </p>
+        </div>
+        
+        <div className="space-y-6">
+          <ImportExportActivityLog />
+          <EnrichmentErrorLog />
+        </div>
       </div>
 
       <Card className="bg-muted/50">

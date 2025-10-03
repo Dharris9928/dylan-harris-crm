@@ -194,7 +194,7 @@ serve(async (req) => {
     console.log(`Successfully applied ${appliedFields.length} fields:`, appliedFields);
 
     // Log the manual re-application
-    await supabase.from('enrichment_logs').insert({
+    const { error: insertError } = await supabase.from('enrichment_logs').insert({
       company_id: log.company_id,
       provider: log.provider + '_manual',
       enrichment_type: 'manual_reapply',
@@ -203,6 +203,18 @@ serve(async (req) => {
       fields_enriched: updates,
       created_by: user.id
     });
+    
+    if (insertError) {
+      console.error('Failed to create manual reapply log:', insertError);
+      console.error('Log data:', {
+        company_id: log.company_id,
+        provider: log.provider + '_manual',
+        enrichment_type: 'manual_reapply',
+        fields_enriched: updates
+      });
+    } else {
+      console.log('Manual reapply log created successfully');
+    }
 
     return new Response(
       JSON.stringify({

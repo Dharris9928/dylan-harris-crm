@@ -168,14 +168,19 @@ serve(async (req) => {
     }
 
     if (!enrichmentResult) {
-      await supabase.from('enrichment_logs').insert({
+      const { error: logError } = await supabase.from('enrichment_logs').insert({
         company_id: companyId,
         provider: provider || 'none',
         enrichment_type: deepEnrich ? 'deep' : 'standard',
         status: 'failed',
         error_message: 'All selected enrichment providers failed',
+        fields_enriched: {},
         created_by: user.id
       });
+      
+      if (logError) {
+        console.error('Failed to create failure enrichment log:', logError);
+      }
       
       return new Response(
         JSON.stringify({ error: 'All selected enrichment providers failed. Please try selecting different providers.' }),
@@ -270,15 +275,20 @@ serve(async (req) => {
 
     // If nothing to update, still log and return success
     if (Object.keys(updates).length === 0) {
-      await supabase.from('enrichment_logs').insert({
+      const { error: logError } = await supabase.from('enrichment_logs').insert({
         company_id: companyId,
         provider,
         enrichment_type: deepEnrich ? 'deep' : 'standard',
         status: 'success',
         confidence_score: enrichmentResult.confidence,
-        fields_enriched: [],
+        fields_enriched: {},
         created_by: user.id
       });
+      
+      if (logError) {
+        console.error('Failed to create enrichment log (no updates):', logError);
+      }
+      
       return new Response(
         JSON.stringify({ success: true, provider, apolloEnriched: !!apolloData, confidence: enrichmentResult.confidence, fieldsEnriched: [], insights: enrichmentResult.insights, scoreRecalculationTriggered: false }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -355,16 +365,25 @@ serve(async (req) => {
 
     if (updateError) {
       // Log failure with attempted fields
-      await supabase.from('enrichment_logs').insert({
+      const attemptedFields: Record<string, any> = {};
+      Object.keys(updates).forEach(key => {
+        attemptedFields[key] = updates[key];
+      });
+      
+      const { error: logError } = await supabase.from('enrichment_logs').insert({
         company_id: companyId,
         provider,
         enrichment_type: deepEnrich ? 'deep' : 'standard',
         status: 'failed',
         confidence_score: enrichmentResult.confidence,
-        fields_enriched: Object.keys(updates),
+        fields_enriched: attemptedFields,
         error_message: (updateError as any).message || 'Update failed',
         created_by: user.id
       });
+      
+      if (logError) {
+        console.error('Failed to create failure log:', logError);
+      }
 
       return new Response(
         JSON.stringify({ error: 'Update failed', details: (updateError as any).message || 'Unknown error' }),
@@ -402,7 +421,7 @@ serve(async (req) => {
     });
 
     // Log enrichment with persisted fields and their values
-    await supabase.from('enrichment_logs').insert({
+    const { error: logError } = await supabase.from('enrichment_logs').insert({
       company_id: companyId,
       provider,
       enrichment_type: deepEnrich ? 'deep' : 'standard',
@@ -411,6 +430,21 @@ serve(async (req) => {
       fields_enriched: enrichedDataWithValues,
       created_by: user.id
     });
+
+    if (logError) {
+      console.error('Failed to create enrichment log:', logError);
+      console.error('Log data:', {
+        company_id: companyId,
+        provider,
+        enrichment_type: deepEnrich ? 'deep' : 'standard',
+        status: 'success',
+        confidence_score: enrichmentResult.confidence,
+        fields_enriched: enrichedDataWithValues,
+        created_by: user.id
+      });
+    } else {
+      console.log('Enrichment log created successfully');
+    }
 
     // Trigger score recalculation by updating company timestamp
     await supabase

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { enrichWithDeepseek } from "./enrichWithDeepseek.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -29,7 +30,7 @@ serve(async (req) => {
   }
 
   try {
-    const { companyId, deepEnrich = false, previewOnly = false } = await req.json();
+    const { companyId, deepEnrich = false, previewOnly = false, providers = ['apollo', 'gemini', 'claude', 'deepseek', 'perplexity'] } = await req.json();
 
     if (!companyId) {
       return new Response(
@@ -79,14 +80,15 @@ serve(async (req) => {
     console.log(`Starting enrichment for company: ${company.company_name} (${companyId})`);
 
     let enrichmentResult;
-    let provider = 'lovable_ai';
+    let provider = 'none';
     let fallbackUsed = false;
 
-    // First, try Apollo for accurate business data
+    // First, try Apollo for accurate business data (if enabled)
     let apolloData = null;
-    try {
-      console.log('Attempting Apollo enrichment first for business metrics...');
-      const apolloResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/apollo-enrich`, {
+    if (providers.includes('apollo')) {
+      try {
+        console.log('Attempting Apollo enrichment first for business metrics...');
+        const apolloResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/apollo-enrich`, {
         method: 'POST',
         headers: {
           'Authorization': authHeader,
@@ -106,38 +108,36 @@ serve(async (req) => {
           console.log(`Apollo found data: ${apolloResult.fieldsEnriched?.length || 0} fields`);
         }
       }
-    } catch (error) {
-      console.log('Apollo enrichment skipped:', error instanceof Error ? error.message : 'Unknown error');
-    }
-
-    // Try Lovable AI (Gemini) for comprehensive enrichment
-    if (!deepEnrich) {
-      try {
-        enrichmentResult = await enrichWithLovableAI(company);
-        console.log('Lovable AI enrichment successful');
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.error('Lovable AI failed, falling back to Claude:', errorMessage);
-        fallbackUsed = true;
+        console.log('Apollo enrichment skipped:', error instanceof Error ? error.message : 'Unknown error');
       }
     }
 
-    // Use Claude for deep enrichment or if Lovable AI failed
-    if (deepEnrich || fallbackUsed) {
-      provider = 'claude';
+    // Build list of available AI providers based on user selection
+    const availableProviders = [];
+    if (providers.includes('gemini')) availableProviders.push('gemini');
+    if (providers.includes('claude')) availableProviders.push('claude');
+    if (providers.includes('deepseek')) availableProviders.push('deepseek');
+    if (providers.includes('perplexity')) availableProviders.push('perplexity');
+
+    // Try AI providers in order of preference
+    for (const providerName of availableProviders) {
+      if (enrichmentResult) break; // Already succeeded
+      
       try {
-        enrichmentResult = await enrichWithClaude(company, deepEnrich);
-        console.log('Claude enrichment successful');
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.error('Claude enrichment failed, trying Perplexity as final fallback:', errorMessage);
+        console.log(`Attempting ${providerName} enrichment...`);
         
-        // Try Perplexity as complete fallback when Claude fails
-        try {
-          console.log('Attempting Perplexity as primary enrichment source...');
+        if (providerName === 'gemini' && !deepEnrich) {
+          provider = 'lovable_ai';
+          enrichmentResult = await enrichWithLovableAI(company);
+        } else if (providerName === 'claude') {
+          provider = 'claude';
+          enrichmentResult = await enrichWithClaude(company, deepEnrich);
+        } else if (providerName === 'deepseek') {
+          provider = 'deepseek';
+          enrichmentResult = await enrichWithDeepseek(company, deepEnrich);
+        } else if (providerName === 'perplexity') {
           provider = 'perplexity';
-          
-          // Identify all potentially enrichable fields
           const allMissingFields = [
             'website_url', 'linkedin_company_url', 'primary_phone',
             'total_employees', 'total_employees_range', 'annual_revenue_range',
@@ -146,49 +146,38 @@ serve(async (req) => {
           ].filter(field => !company[field] || company[field] === '');
           
           const perplexityData = await enrichWithPerplexity(company, allMissingFields);
-          
           if (perplexityData && Object.keys(perplexityData).length > 0) {
-            console.log(`Perplexity enriched ${Object.keys(perplexityData).length} fields as primary source`);
             enrichmentResult = {
               companyUpdates: perplexityData,
               fieldsEnriched: Object.keys(perplexityData),
               confidence: 60,
               insights: null
             };
-          } else {
-            throw new Error('Perplexity returned no data');
           }
-        } catch (perplexityError) {
-          const perplexityMessage = perplexityError instanceof Error ? perplexityError.message : 'Unknown error';
-          console.error('Perplexity fallback also failed:', perplexityMessage);
-          
-          // Log complete failure
-          await supabase.from('enrichment_logs').insert({
-            company_id: companyId,
-            provider: 'claude',
-            enrichment_type: deepEnrich ? 'deep' : 'standard',
-            status: 'failed',
-            error_message: `Claude: ${errorMessage}; Perplexity: ${perplexityMessage}`,
-            created_by: user.id
-          });
-
-          return new Response(
-            JSON.stringify({ 
-              error: 'All enrichment providers failed', 
-              details: {
-                claude: errorMessage,
-                perplexity: perplexityMessage
-              }
-            }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
         }
+        
+        if (enrichmentResult) {
+          console.log(`${providerName} enrichment successful`);
+          break;
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.error(`${providerName} enrichment failed:`, errorMessage);
       }
     }
 
     if (!enrichmentResult) {
+      await supabase.from('enrichment_logs').insert({
+        company_id: companyId,
+        provider: provider || 'none',
+        enrichment_type: deepEnrich ? 'deep' : 'standard',
+        status: 'failed',
+        error_message: 'All selected enrichment providers failed',
+        created_by: user.id
+      });
+      
       return new Response(
-        JSON.stringify({ error: 'No enrichment result' }),
+        JSON.stringify({ error: 'All selected enrichment providers failed. Please try selecting different providers.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -206,25 +195,27 @@ serve(async (req) => {
       ]));
     }
 
-    // Use Perplexity as final fallback to fill remaining blank fields
-    const missingFields = identifyMissingFields(company, enrichmentResult.companyUpdates);
-    if (missingFields.length > 0) {
-      console.log(`Attempting Perplexity fallback for ${missingFields.length} missing fields:`, missingFields);
-      try {
-        const perplexityData = await enrichWithPerplexity(company, missingFields);
-        if (perplexityData && Object.keys(perplexityData).length > 0) {
-          console.log(`Perplexity filled ${Object.keys(perplexityData).length} additional fields`);
-          enrichmentResult.companyUpdates = {
-            ...enrichmentResult.companyUpdates,
-            ...perplexityData
-          };
-          enrichmentResult.fieldsEnriched = Array.from(new Set([
-            ...enrichmentResult.fieldsEnriched,
-            ...Object.keys(perplexityData)
-          ]));
+    // Use Perplexity as final fallback to fill remaining blank fields (if enabled)
+    if (providers.includes('perplexity') && provider !== 'perplexity') {
+      const missingFields = identifyMissingFields(company, enrichmentResult.companyUpdates);
+      if (missingFields.length > 0) {
+        console.log(`Attempting Perplexity fallback for ${missingFields.length} missing fields:`, missingFields);
+        try {
+          const perplexityData = await enrichWithPerplexity(company, missingFields);
+          if (perplexityData && Object.keys(perplexityData).length > 0) {
+            console.log(`Perplexity filled ${Object.keys(perplexityData).length} additional fields`);
+            enrichmentResult.companyUpdates = {
+              ...enrichmentResult.companyUpdates,
+              ...perplexityData
+            };
+            enrichmentResult.fieldsEnriched = Array.from(new Set([
+              ...enrichmentResult.fieldsEnriched,
+              ...Object.keys(perplexityData)
+            ]));
+          }
+        } catch (error) {
+          console.log('Perplexity fallback failed:', error instanceof Error ? error.message : 'Unknown error');
         }
-      } catch (error) {
-        console.log('Perplexity fallback failed:', error instanceof Error ? error.message : 'Unknown error');
       }
     }
 

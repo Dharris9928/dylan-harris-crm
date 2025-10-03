@@ -7,8 +7,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { EnrichmentConfirmDialog } from './EnrichmentConfirmDialog';
 
 interface EnrichCompanyButtonProps {
@@ -21,15 +24,43 @@ export function EnrichCompanyButton({ companyId, onComplete }: EnrichCompanyButt
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [previewData, setPreviewData] = useState<any>(null);
   const [pendingDeepEnrich, setPendingDeepEnrich] = useState(false);
+  const [providers, setProviders] = useState({
+    apollo: true,
+    gemini: true,
+    claude: true,
+    deepseek: true,
+    perplexity: true,
+  });
   const { toast } = useToast();
 
+  const toggleProvider = (provider: keyof typeof providers) => {
+    setProviders(prev => ({ ...prev, [provider]: !prev[provider] }));
+  };
+
+  const getEnabledProviders = () => {
+    return Object.entries(providers)
+      .filter(([_, enabled]) => enabled)
+      .map(([name]) => name);
+  };
+
   const handleEnrich = async (deepEnrich: boolean = false) => {
+    const enabledProviders = getEnabledProviders();
+    
+    if (enabledProviders.length === 0) {
+      toast({
+        title: 'No Providers Selected',
+        description: 'Please select at least one enrichment provider.',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
     setEnriching(true);
     
     try {
       // First, get preview of what would be changed
       const { data: preview, error: previewError } = await supabase.functions.invoke('enrich-company', {
-        body: { companyId, deepEnrich, previewOnly: true }
+        body: { companyId, deepEnrich, previewOnly: true, providers: enabledProviders }
       });
 
       if (previewError) throw previewError;
@@ -56,17 +87,23 @@ export function EnrichCompanyButton({ companyId, onComplete }: EnrichCompanyButt
   };
 
   const executeEnrichment = async (deepEnrich: boolean) => {
+    const enabledProviders = getEnabledProviders();
     setEnriching(true);
     try {
       const { data, error } = await supabase.functions.invoke('enrich-company', {
-        body: { companyId, deepEnrich, previewOnly: false }
+        body: { companyId, deepEnrich, previewOnly: false, providers: enabledProviders }
       });
 
       if (error) throw error;
 
+      const providerName = data.provider === 'lovable_ai' ? 'Gemini AI' : 
+                          data.provider === 'claude' ? 'Claude AI' :
+                          data.provider === 'deepseek' ? 'Deepseek AI' :
+                          data.provider === 'perplexity' ? 'Perplexity' : data.provider;
+      
       toast({
         title: deepEnrich ? 'Deep Enrichment Complete' : 'Enrichment Complete',
-        description: `${data.fieldsEnriched.length} fields updated${data.apolloEnriched ? ' (including Apollo business data)' : ''} using ${data.provider === 'lovable_ai' ? 'Gemini AI' : 'Claude AI'}.`,
+        description: `${data.fieldsEnriched.length} fields updated${data.apolloEnriched ? ' (including Apollo data)' : ''} using ${providerName}.`,
       });
       
       if (onComplete) onComplete();
@@ -96,16 +133,70 @@ export function EnrichCompanyButton({ companyId, onComplete }: EnrichCompanyButt
             {enriching ? 'Enriching...' : 'Enrich Data'}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="end" className="w-80">
+          <div className="p-3 space-y-3">
+            <div className="text-sm font-medium mb-2">Select Providers</div>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="apollo" 
+                  checked={providers.apollo}
+                  onCheckedChange={() => toggleProvider('apollo')}
+                />
+                <Label htmlFor="apollo" className="text-sm cursor-pointer">
+                  Apollo.io (Business Data)
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="gemini" 
+                  checked={providers.gemini}
+                  onCheckedChange={() => toggleProvider('gemini')}
+                />
+                <Label htmlFor="gemini" className="text-sm cursor-pointer">
+                  Gemini AI (Fast)
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="claude" 
+                  checked={providers.claude}
+                  onCheckedChange={() => toggleProvider('claude')}
+                />
+                <Label htmlFor="claude" className="text-sm cursor-pointer">
+                  Claude AI (Advanced)
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="deepseek" 
+                  checked={providers.deepseek}
+                  onCheckedChange={() => toggleProvider('deepseek')}
+                />
+                <Label htmlFor="deepseek" className="text-sm cursor-pointer">
+                  Deepseek AI (Deep Analysis)
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="perplexity" 
+                  checked={providers.perplexity}
+                  onCheckedChange={() => toggleProvider('perplexity')}
+                />
+                <Label htmlFor="perplexity" className="text-sm cursor-pointer">
+                  Perplexity (Research)
+                </Label>
+              </div>
+            </div>
+          </div>
+          <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => handleEnrich(false)}>
             <Sparkles className="h-4 w-4 mr-2" />
             Standard Enrichment
-            <span className="ml-2 text-xs text-muted-foreground">(Fast, Gemini AI)</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => handleEnrich(true)}>
             <Zap className="h-4 w-4 mr-2" />
             Deep Enrichment
-            <span className="ml-2 text-xs text-muted-foreground">(Advanced, Claude AI)</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

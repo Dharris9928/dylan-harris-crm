@@ -8,6 +8,7 @@ import { UserManagement } from "@/components/settings/UserManagement";
 import { UserApprovalPanel } from "@/components/settings/UserApprovalPanel";
 import { DeletionApprovalPanel } from "@/components/settings/DeletionApprovalPanel";
 import { ApprovalAuditLog } from "@/components/settings/ApprovalAuditLog";
+import { SecurityDashboard } from "@/components/settings/SecurityDashboard";
 
 const Settings = () => {
   const builderSegments = [
@@ -57,6 +58,8 @@ const Settings = () => {
       </div>
 
       <div className="grid gap-6">
+        <SecurityDashboard />
+        
         <UserApprovalPanel />
         
         <DeletionApprovalPanel />

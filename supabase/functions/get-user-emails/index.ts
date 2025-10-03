@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0'
+import { checkRateLimit } from '../_shared/rateLimiting.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -45,6 +46,22 @@ Deno.serve(async (req) => {
       )
     }
 
+    // Check rate limit and create admin client
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    );
+    const rateLimitResponse = await checkRateLimit(supabaseAdmin, user.id, 'get-user-emails');
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     // Check if user has elevated access using secure RPC function
     const { data: hasAccess, error: accessError } = await supabaseClient
       .rpc('has_elevated_access', { _user_id: user.id })
@@ -55,18 +72,6 @@ Deno.serve(async (req) => {
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
-
-    // Create a Supabase client with the service role key for admin access
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
-    )
 
     const { userIds } = await req.json()
 

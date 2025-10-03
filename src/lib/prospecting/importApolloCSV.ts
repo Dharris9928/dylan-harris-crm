@@ -151,8 +151,16 @@ export function groupByCompany(rows: ApolloImportRow[]): CompanyWithContacts[] {
   const companiesMap = new Map<string, CompanyWithContacts>();
 
   rows.forEach(row => {
-    const companyName = row['Company'] || row['Organization Name'];
-    if (!companyName) return;
+    // Try multiple variations of company name fields
+    const companyName = row['Company'] || 
+                        row['Organization Name'] || 
+                        row['Company Name'] ||
+                        row['Organization'] ||
+                        row['Account Name'] ||
+                        row['name'] ||
+                        row['company_name'];
+    
+    if (!companyName || typeof companyName !== 'string') return;
 
     const companyKey = companyName.toLowerCase().trim();
 

@@ -65,12 +65,28 @@ export function ApolloCSVImportDialog({
         header: true,
         skipEmptyLines: true,
         complete: (results) => {
-          const grouped = groupByCompany(results.data as any[]);
+          const data = results.data as any[];
+          
+          if (data.length === 0) {
+            toast({
+              title: 'Empty file',
+              description: 'The CSV file does not contain any data rows',
+              variant: 'destructive',
+            });
+            return;
+          }
+
+          // Get column headers from first row
+          const columns = Object.keys(data[0] || {});
+          console.log('CSV columns found:', columns);
+          
+          const grouped = groupByCompany(data);
           
           if (grouped.length === 0) {
+            const columnList = columns.join(', ');
             toast({
-              title: 'No data found',
-              description: 'The CSV file does not contain valid company data',
+              title: 'No company data found',
+              description: `Could not find company names in CSV. Columns found: ${columnList}. Please ensure your CSV has a 'Company' or 'Organization Name' column.`,
               variant: 'destructive',
             });
             return;

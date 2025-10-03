@@ -4,6 +4,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { EnrichmentErrorLog } from '@/components/help/EnrichmentErrorLog';
 import { ImportExportActivityLog } from '@/components/help/ImportExportActivityLog';
 import { 
@@ -32,10 +33,24 @@ import {
 
 const Help = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('getting-started');
 
-  const filterContent = (text: string) => {
-    return text.toLowerCase().includes(searchQuery.toLowerCase());
-  };
+  const sections = [
+    { value: 'getting-started', label: 'Getting Started', keywords: 'welcome quick start guide roles overview' },
+    { value: 'companies', label: 'Companies', keywords: 'companies management lead scoring filters bulk actions enrichment segments recommendations apollo' },
+    { value: 'contacts', label: 'Contacts', keywords: 'contacts management decision makers influencers contact scoring' },
+    { value: 'prospecting', label: 'Prospecting', keywords: 'prospecting apollo search csv import segments recommendations' },
+    { value: 'activities', label: 'Activities', keywords: 'activities outreach types outcomes sequences calendar' },
+    { value: 'ai-features', label: 'AI Features', keywords: 'ai features scoring prioritization outreach strategy batch' },
+    { value: 'reports', label: 'Reports', keywords: 'reports analytics scoring breakdown distribution segment performance enrichment' },
+    { value: 'settings', label: 'Settings', keywords: 'settings user management security dashboard deletion approval integrations' },
+  ];
+
+  const matches = searchQuery.trim().length > 0
+    ? sections.filter(s =>
+        (s.label + ' ' + s.keywords).toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : [];
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -58,7 +73,32 @@ const Help = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="getting-started" className="w-full">
+      {searchQuery.trim().length > 0 && (
+        <Card className="max-w-3xl mt-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <div>
+              <CardTitle className="text-base">Search Results</CardTitle>
+              <CardDescription>Jump to matching sections</CardDescription>
+            </div>
+            <Button variant="secondary" size="sm" onClick={() => setSearchQuery('')}>Clear</Button>
+          </CardHeader>
+          <CardContent>
+            {matches.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {matches.map((s) => (
+                  <Button key={s.value} variant="outline" size="sm" onClick={() => setActiveTab(s.value)}>
+                    {s.label}
+                  </Button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No matches found. Try different keywords.</p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-4 lg:grid-cols-8 w-full">
           <TabsTrigger value="getting-started">Getting Started</TabsTrigger>
           <TabsTrigger value="companies">Companies</TabsTrigger>

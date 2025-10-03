@@ -3,23 +3,53 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AlertCircle, RefreshCw, Calendar, Building2 } from 'lucide-react';
+import { AlertCircle, RefreshCw, Calendar, Building2, User, Sparkles, CheckCircle2, Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 
-interface EnrichmentError {
+interface EnrichmentLog {
   id: string;
   company_id: string;
   provider: string;
   enrichment_type: string;
   status: string;
-  error_message: string;
+  error_message: string | null;
+  fields_enriched: any;
   created_at: string;
+  created_by: string;
   company_name?: string;
+  user_name?: string;
+}
+
+// Estimated token costs per provider (rough estimates)
+const PROVIDER_COSTS = {
+  'lovable_ai': { tokensPerRequest: 5000, costPer1M: 0.5 },
+  'gemini': { tokensPerRequest: 5000, costPer1M: 0.5 },
+  'claude': { tokensPerRequest: 6000, costPer1M: 3.0 },
+  'deepseek': { tokensPerRequest: 5000, costPer1M: 0.3 },
+  'perplexity': { tokensPerRequest: 4000, costPer1M: 1.0 },
+  'apollo': { tokensPerRequest: 0, costPer1M: 0 }, // API call, not token-based
+};
+
+function estimateCost(provider: string): { tokens: number; cost: string } {
+  const providerKey = provider.toLowerCase();
+  const config = PROVIDER_COSTS[providerKey as keyof typeof PROVIDER_COSTS] || { tokensPerRequest: 5000, costPer1M: 1.0 };
+  
+  const tokens = config.tokensPerRequest;
+  const cost = (tokens / 1000000) * config.costPer1M;
+  
+  if (providerKey === 'apollo') {
+    return { tokens: 0, cost: '$0.01' }; // Fixed API call cost
+  }
+  
+  return { 
+    tokens, 
+    cost: cost < 0.01 ? '<$0.01' : `$${cost.toFixed(3)}`
+  };
 }
 
 export function EnrichmentErrorLog() {
-  const [errors, setErrors] = useState<EnrichmentError[]>([]);
+  const [logs, setLogs] = useState<EnrichmentLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -46,7 +76,7 @@ export function EnrichmentErrorLog() {
 
       if (roleData) {
         setIsAdmin(true);
-        loadErrors();
+        loadLogs();
       } else {
         setIsAdmin(false);
         setLoading(false);
@@ -58,11 +88,11 @@ export function EnrichmentErrorLog() {
     }
   };
 
-  const loadErrors = async () => {
+  const loadLogs = async () => {
     try {
       setLoading(true);
       
-      // Get errors from enrichment_logs with company names
+      // Get all enrichment logs with company and user information
       const { data, error } = await supabase
         .from('enrichment_logs')
         .select(`
@@ -72,23 +102,28 @@ export function EnrichmentErrorLog() {
           enrichment_type,
           status,
           error_message,
+          fields_enriched,
           created_at,
-          companies!inner(company_name)
+          created_by,
+          companies!inner(company_name),
+          profiles!enrichment_logs_created_by_fkey(first_name, last_name)
         `)
-        .eq('status', 'failed')
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(100);
 
       if (error) throw error;
 
-      const formattedErrors = data?.map(log => ({
+      const formattedLogs = data?.map(log => ({
         ...log,
-        company_name: (log.companies as any)?.company_name
+        company_name: (log.companies as any)?.company_name,
+        user_name: log.profiles 
+          ? `${(log.profiles as any)?.first_name || ''} ${(log.profiles as any)?.last_name || ''}`.trim() || 'Unknown User'
+          : 'Unknown User'
       })) || [];
 
-      setErrors(formattedErrors);
+      setLogs(formattedLogs);
     } catch (error) {
-      console.error('Error loading enrichment errors:', error);
+      console.error('Error loading enrichment logs:', error);
     } finally {
       setLoading(false);
     }
@@ -101,6 +136,7 @@ export function EnrichmentErrorLog() {
   const getProviderBadgeColor = (provider: string) => {
     switch (provider) {
       case 'lovable_ai':
+      case 'gemini':
         return 'bg-blue-500';
       case 'claude':
         return 'bg-purple-500';
@@ -108,6 +144,8 @@ export function EnrichmentErrorLog() {
         return 'bg-cyan-500';
       case 'perplexity':
         return 'bg-orange-500';
+      case 'apollo':
+        return 'bg-green-500';
       default:
         return 'bg-gray-500';
     }
@@ -123,23 +161,33 @@ export function EnrichmentErrorLog() {
         return 'Deepseek';
       case 'perplexity':
         return 'Perplexity';
+      case 'apollo':
+        return 'Apollo';
       default:
         return provider;
     }
   };
 
+  const successCount = logs.filter(log => log.status === 'success').length;
+  const failedCount = logs.filter(log => log.status === 'failed' || log.status === 'error').length;
+  const totalEstimatedCost = logs.reduce((sum, log) => {
+    const cost = estimateCost(log.provider);
+    const numericCost = parseFloat(cost.cost.replace(/[<$]/g, '')) || 0;
+    return sum + numericCost;
+  }, 0);
+
   return (
-    <Card className="border-destructive/50">
+    <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-destructive" />
-            <CardTitle>AI Enrichment Errors</CardTitle>
+            <Sparkles className="h-5 w-5 text-primary" />
+            <CardTitle>AI Enrichment Activity Log</CardTitle>
           </div>
           <Button
             variant="outline"
             size="sm"
-            onClick={loadErrors}
+            onClick={loadLogs}
             disabled={loading}
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
@@ -147,79 +195,141 @@ export function EnrichmentErrorLog() {
           </Button>
         </div>
         <CardDescription>
-          Recent AI enrichment failures - Admin only
+          Complete enrichment history with cost tracking - Admin only
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {/* Summary Stats */}
+        {logs.length > 0 && (
+          <div className="grid grid-cols-3 gap-4 mb-6 p-4 bg-accent/50 rounded-lg">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              <div>
+                <div className="text-sm text-muted-foreground">Success</div>
+                <div className="text-2xl font-bold">{successCount}</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              <div>
+                <div className="text-sm text-muted-foreground">Failed</div>
+                <div className="text-2xl font-bold">{failedCount}</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Coins className="h-5 w-5 text-primary" />
+              <div>
+                <div className="text-sm text-muted-foreground">Est. Cost</div>
+                <div className="text-2xl font-bold">${totalEstimatedCost.toFixed(2)}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {loading ? (
           <div className="text-center py-8 text-muted-foreground">
             <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2" />
-            Loading errors...
+            Loading enrichment logs...
           </div>
-        ) : errors.length === 0 ? (
+        ) : logs.length === 0 ? (
           <div className="text-center py-8">
-            <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-2 opacity-50" />
-            <p className="text-muted-foreground">No enrichment errors found</p>
+            <Sparkles className="h-12 w-12 text-muted-foreground mx-auto mb-2 opacity-50" />
+            <p className="text-muted-foreground">No enrichment activity yet</p>
             <p className="text-sm text-muted-foreground mt-1">
-              All enrichment operations completed successfully
+              Enrichment requests will appear here
             </p>
           </div>
         ) : (
           <ScrollArea className="h-[600px] pr-4">
-            <div className="space-y-4">
-              {errors.map((error) => (
-                <div
-                  key={error.id}
-                  className="border border-border rounded-lg p-4 space-y-3 hover:border-destructive/50 transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2 flex-1">
-                      <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      <span className="font-medium truncate">
-                        {error.company_name || 'Unknown Company'}
-                      </span>
+            <div className="space-y-3">
+              {logs.map((log) => {
+                const costInfo = estimateCost(log.provider);
+                const fieldsCount = log.fields_enriched ? 
+                  (Array.isArray(log.fields_enriched) ? log.fields_enriched.length : Object.keys(log.fields_enriched).length) 
+                  : 0;
+                const isSuccess = log.status === 'success';
+                
+                return (
+                  <div
+                    key={log.id}
+                    className={`border rounded-lg p-4 space-y-3 transition-colors ${
+                      isSuccess 
+                        ? 'border-border hover:border-primary/50' 
+                        : 'border-destructive/50 hover:border-destructive'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-1">
+                        <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <span className="font-medium truncate">
+                          {log.company_name || 'Unknown Company'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {isSuccess ? (
+                          <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20">
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            Success
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">
+                            <AlertCircle className="h-3 w-3 mr-1" />
+                            Failed
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                    <Badge className={getProviderBadgeColor(error.provider)}>
-                      {getProviderName(error.provider)}
-                    </Badge>
-                  </div>
 
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="h-3 w-3" />
-                    {format(new Date(error.created_at), 'MMM dd, yyyy HH:mm:ss')}
-                  </div>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Calendar className="h-3 w-3 flex-shrink-0" />
+                        <span className="truncate">
+                          {format(new Date(log.created_at), 'MMM dd, yyyy HH:mm:ss')}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <User className="h-3 w-3 flex-shrink-0" />
+                        <span className="truncate">{log.user_name}</span>
+                      </div>
+                    </div>
 
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge className={getProviderBadgeColor(log.provider)}>
+                        {getProviderName(log.provider)}
+                      </Badge>
                       <Badge variant="outline" className="text-xs">
-                        {error.enrichment_type}
+                        {log.enrichment_type}
                       </Badge>
-                      <Badge variant="destructive" className="text-xs">
-                        Failed
-                      </Badge>
+                      {isSuccess && (
+                        <Badge variant="secondary" className="text-xs">
+                          {fieldsCount} fields enriched
+                        </Badge>
+                      )}
+                      <div className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
+                        {costInfo.tokens > 0 && (
+                          <span>{costInfo.tokens.toLocaleString()} tokens</span>
+                        )}
+                        <span className="font-medium">{costInfo.cost}</span>
+                      </div>
                     </div>
-                  </div>
 
-                  {error.error_message && (
-                    <div className="bg-destructive/10 border border-destructive/20 rounded p-3">
-                      <p className="text-sm text-destructive font-mono break-words">
-                        {error.error_message}
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="text-xs text-muted-foreground font-mono truncate">
-                    Company ID: {error.company_id}
+                    {!isSuccess && log.error_message && (
+                      <div className="bg-destructive/10 border border-destructive/20 rounded p-3">
+                        <p className="text-sm text-destructive font-mono break-words">
+                          {log.error_message}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </ScrollArea>
         )}
 
-        {errors.length > 0 && (
+        {logs.length > 0 && (
           <div className="mt-4 pt-4 border-t text-sm text-muted-foreground">
-            <p>Showing {errors.length} most recent errors (last 50)</p>
+            <p>Showing {logs.length} most recent enrichment requests (last 100)</p>
           </div>
         )}
       </CardContent>

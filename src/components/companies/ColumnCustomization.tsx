@@ -35,7 +35,7 @@ interface ColumnCustomizationProps {
 export function ColumnCustomization({ visibility, onChange }: ColumnCustomizationProps) {
   const columns = [
     { key: "companyName", label: "Company Name", required: true },
-    { key: "type", label: "Industry Type", required: false },
+    { key: "type", label: "Company Type", required: false },
     { key: "segment", label: "Segment", required: false },
     { key: "structure", label: "Company Structure", required: false },
     { key: "parentCompany", label: "Parent Company", required: false },

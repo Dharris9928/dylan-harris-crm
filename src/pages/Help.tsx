@@ -529,7 +529,7 @@ const Help = () => {
                     <div>
                       <h4 className="font-medium mb-2">Smart Import Features</h4>
                       <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                        <li><strong>Auto-detection:</strong> Automatically detects Builder vs Contractor industry type</li>
+                        <li><strong>Auto-detection:</strong> Automatically detects Builder vs Contractor company type</li>
                         <li><strong>Contact linking:</strong> Associates contacts with their companies automatically</li>
                         <li><strong>Duplicate prevention:</strong> Skips companies and contacts that already exist</li>
                         <li><strong>Data mapping:</strong> Maps Apollo fields to CRM fields automatically</li>

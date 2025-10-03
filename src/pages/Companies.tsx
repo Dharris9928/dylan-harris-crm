@@ -189,7 +189,7 @@ const Companies = () => {
       );
     }
     
-    // Apply industry type filter
+    // Apply company type filter
     if (industryTypeFilter) {
       filtered = filtered.filter(company => company.industry_type === industryTypeFilter);
     }

@@ -305,7 +305,7 @@ export function AddCompanyDialog({ open, onClose, onOpenChange, onSuccess }: Add
 
               <div>
                 <Label htmlFor="industry_type">
-                  Industry Type <span className="text-destructive">*</span>
+                  Company Type <span className="text-destructive">*</span>
                 </Label>
                 <Select value={industryType} onValueChange={(v: any) => setIndustryType(v)}>
                   <SelectTrigger id="industry_type">

@@ -152,9 +152,9 @@ export function CompaniesFilterSidebar({ isCollapsed, onToggle }: CompaniesFilte
       </div>
 
       <div className="p-4 space-y-2">
-        {/* Industry Type Filter */}
+        {/* Company Type Filter */}
         <FilterSection
-          title="Industry Type"
+          title="Company Type"
           isCollapsed={collapsedSections.has('industry')}
           onToggle={() => toggleSection('industry')}
         >

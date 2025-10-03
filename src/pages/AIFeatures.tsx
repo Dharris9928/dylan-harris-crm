@@ -176,7 +176,7 @@ const AIFeatures = () => {
                     <div>
                       <h4 className="font-medium mb-1">Context Analysis</h4>
                       <p className="text-sm text-muted-foreground">
-                        Analyzes industry type, size, digital presence, smart home offerings, financial stability, and contact information
+                        Analyzes company type, size, digital presence, smart home offerings, financial stability, and contact information
                       </p>
                     </div>
                   </div>

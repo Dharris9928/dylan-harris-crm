@@ -427,7 +427,7 @@ export function EditCompanyDialog({ open, onClose, onOpenChange, onSuccess, comp
 
               <div>
                 <Label htmlFor="industry_type">
-                  Industry Type <span className="text-destructive">*</span>
+                  Company Type <span className="text-destructive">*</span>
                 </Label>
                 <Select value={industryType} onValueChange={(v: any) => {
                   setIndustryType(v);

@@ -128,6 +128,45 @@ export type Database = {
           },
         ]
       }
+      bulk_access_alerts: {
+        Row: {
+          alert_details: Json | null
+          alert_type: string
+          created_at: string
+          id: string
+          record_count: number
+          reviewed: boolean | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          table_name: string
+          user_id: string
+        }
+        Insert: {
+          alert_details?: Json | null
+          alert_type: string
+          created_at?: string
+          id?: string
+          record_count: number
+          reviewed?: boolean | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          table_name: string
+          user_id: string
+        }
+        Update: {
+          alert_details?: Json | null
+          alert_type?: string
+          created_at?: string
+          id?: string
+          record_count?: number
+          reviewed?: boolean | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          table_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           address_line1: string | null
@@ -743,6 +782,39 @@ export type Database = {
           },
         ]
       }
+      data_retention_policies: {
+        Row: {
+          created_at: string
+          date_column: string
+          enabled: boolean
+          id: string
+          last_cleanup_at: string | null
+          retention_days: number
+          table_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_column?: string
+          enabled?: boolean
+          id?: string
+          last_cleanup_at?: string | null
+          retention_days: number
+          table_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_column?: string
+          enabled?: boolean
+          id?: string
+          last_cleanup_at?: string | null
+          retention_days?: number
+          table_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       deletion_requests: {
         Row: {
           created_at: string | null
@@ -1146,6 +1218,69 @@ export type Database = {
           },
         ]
       }
+      rate_limit_rules: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          endpoint: string
+          id: string
+          requests_per_hour: number
+          requests_per_minute: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          endpoint: string
+          id?: string
+          requests_per_hour: number
+          requests_per_minute: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          endpoint?: string
+          id?: string
+          requests_per_hour?: number
+          requests_per_minute?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      rate_limit_tracking: {
+        Row: {
+          blocked: boolean | null
+          created_at: string
+          endpoint: string
+          id: string
+          request_count: number
+          user_id: string | null
+          window_end: string
+          window_start: string
+        }
+        Insert: {
+          blocked?: boolean | null
+          created_at?: string
+          endpoint: string
+          id?: string
+          request_count?: number
+          user_id?: string | null
+          window_end: string
+          window_start: string
+        }
+        Update: {
+          blocked?: boolean | null
+          created_at?: string
+          endpoint?: string
+          id?: string
+          request_count?: number
+          user_id?: string | null
+          window_end?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       saved_views: {
         Row: {
           configuration: Json | null
@@ -1360,23 +1495,29 @@ export type Database = {
       }
       user_roles: {
         Row: {
+          access_expires_at: string | null
           created_at: string | null
           created_by: string | null
           id: string
+          last_access_at: string | null
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
+          access_expires_at?: string | null
           created_at?: string | null
           created_by?: string | null
           id?: string
+          last_access_at?: string | null
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
+          access_expires_at?: string | null
           created_at?: string | null
           created_by?: string | null
           id?: string
+          last_access_at?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
@@ -1435,9 +1576,36 @@ export type Database = {
       }
     }
     Functions: {
+      anonymize_ipv4: {
+        Args: { ip_addr: unknown }
+        Returns: unknown
+      }
+      anonymize_old_ip_addresses: {
+        Args: { _days_old?: number }
+        Returns: {
+          records_anonymized: number
+          table_name: string
+        }[]
+      }
       can_access_company: {
         Args: { _company_id: string; _user_id: string }
         Returns: boolean
+      }
+      check_rate_limit: {
+        Args: { _endpoint: string; _user_id: string; _window_minutes?: number }
+        Returns: Json
+      }
+      cleanup_old_records: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          cleaned_table: string
+          records_deleted: number
+          retention_days: number
+        }[]
+      }
+      cleanup_rate_limit_tracking: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       get_company_hierarchy: {
         Args: Record<PropertyKey, never>
@@ -1483,6 +1651,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_role_active: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_user_approved: {
         Args: { _user_id: string }
         Returns: boolean
@@ -1490,6 +1665,14 @@ export type Database = {
       log_security_event: {
         Args: { _event_details?: Json; _event_type: string }
         Returns: undefined
+      }
+      revoke_expired_access: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          expired_at: string
+          revoked_role: Database["public"]["Enums"]["app_role"]
+          revoked_user_id: string
+        }[]
       }
       user_approved_with_grace_period: {
         Args: { _hours?: number; _user_id: string }

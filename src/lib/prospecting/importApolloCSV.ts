@@ -145,6 +145,48 @@ function parseRevenueRange(value: string): string | null {
 }
 
 /**
+ * Extract location data from various column formats
+ */
+function parseLocation(row: ApolloImportRow): { city: string | null; state: string | null } {
+  // Try direct columns first
+  let city = row['City'] || row['city'] || row['Company City'] || null;
+  let state = row['State'] || row['state'] || row['Company State'] || null;
+
+  // If no state but we have a Location field, try to parse it
+  if (!state) {
+    const location = row['Location'] || row['location'] || row['Company Location'] || '';
+    
+    // Try to parse "City, State" or "City, ST" format
+    const locationMatch = location.match(/^([^,]+),\s*([A-Z]{2}|[A-Za-z\s]+)$/);
+    if (locationMatch) {
+      if (!city) city = locationMatch[1].trim();
+      state = locationMatch[2].trim();
+    }
+    // Try "State" only format
+    else if (location.length === 2 && /^[A-Z]{2}$/.test(location)) {
+      state = location;
+    }
+    // Try full state name
+    else if (location && !location.includes(',')) {
+      state = location;
+    }
+  }
+
+  // Handle full address fields
+  const address = row['Address'] || row['address'] || row['Company Address'] || '';
+  if (!city || !state) {
+    // Try to extract from address (e.g., "123 Main St, Austin, TX 78701")
+    const addressMatch = address.match(/,\s*([^,]+),\s*([A-Z]{2})\s*\d{5}/);
+    if (addressMatch) {
+      if (!city) city = addressMatch[1].trim();
+      if (!state) state = addressMatch[2].trim();
+    }
+  }
+
+  return { city, state };
+}
+
+/**
  * Group Apollo rows by company
  */
 export function groupByCompany(rows: ApolloImportRow[]): CompanyWithContacts[] {
@@ -169,18 +211,19 @@ export function groupByCompany(rows: ApolloImportRow[]): CompanyWithContacts[] {
       const industryType = detectIndustryType(row);
       const employeeRange = parseEmployeeRange(row['Company Size'] || row['# Employees'] || '');
       const revenueRange = parseRevenueRange(row['Revenue Range'] || row['Estimated Revenue'] || '');
+      const location = parseLocation(row);
 
       companiesMap.set(companyKey, {
         companyData: {
           company_name: companyName,
-          website_url: row['Website'] || row['Company Website'] || null,
+          website_url: row['Website'] || row['Company Website'] || row['website'] || null,
           industry_type: industryType,
-          linkedin_company_url: row['Company LinkedIn Url'] || null,
+          linkedin_company_url: row['Company LinkedIn Url'] || row['LinkedIn URL'] || null,
           total_employees_range: employeeRange,
           annual_revenue_range: revenueRange,
-          city: row['City'] || null,
-          state: row['State'] || null,
-          primary_phone: row['Company Phone'] || row['Phone'] || null,
+          city: location.city,
+          state: location.state,
+          primary_phone: row['Company Phone'] || row['Phone'] || row['phone'] || null,
           status: 'Lead'
         },
         contacts: []

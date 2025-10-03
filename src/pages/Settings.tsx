@@ -3,13 +3,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Users } from "lucide-react";
+import { Building2, Users, FileText } from "lucide-react";
 import { UserManagement } from "@/components/settings/UserManagement";
 import { UserApprovalPanel } from "@/components/settings/UserApprovalPanel";
 import { DeletionApprovalPanel } from "@/components/settings/DeletionApprovalPanel";
 import { ApprovalAuditLog } from "@/components/settings/ApprovalAuditLog";
 import { SecurityDashboard } from "@/components/settings/SecurityDashboard";
-
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 const Settings = () => {
   const builderSegments = [
     { name: "Production/Tract Builders", priority: "40%", description: "100-1,000+ homes annually" },
@@ -59,6 +60,25 @@ const Settings = () => {
 
       <div className="grid gap-6">
         <SecurityDashboard />
+
+        {/* System Activity Logs quick access */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                <CardTitle>System Activity Logs</CardTitle>
+              </div>
+              <Link to="/help#activity-logs">
+                <Button size="sm">View Logs</Button>
+              </Link>
+            </div>
+            <CardDescription>Imports, exports, and enrichment activities</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">Open the Help page to review recent import/export operations and AI enrichment events.</p>
+          </CardContent>
+        </Card>
         
         <UserApprovalPanel />
         

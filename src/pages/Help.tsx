@@ -1192,7 +1192,7 @@ const Help = () => {
       </Card>
 
       {/* Activity Logs Section */}
-      <div className="mt-8 space-y-6">
+      <div id="activity-logs" className="mt-8 space-y-6">
         <div className="border-b pb-2">
           <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Clock className="h-6 w-6 text-primary" />

@@ -92,7 +92,7 @@ export function EnrichmentErrorLog() {
     try {
       setLoading(true);
       
-      // Get all enrichment logs with company and user information
+      // Get all enrichment logs with company information
       const { data, error } = await supabase
         .from('enrichment_logs')
         .select(`
@@ -105,20 +105,30 @@ export function EnrichmentErrorLog() {
           fields_enriched,
           created_at,
           created_by,
-          companies!inner(company_name),
-          profiles!enrichment_logs_created_by_fkey(first_name, last_name)
+          companies!inner(company_name)
         `)
         .order('created_at', { ascending: false })
         .limit(100);
 
       if (error) throw error;
 
+      // Get unique user IDs
+      const userIds = [...new Set(data?.map(log => log.created_by).filter(Boolean) || [])];
+      
+      // Fetch user names separately
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', userIds);
+
+      const profilesMap = new Map(
+        profilesData?.map(p => [p.id, `${p.first_name || ''} ${p.last_name || ''}`.trim()]) || []
+      );
+
       const formattedLogs = data?.map(log => ({
         ...log,
         company_name: (log.companies as any)?.company_name,
-        user_name: log.profiles 
-          ? `${(log.profiles as any)?.first_name || ''} ${(log.profiles as any)?.last_name || ''}`.trim() || 'Unknown User'
-          : 'Unknown User'
+        user_name: profilesMap.get(log.created_by) || 'Unknown User'
       })) || [];
 
       setLogs(formattedLogs);

@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
 import { createCompany } from '@/lib/companies/createCompany';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -22,7 +23,8 @@ import {
   SERVICE_AREA_TYPES,
   REVENUE_GROWTH_TRENDS,
   PROFITABILITY_LEVELS,
-  FINANCIAL_HEALTH_RATINGS
+  FINANCIAL_HEALTH_RATINGS,
+  INDUSTRY_SPECIALTIES
 } from './formOptions';
 
 interface AddCompanyDialogProps {
@@ -45,6 +47,7 @@ export function AddCompanyDialog({ open, onClose, onOpenChange, onSuccess }: Add
   const [industryType, setIndustryType] = useState<'Builder' | 'Contractor' | 'CI/Security'>('Builder');
   const [segment, setSegment] = useState('');
   const [status, setStatus] = useState('Lead');
+  const [industrySpecialties, setIndustrySpecialties] = useState<string[]>([]);
   
   // Parent-Subsidiary Relationship
   const [companyType, setCompanyType] = useState<'standalone' | 'parent' | 'subsidiary'>('standalone');
@@ -171,6 +174,9 @@ export function AddCompanyDialog({ open, onClose, onOpenChange, onSuccess }: Add
         offers_smart_security: offersSmartSecurity,
         offers_home_automation: offersHomeAutomation,
         
+        // Industry Specialties
+        industry_specialties: industrySpecialties.length > 0 ? industrySpecialties : undefined,
+        
         // Builder-specific - NOW USING RANGE
         average_home_price_range: industryType === 'Builder' 
           ? averageHomePriceRange || undefined 
@@ -233,6 +239,8 @@ export function AddCompanyDialog({ open, onClose, onOpenChange, onSuccess }: Add
     setCompanyName('');
     setIndustryType('Builder');
     setSegment('');
+    setStatus('Lead');
+    setIndustrySpecialties([]);
     setCompanyType('standalone');
     setParentCompanyId('');
     setContractorSpecialty('');
@@ -349,6 +357,33 @@ export function AddCompanyDialog({ open, onClose, onOpenChange, onSuccess }: Add
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="col-span-2">
+                <Label>Industry Type</Label>
+                <div className="grid grid-cols-2 gap-3 mt-2">
+                  {INDUSTRY_SPECIALTIES.map((specialty) => (
+                    <div key={specialty.value} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={specialty.value}
+                        checked={industrySpecialties.includes(specialty.value)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setIndustrySpecialties([...industrySpecialties, specialty.value]);
+                          } else {
+                            setIndustrySpecialties(industrySpecialties.filter(s => s !== specialty.value));
+                          }
+                        }}
+                      />
+                      <label
+                        htmlFor={specialty.value}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        {specialty.label}
+                      </label>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

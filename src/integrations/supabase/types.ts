@@ -190,6 +190,7 @@ export type Database = {
           has_google_business_profile: boolean | null
           id: string
           industry_awards_recognition: boolean | null
+          industry_specialties: string[] | null
           industry_type: string
           instagram_url: string | null
           is_franchise: boolean | null
@@ -267,6 +268,7 @@ export type Database = {
           has_google_business_profile?: boolean | null
           id?: string
           industry_awards_recognition?: boolean | null
+          industry_specialties?: string[] | null
           industry_type: string
           instagram_url?: string | null
           is_franchise?: boolean | null
@@ -344,6 +346,7 @@ export type Database = {
           has_google_business_profile?: boolean | null
           id?: string
           industry_awards_recognition?: boolean | null
+          industry_specialties?: string[] | null
           industry_type?: string
           instagram_url?: string | null
           is_franchise?: boolean | null

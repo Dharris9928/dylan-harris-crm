@@ -37,6 +37,14 @@ export const CI_SECURITY_SEGMENTS = [
   { value: 'managed_services', label: 'Managed Security Services' }
 ];
 
+export const INDUSTRY_SPECIALTIES = [
+  { value: 'Wholesaler', label: 'Wholesaler' },
+  { value: 'HVAC', label: 'HVAC' },
+  { value: 'Electrical', label: 'Electrical' },
+  { value: 'Plumbing', label: 'Plumbing' },
+  { value: 'General Contracting', label: 'General Contracting' }
+];
+
 export const STATUSES = [
   { value: 'Lead', label: 'Lead' },
   { value: 'Contacted', label: 'Contacted' },

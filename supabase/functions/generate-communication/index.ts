@@ -30,7 +30,7 @@ serve(async (req) => {
       });
     }
 
-    const { companyId, communicationType, previousContext, aiModel, contactId, outreachPrompt } = await req.json();
+    const { companyId, communicationType, previousContext, aiModel, contactId, businessContext, outreachPrompt } = await req.json();
 
     // Fetch company data with contacts and AI insights
     const { data: company, error: companyError } = await supabase
@@ -112,12 +112,14 @@ serve(async (req) => {
     let userPrompt = '';
 
     if (communicationType === 'email') {
-      systemPrompt = `You are an expert B2B sales email writer for Google Nest Pro products. 
+      systemPrompt = `You are an expert B2B sales email writer${businessContext ? `. ${businessContext}` : ' for Google Nest Pro products'}. 
 Your goal is to write compelling, personalized emails that drive engagement and meetings.
 Focus on value proposition, pain points, and building relationships.
 Keep emails concise (under 200 words), professional, and action-oriented.`;
 
       userPrompt = `Generate a personalized sales email for ${company.company_name}${targetContact ? ` to ${targetContact.first_name} ${targetContact.last_name} (${targetContact.title || 'Contact'})` : ''}.
+
+${businessContext ? `YOUR BUSINESS CONTEXT:\n${businessContext}\n\n` : ''}
 
 ${outreachPrompt ? `OUTREACH PURPOSE:\n${outreachPrompt}\n\n` : ''}
 
@@ -145,11 +147,13 @@ Return in JSON format:
   "content": "email body here"
 }`;
     } else if (communicationType === 'call_script') {
-      systemPrompt = `You are an expert B2B sales call script writer for Google Nest Pro products.
+      systemPrompt = `You are an expert B2B sales call script writer${businessContext ? `. ${businessContext}` : ' for Google Nest Pro products'}.
 Your goal is to create effective call scripts that build rapport, uncover needs, and drive next steps.
 Include discovery questions, objection handling, and clear value propositions.`;
 
       userPrompt = `Generate a personalized call script for ${company.company_name}${targetContact ? ` when speaking with ${targetContact.first_name} ${targetContact.last_name} (${targetContact.title || 'Contact'})` : ''}.
+
+${businessContext ? `YOUR BUSINESS CONTEXT:\n${businessContext}\n\n` : ''}
 
 ${outreachPrompt ? `OUTREACH PURPOSE:\n${outreachPrompt}\n\n` : ''}
 
@@ -177,11 +181,13 @@ Return in JSON format:
   "content": "full call script here with clear sections"
 }`;
     } else if (communicationType === 'linkedin_message') {
-      systemPrompt = `You are an expert at crafting LinkedIn connection requests and messages.
+      systemPrompt = `You are an expert at crafting LinkedIn connection requests and messages${businessContext ? `. ${businessContext}` : ''}.
 Keep messages brief (under 300 characters for initial connection), professional, and focused on building relationships.
 Reference specific details about their company to show genuine interest.`;
 
       userPrompt = `Generate a personalized LinkedIn message for ${company.company_name}${targetContact ? ` to connect with ${targetContact.first_name} ${targetContact.last_name} (${targetContact.title || 'Contact'})` : ''}.
+
+${businessContext ? `YOUR BUSINESS CONTEXT:\n${businessContext}\n\n` : ''}
 
 ${outreachPrompt ? `OUTREACH PURPOSE:\n${outreachPrompt}\n\n` : ''}
 

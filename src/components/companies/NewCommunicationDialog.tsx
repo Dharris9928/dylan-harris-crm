@@ -34,6 +34,7 @@ export function NewCommunicationDialog({ onSuccess }: { onSuccess?: () => void }
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
   const [selectedContactId, setSelectedContactId] = useState<string>('');
   const [communicationType, setCommunicationType] = useState<'email' | 'call_script' | 'linkedin_message'>('email');
+  const [businessContext, setBusinessContext] = useState('');
   const [outreachPrompt, setOutreachPrompt] = useState('');
   const [previousContext, setPreviousContext] = useState('');
   const [aiModel, setAiModel] = useState('google/gemini-2.5-flash');
@@ -124,6 +125,7 @@ export function NewCommunicationDialog({ onSuccess }: { onSuccess?: () => void }
           companyId: selectedCompanyId,
           contactId: selectedContactId || null,
           communicationType,
+          businessContext: businessContext || null,
           outreachPrompt: outreachPrompt || null,
           previousContext: previousContext || null,
           aiModel,
@@ -156,6 +158,7 @@ export function NewCommunicationDialog({ onSuccess }: { onSuccess?: () => void }
     setSelectedCompanyId('');
     setSelectedContactId('');
     setCommunicationType('email');
+    setBusinessContext('');
     setOutreachPrompt('');
     setPreviousContext('');
     setAiModel('google/gemini-2.5-flash');
@@ -272,6 +275,22 @@ export function NewCommunicationDialog({ onSuccess }: { onSuccess?: () => void }
                 </SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Business Context */}
+          <div className="space-y-2">
+            <Label htmlFor="business-context">Your Business Context (Optional but Recommended)</Label>
+            <Textarea
+              id="business-context"
+              placeholder="Example: We are Google Nest Pro representatives offering smart home solutions to builders and contractors. Our goal is to establish partnerships and help integrate Nest products into their projects..."
+              value={businessContext}
+              onChange={(e) => setBusinessContext(e.target.value)}
+              rows={3}
+              className="resize-none"
+            />
+            <p className="text-xs text-muted-foreground">
+              Describe your business, what you offer, and your relationship goals to help the AI generate more accurate communications
+            </p>
           </div>
 
           {/* Outreach Purpose Prompt */}

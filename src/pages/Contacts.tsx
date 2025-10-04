@@ -7,6 +7,7 @@ import { Plus } from "lucide-react";
 import { ContactTable } from "@/components/contacts/ContactTable";
 import { AddContactDialog } from "@/components/contacts/AddContactDialog";
 import { EditContactDialog } from "@/components/contacts/EditContactDialog";
+import { ImportContactsDialog } from "@/components/contacts/ImportContactsDialog";
 import { logBulkContactView } from "@/lib/contacts/logContactAccess";
 
 const Contacts = () => {
@@ -56,10 +57,13 @@ const Contacts = () => {
             Manage decision makers and key contacts
           </p>
         </div>
-        <Button onClick={() => setIsAddDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Contact
-        </Button>
+        <div className="flex gap-2">
+          <ImportContactsDialog onSuccess={refetch} />
+          <Button onClick={() => setIsAddDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Contact
+          </Button>
+        </div>
       </div>
 
       <ContactTable

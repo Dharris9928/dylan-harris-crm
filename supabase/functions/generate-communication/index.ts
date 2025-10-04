@@ -11,13 +11,13 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')!;
+  
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')!;
-    
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    
     // Get auth user
     const authHeader = req.headers.get('Authorization')!;
     const token = authHeader.replace('Bearer ', '');
@@ -325,6 +325,26 @@ Return in JSON format:
       throw saveError;
     }
 
+    // Log AI usage
+    await supabase.from('ai_usage_logs').insert({
+      user_id: user.id,
+      feature_type: 'communication_generation',
+      ai_model: selectedModel,
+      prompt_tokens: aiData.usage?.prompt_tokens || null,
+      completion_tokens: aiData.usage?.completion_tokens || null,
+      total_tokens: aiData.usage?.total_tokens || null,
+      company_id: companyId,
+      contact_id: contactId || null,
+      communication_id: savedComm.id,
+      request_metadata: {
+        communication_type: communicationType,
+        has_previous_context: !!previousContext,
+        has_outreach_prompt: !!outreachPrompt,
+        has_business_context: !!businessContext,
+      },
+      status: 'success',
+    });
+
     return new Response(JSON.stringify({
       success: true,
       communication: savedComm,
@@ -335,6 +355,7 @@ Return in JSON format:
 
   } catch (error: any) {
     console.error('Error in generate-communication:', error);
+    
     return new Response(JSON.stringify({ error: error.message || 'Internal server error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

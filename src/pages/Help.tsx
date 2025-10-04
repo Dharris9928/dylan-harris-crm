@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { EnrichmentErrorLog } from '@/components/help/EnrichmentErrorLog';
 import { ImportExportActivityLog } from '@/components/help/ImportExportActivityLog';
-import { 
+import { AIUsageLog } from '@/components/help/AIUsageLog';
+import {
   Search, 
   Building2, 
   Users, 
@@ -38,12 +39,14 @@ const Help = () => {
   const sections = [
     { value: 'getting-started', label: 'Getting Started', keywords: 'welcome quick start guide roles overview' },
     { value: 'companies', label: 'Companies', keywords: 'companies management lead scoring filters bulk actions enrichment segments recommendations apollo' },
-    { value: 'contacts', label: 'Contacts', keywords: 'contacts management decision makers influencers contact scoring' },
+    { value: 'contacts', label: 'Contacts', keywords: 'contacts management decision makers influencers contact scoring import csv' },
+    { value: 'communications', label: 'Communications', keywords: 'communications ai generated emails call scripts linkedin messages outreach' },
     { value: 'prospecting', label: 'Prospecting', keywords: 'prospecting apollo search csv import segments recommendations' },
     { value: 'activities', label: 'Activities', keywords: 'activities outreach types outcomes sequences calendar' },
-    { value: 'ai-features', label: 'AI Features', keywords: 'ai features scoring prioritization outreach strategy batch' },
+    { value: 'ai-features', label: 'AI Features', keywords: 'ai features scoring prioritization outreach strategy batch usage logs' },
     { value: 'reports', label: 'Reports', keywords: 'reports analytics scoring breakdown distribution segment performance enrichment' },
-    { value: 'settings', label: 'Settings', keywords: 'settings user management security dashboard deletion approval integrations' },
+    { value: 'settings', label: 'Settings', keywords: 'settings user management security dashboard deletion approval integrations business context' },
+    { value: 'activity-logs', label: 'Activity Logs', keywords: 'logs import export enrichment ai usage monitoring tracking' },
   ];
 
   const matches = searchQuery.trim().length > 0
@@ -99,15 +102,17 @@ const Help = () => {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-4 lg:grid-cols-8 w-full">
+        <TabsList className="grid grid-cols-5 lg:grid-cols-10 w-full">
           <TabsTrigger value="getting-started">Getting Started</TabsTrigger>
           <TabsTrigger value="companies">Companies</TabsTrigger>
           <TabsTrigger value="contacts">Contacts</TabsTrigger>
+          <TabsTrigger value="communications">Communications</TabsTrigger>
           <TabsTrigger value="prospecting">Prospecting</TabsTrigger>
           <TabsTrigger value="activities">Activities</TabsTrigger>
           <TabsTrigger value="ai-features">AI Features</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="activity-logs">Activity Logs</TabsTrigger>
         </TabsList>
 
         {/* Getting Started Tab */}
@@ -512,6 +517,104 @@ const Help = () => {
                       <li>Track response rates and engagement patterns</li>
                       <li>Identify "warm" vs "cold" contacts</li>
                     </ul>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Communications Tab */}
+        <TabsContent value="communications" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-primary" />
+                Communications Management
+              </CardTitle>
+              <CardDescription>
+                AI-powered communication generation and management
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="overview">
+                  <AccordionTrigger>Communication Features Overview</AccordionTrigger>
+                  <AccordionContent className="space-y-3">
+                    <p>The Communications hub allows you to generate and manage AI-powered outreach materials tailored to specific companies and contacts.</p>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">Communication Types:</h4>
+                      <ul className="list-disc pl-5 space-y-1">
+                        <li><strong>Emails:</strong> Professional sales emails with subject lines and body content</li>
+                        <li><strong>Call Scripts:</strong> Structured talking points for phone conversations</li>
+                        <li><strong>LinkedIn Messages:</strong> Brief, professional connection requests and messages</li>
+                      </ul>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="generation">
+                  <AccordionTrigger>Generating Communications</AccordionTrigger>
+                  <AccordionContent className="space-y-3">
+                    <p>Create personalized communications using AI that factors in company data, contact information, and your business context.</p>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">Generation Process:</h4>
+                      <ol className="list-decimal pl-5 space-y-2">
+                        <li>Click "New Communication" button</li>
+                        <li>Select target company from dropdown</li>
+                        <li>Optionally select specific contact (or leave for general messaging)</li>
+                        <li>Choose communication type (email, call script, or LinkedIn message)</li>
+                        <li>Add business context (optional but recommended)</li>
+                        <li>Describe outreach purpose (required - what you're reaching out about)</li>
+                        <li>Add previous conversation context if applicable</li>
+                        <li>Select AI model (Gemini 2.5 Flash recommended)</li>
+                        <li>Click "Generate" and AI will create your communication</li>
+                      </ol>
+                    </div>
+                    <div className="p-3 bg-muted rounded-lg">
+                      <p className="text-sm">
+                        <strong>Tip:</strong> The more context you provide (business description, outreach purpose), the more targeted and effective your communications will be.
+                      </p>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="management">
+                  <AccordionTrigger>Managing Communications</AccordionTrigger>
+                  <AccordionContent className="space-y-3">
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">Features:</h4>
+                      <ul className="list-disc pl-5 space-y-1">
+                        <li><strong>Copy to Clipboard:</strong> Quickly copy communication content</li>
+                        <li><strong>Mark as Attempted:</strong> Track when you've used a communication</li>
+                        <li><strong>Active/Inactive Status:</strong> Mark conversations as active or inactive</li>
+                        <li><strong>Filtering:</strong> Filter by industry, status, communication type, and conversation status</li>
+                        <li><strong>Search:</strong> Search across companies, contacts, subject, and content</li>
+                      </ul>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="business-context">
+                  <AccordionTrigger>Business Context Settings</AccordionTrigger>
+                  <AccordionContent className="space-y-3">
+                    <p>Administrators can configure permanent business context in Settings that automatically informs all AI-generated communications.</p>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">Business Context Fields:</h4>
+                      <ul className="list-disc pl-5 space-y-1">
+                        <li><strong>Business Description:</strong> What your company does</li>
+                        <li><strong>Team Mission:</strong> Your goals and objectives</li>
+                        <li><strong>Value Proposition:</strong> What makes you unique</li>
+                        <li><strong>Target Customers:</strong> Your ideal customer profile</li>
+                        <li><strong>Products/Services:</strong> What you offer</li>
+                        <li><strong>Communication Guidelines:</strong> Tone, style, key messages</li>
+                      </ul>
+                    </div>
+                    <div className="p-3 bg-muted rounded-lg">
+                      <p className="text-sm">
+                        <strong>Admin Only:</strong> Only administrators can edit business context settings. These settings help the AI understand your business and generate consistent, on-brand communications.
+                      </p>
+                    </div>
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
@@ -1140,6 +1243,54 @@ const Help = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Activity Logs Tab */}
+        <TabsContent value="activity-logs" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5 text-primary" />
+                System Activity Logs
+              </CardTitle>
+              <CardDescription>
+                Monitor and track all system activities including AI usage, imports, exports, and enrichments
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Activity logs help you track usage patterns, monitor costs, troubleshoot issues, and ensure data quality across all system operations.
+              </p>
+            </CardContent>
+          </Card>
+
+          <AIUsageLog />
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Import/Export Activity Log</CardTitle>
+              <CardDescription>
+                View all data import and export operations. Click on any activity to expand and see detailed error information 
+                for failed records, including the specific reason each record failed. This helps identify and resolve data quality issues.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ImportExportActivityLog />
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Enrichment Activity Log</CardTitle>
+              <CardDescription>
+                Monitor all enrichment operations. Track which companies were successfully enriched and investigate 
+                any failures to understand data source limitations or connectivity issues.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <EnrichmentErrorLog />
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       <Card>
@@ -1259,45 +1410,6 @@ const Help = () => {
           </Accordion>
         </CardContent>
       </Card>
-
-      {/* Activity Logs Section */}
-      <div id="activity-logs" className="mt-8 space-y-6">
-        <div className="border-b pb-2">
-          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Clock className="h-6 w-6 text-primary" />
-            System Activity Logs
-          </h2>
-          <p className="text-muted-foreground mt-1">
-            Track and monitor all import, export, and enrichment activities with detailed error reporting
-          </p>
-        </div>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Import/Export Activity Log</CardTitle>
-            <CardDescription>
-              View all data import and export operations. Click on any activity to expand and see detailed error information 
-              for failed records, including the specific reason each record failed. This helps identify and resolve data quality issues.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ImportExportActivityLog />
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Enrichment Activity Log</CardTitle>
-            <CardDescription>
-              Monitor all enrichment operations. Track which companies were successfully enriched and investigate 
-              any failures to understand data source limitations or connectivity issues.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <EnrichmentErrorLog />
-          </CardContent>
-        </Card>
-      </div>
 
       <Card className="bg-muted/50">
         <CardContent className="pt-6">

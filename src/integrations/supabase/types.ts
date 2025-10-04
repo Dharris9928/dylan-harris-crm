@@ -14,6 +14,82 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_usage_logs: {
+        Row: {
+          ai_model: string
+          communication_id: string | null
+          company_id: string | null
+          completion_tokens: number | null
+          contact_id: string | null
+          created_at: string | null
+          error_message: string | null
+          feature_type: string
+          id: string
+          prompt_tokens: number | null
+          request_metadata: Json | null
+          response_metadata: Json | null
+          status: string
+          total_tokens: number | null
+          user_id: string
+        }
+        Insert: {
+          ai_model: string
+          communication_id?: string | null
+          company_id?: string | null
+          completion_tokens?: number | null
+          contact_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          feature_type: string
+          id?: string
+          prompt_tokens?: number | null
+          request_metadata?: Json | null
+          response_metadata?: Json | null
+          status?: string
+          total_tokens?: number | null
+          user_id: string
+        }
+        Update: {
+          ai_model?: string
+          communication_id?: string | null
+          company_id?: string | null
+          completion_tokens?: number | null
+          contact_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          feature_type?: string
+          id?: string
+          prompt_tokens?: number | null
+          request_metadata?: Json | null
+          response_metadata?: Json | null
+          status?: string
+          total_tokens?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_usage_logs_communication_id_fkey"
+            columns: ["communication_id"]
+            isOneToOne: false
+            referencedRelation: "company_communications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_usage_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_usage_logs_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       approval_audit_log: {
         Row: {
           approved_by: string | null

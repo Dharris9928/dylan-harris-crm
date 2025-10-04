@@ -48,8 +48,12 @@ export function ApolloContactImportDialog({ onSuccess }: { onSuccess?: () => voi
 
   const cleanPhoneNumber = (phone: string): string => {
     if (!phone) return '';
-    // Remove +, spaces, and format
-    return phone.replace(/^\+1\s*/, '').replace(/[^\d]/g, '').replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+    // Remove quotes, +1, spaces, and non-digits, then format
+    const cleaned = phone.replace(/['"]/g, '').replace(/^\+1\s*/, '').replace(/[^\d]/g, '');
+    if (cleaned.length === 10) {
+      return cleaned.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+    }
+    return cleaned;
   };
 
   const normalizeStateName = (state: string | null): string | null => {

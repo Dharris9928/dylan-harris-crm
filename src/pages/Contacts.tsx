@@ -8,6 +8,7 @@ import { ContactTable } from "@/components/contacts/ContactTable";
 import { AddContactDialog } from "@/components/contacts/AddContactDialog";
 import { EditContactDialog } from "@/components/contacts/EditContactDialog";
 import { ImportContactsDialog } from "@/components/contacts/ImportContactsDialog";
+import { ApolloContactImportDialog } from "@/components/contacts/ApolloContactImportDialog";
 import { logBulkContactView } from "@/lib/contacts/logContactAccess";
 
 const Contacts = () => {
@@ -58,6 +59,7 @@ const Contacts = () => {
           </p>
         </div>
         <div className="flex gap-2">
+          <ApolloContactImportDialog onSuccess={refetch} />
           <ImportContactsDialog onSuccess={refetch} />
           <Button onClick={() => setIsAddDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />

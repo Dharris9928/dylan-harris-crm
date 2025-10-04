@@ -285,10 +285,9 @@ export function CommunicationsTab({ companyId }: CommunicationsTabProps) {
             <Label>Target Contact (Optional)</Label>
             <Select value={selectedContactId} onValueChange={setSelectedContactId}>
               <SelectTrigger>
-                <SelectValue placeholder="Select a contact..." />
+                <SelectValue placeholder="No specific contact (general communication)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No specific contact</SelectItem>
                 {contacts.map((contact) => (
                   <SelectItem key={contact.id} value={contact.id}>
                     {contact.first_name} {contact.last_name}
@@ -299,7 +298,7 @@ export function CommunicationsTab({ companyId }: CommunicationsTabProps) {
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground mt-1">
-              Select a specific contact to personalize the communication
+              Select a specific contact to personalize the communication, or leave empty for general messaging
             </p>
           </div>
 

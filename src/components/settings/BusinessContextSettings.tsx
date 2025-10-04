@@ -13,13 +13,7 @@ export function BusinessContextSettings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
-  
-  const [businessDescription, setBusinessDescription] = useState('');
-  const [teamMission, setTeamMission] = useState('');
-  const [valueProposition, setValueProposition] = useState('');
-  const [targetCustomerProfile, setTargetCustomerProfile] = useState('');
-  const [keyProductsServices, setKeyProductsServices] = useState('');
-  const [communicationGuidelines, setCommunicationGuidelines] = useState('');
+  const [businessContext, setBusinessContext] = useState('');
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['business-context-settings'],
@@ -38,12 +32,7 @@ export function BusinessContextSettings() {
 
   useEffect(() => {
     if (settings) {
-      setBusinessDescription(settings.business_description || '');
-      setTeamMission(settings.team_mission || '');
-      setValueProposition(settings.value_proposition || '');
-      setTargetCustomerProfile(settings.target_customer_profile || '');
-      setKeyProductsServices(settings.key_products_services || '');
-      setCommunicationGuidelines(settings.communication_guidelines || '');
+      setBusinessContext(settings.business_description || '');
     }
   }, [settings]);
 
@@ -78,23 +67,13 @@ export function BusinessContextSettings() {
 
   const handleSave = () => {
     updateMutation.mutate({
-      business_description: businessDescription,
-      team_mission: teamMission,
-      value_proposition: valueProposition,
-      target_customer_profile: targetCustomerProfile,
-      key_products_services: keyProductsServices,
-      communication_guidelines: communicationGuidelines,
+      business_description: businessContext,
     });
   };
 
   const handleCancel = () => {
     if (settings) {
-      setBusinessDescription(settings.business_description || '');
-      setTeamMission(settings.team_mission || '');
-      setValueProposition(settings.value_proposition || '');
-      setTargetCustomerProfile(settings.target_customer_profile || '');
-      setKeyProductsServices(settings.key_products_services || '');
-      setCommunicationGuidelines(settings.communication_guidelines || '');
+      setBusinessContext(settings.business_description || '');
     }
     setIsEditing(false);
   };
@@ -128,81 +107,20 @@ export function BusinessContextSettings() {
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="business-description">Business Description</Label>
+            <Label htmlFor="business-context">Business Context</Label>
             <Textarea
-              id="business-description"
-              value={businessDescription}
-              onChange={(e) => setBusinessDescription(e.target.value)}
+              id="business-context"
+              value={businessContext}
+              onChange={(e) => setBusinessContext(e.target.value)}
               disabled={!isEditing}
-              placeholder="Describe what your business does and your core offerings..."
-              rows={4}
-              className="resize-none"
+              placeholder="Enter your complete business context including mission, goals, products, services, target customers, and communication guidelines..."
+              rows={20}
+              className="resize-y font-mono text-sm"
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="team-mission">Team Mission & Goals</Label>
-            <Textarea
-              id="team-mission"
-              value={teamMission}
-              onChange={(e) => setTeamMission(e.target.value)}
-              disabled={!isEditing}
-              placeholder="What is your team's mission and what goals are you working towards..."
-              rows={3}
-              className="resize-none"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="value-proposition">Value Proposition</Label>
-            <Textarea
-              id="value-proposition"
-              value={valueProposition}
-              onChange={(e) => setValueProposition(e.target.value)}
-              disabled={!isEditing}
-              placeholder="What makes your offering unique and valuable to customers..."
-              rows={3}
-              className="resize-none"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="target-customer">Target Customer Profile</Label>
-            <Textarea
-              id="target-customer"
-              value={targetCustomerProfile}
-              onChange={(e) => setTargetCustomerProfile(e.target.value)}
-              disabled={!isEditing}
-              placeholder="Describe your ideal customer profile, industries, company sizes, decision makers..."
-              rows={3}
-              className="resize-none"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="key-products">Key Products & Services</Label>
-            <Textarea
-              id="key-products"
-              value={keyProductsServices}
-              onChange={(e) => setKeyProductsServices(e.target.value)}
-              disabled={!isEditing}
-              placeholder="List and describe your key products, services, and solutions..."
-              rows={3}
-              className="resize-none"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="communication-guidelines">Communication Guidelines</Label>
-            <Textarea
-              id="communication-guidelines"
-              value={communicationGuidelines}
-              onChange={(e) => setCommunicationGuidelines(e.target.value)}
-              disabled={!isEditing}
-              placeholder="Define your preferred communication style, tone, key messages, things to emphasize or avoid..."
-              rows={4}
-              className="resize-none"
-            />
+            <p className="text-xs text-muted-foreground">
+              This context is automatically included in all AI-generated communications to ensure consistency 
+              with your team's business direction and communication style.
+            </p>
           </div>
         </div>
 

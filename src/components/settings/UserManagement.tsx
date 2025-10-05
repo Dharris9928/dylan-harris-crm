@@ -7,9 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Shield, ShieldAlert, ShieldCheck, Eye, Key } from "lucide-react";
+import { Shield, ShieldAlert, ShieldCheck, Eye, Key, Pencil } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface UserProfile {
@@ -26,9 +26,17 @@ export function UserManagement() {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [resetting, setResetting] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editForm, setEditForm] = useState({
+    email: "",
+    firstName: "",
+    lastName: "",
+    password: ""
+  });
 
   useEffect(() => {
     loadUsers();
@@ -176,6 +184,66 @@ export function UserManagement() {
     }
   };
 
+  const openEditDialog = (user: UserProfile) => {
+    setSelectedUserId(user.id);
+    setEditForm({
+      email: user.email,
+      firstName: user.first_name || "",
+      lastName: user.last_name || "",
+      password: ""
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleEditUser = async () => {
+    if (!selectedUserId) return;
+
+    // Validate password if provided
+    if (editForm.password && (editForm.password.length < 8 || editForm.password.length > 15)) {
+      toast.error('Password must be 8-15 characters');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const updates: {
+        userId: string;
+        email?: string;
+        firstName?: string;
+        lastName?: string;
+        password?: string;
+      } = { userId: selectedUserId };
+
+      // Only include fields that have changed
+      const originalUser = users.find(u => u.id === selectedUserId);
+      if (editForm.email !== originalUser?.email) updates.email = editForm.email;
+      if (editForm.firstName !== (originalUser?.first_name || "")) updates.firstName = editForm.firstName;
+      if (editForm.lastName !== (originalUser?.last_name || "")) updates.lastName = editForm.lastName;
+      if (editForm.password) updates.password = editForm.password;
+
+      const { data, error } = await supabase.functions.invoke('admin-update-user', {
+        body: updates
+      });
+
+      if (error) throw error;
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      toast.success('User updated successfully');
+      setEditDialogOpen(false);
+      setEditForm({ email: "", firstName: "", lastName: "", password: "" });
+      setSelectedUserId(null);
+      loadUsers();
+    } catch (error) {
+      console.error('Error updating user:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to update user');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const getRoleBadge = (role: string) => {
     const variants: Record<string, { variant: any; icon: any; label: string }> = {
       admin: { 
@@ -280,6 +348,13 @@ export function UserManagement() {
                           <Button
                             variant="outline"
                             size="sm"
+                            onClick={() => openEditDialog(user)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => {
                               setSelectedUserId(user.id);
                               setResetDialogOpen(true);
@@ -307,6 +382,82 @@ export function UserManagement() {
           </ul>
         </div>
       </CardContent>
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>
+              Update user information. Leave password blank to keep current password.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-email">Email</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={editForm.email}
+                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                placeholder="user@example.com"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-firstname">First Name</Label>
+                <Input
+                  id="edit-firstname"
+                  type="text"
+                  value={editForm.firstName}
+                  onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
+                  placeholder="First name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-lastname">Last Name</Label>
+                <Input
+                  id="edit-lastname"
+                  type="text"
+                  value={editForm.lastName}
+                  onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
+                  placeholder="Last name"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-password">New Password (optional)</Label>
+              <Input
+                id="edit-password"
+                type="password"
+                value={editForm.password}
+                onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                placeholder="Leave blank to keep current"
+              />
+              <p className="text-xs text-muted-foreground">
+                8-15 characters with capital letter, number, and special character
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEditDialogOpen(false);
+                setEditForm({ email: "", firstName: "", lastName: "", password: "" });
+                setSelectedUserId(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleEditUser}
+              disabled={saving}
+            >
+              {saving ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
         <DialogContent>

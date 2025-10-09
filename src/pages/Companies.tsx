@@ -154,7 +154,13 @@ const Companies = () => {
 
       // Apply assignee filter
       if (assignedToFilter) {
-        query = query.eq('assigned_to', assignedToFilter);
+        if (assignedToFilter.startsWith('user:')) {
+          const userId = assignedToFilter.replace('user:', '');
+          query = query.eq('assigned_to', userId);
+        } else if (assignedToFilter.startsWith('salesrep:')) {
+          const salesRepId = assignedToFilter.replace('salesrep:', '');
+          query = query.eq('assigned_to_sales_rep_id', salesRepId);
+        }
       }
 
       // Apply enrichment status filter

@@ -289,6 +289,7 @@ export type Database = {
           annual_volume: number | null
           annual_volume_range: string | null
           assigned_to: string | null
+          assigned_to_sales_rep_id: string | null
           average_home_price: number | null
           average_home_price_range: string | null
           city: string | null
@@ -369,6 +370,7 @@ export type Database = {
           annual_volume?: number | null
           annual_volume_range?: string | null
           assigned_to?: string | null
+          assigned_to_sales_rep_id?: string | null
           average_home_price?: number | null
           average_home_price_range?: string | null
           city?: string | null
@@ -449,6 +451,7 @@ export type Database = {
           annual_volume?: number | null
           annual_volume_range?: string | null
           assigned_to?: string | null
+          assigned_to_sales_rep_id?: string | null
           average_home_price?: number | null
           average_home_price_range?: string | null
           city?: string | null
@@ -524,6 +527,13 @@ export type Database = {
           zip?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "companies_assigned_to_sales_rep_id_fkey"
+            columns: ["assigned_to_sales_rep_id"]
+            isOneToOne: false
+            referencedRelation: "sales_reps"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "companies_created_by_fkey"
             columns: ["created_by"]

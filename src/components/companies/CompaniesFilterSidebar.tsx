@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { UserAssignmentSelect } from "./UserAssignmentSelect";
+import { UnifiedAssignmentSelect } from "./UnifiedAssignmentSelect";
 import { 
   BUILDER_SEGMENTS, 
   CONTRACTOR_SEGMENTS, 
@@ -467,7 +468,7 @@ export function CompaniesFilterSidebar({ isCollapsed, onToggle }: CompaniesFilte
           isCollapsed={collapsedSections.has('assignee')}
           onToggle={() => toggleSection('assignee')}
         >
-          <UserAssignmentSelect
+          <UnifiedAssignmentSelect
             value={searchParams.get("assigned_to") || ""}
             onValueChange={(value) => {
               const newParams = new URLSearchParams(searchParams);

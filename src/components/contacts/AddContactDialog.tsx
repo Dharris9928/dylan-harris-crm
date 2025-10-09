@@ -62,7 +62,6 @@ export function AddContactDialog({ open, onOpenChange, onSuccess, companyId, com
   const [companies, setCompanies] = useState<{ id: string; company_name: string }[]>([]);
   const [companySearch, setCompanySearch] = useState("");
   const [openCombobox, setOpenCombobox] = useState(false);
-  const [addAnother, setAddAnother] = useState(false);
   const debouncedSearch = useDebounce(companySearch, 300);
 
   const form = useForm<ContactFormData>({
@@ -116,25 +115,35 @@ export function AddContactDialog({ open, onOpenChange, onSuccess, companyId, com
     if (data) setCompanies(data);
   };
 
-  const onSubmit = async (data: ContactFormData) => {
+  const onSubmit = async (data: ContactFormData, shouldAddAnother: boolean) => {
     try {
       await createContact(data);
       toast.success("Contact added successfully!");
       onSuccess();
       
-      if (addAnother) {
-        // Reset form but keep company selection if it was pre-filled
+      if (shouldAddAnother) {
+        // Reset form but keep company selection
         const currentCompanyId = form.getValues("company_id");
         const currentCompanySearch = companySearch;
-        form.reset();
+        form.reset({
+          first_name: "",
+          last_name: "",
+          title: "",
+          company_id: companyId || currentCompanyId,
+          email: "",
+          phone: "",
+          mobile: "",
+          linkedin_url: "",
+          decision_tier: "Influencer",
+          preferred_contact_method: "Email",
+          notes: "",
+        });
         if (companyId) {
-          form.setValue("company_id", companyId);
           setCompanySearch(companyName || "");
-        } else if (currentCompanyId) {
-          form.setValue("company_id", currentCompanyId);
+        } else {
           setCompanySearch(currentCompanySearch);
         }
-        setAddAnother(false);
+        // Keep dialog open
       } else {
         form.reset();
         setCompanySearch("");
@@ -155,7 +164,7 @@ export function AddContactDialog({ open, onOpenChange, onSuccess, companyId, com
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form onSubmit={(e) => e.preventDefault()}>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <FormField
@@ -378,19 +387,19 @@ export function AddContactDialog({ open, onOpenChange, onSuccess, companyId, com
                 Cancel
               </Button>
               <Button 
-                type="submit" 
+                type="button" 
                 variant="secondary"
                 disabled={form.formState.isSubmitting}
-                onClick={() => setAddAnother(true)}
+                onClick={form.handleSubmit((data) => onSubmit(data, true))}
               >
-                {form.formState.isSubmitting && addAnother ? "Saving..." : "Save & Add Another"}
+                {form.formState.isSubmitting ? "Saving..." : "Save & Add Another"}
               </Button>
               <Button 
-                type="submit" 
+                type="button" 
                 disabled={form.formState.isSubmitting}
-                onClick={() => setAddAnother(false)}
+                onClick={form.handleSubmit((data) => onSubmit(data, false))}
               >
-                {form.formState.isSubmitting && !addAnother ? "Adding..." : "Add Contact"}
+                {form.formState.isSubmitting ? "Adding..." : "Add Contact"}
               </Button>
             </DialogFooter>
           </form>

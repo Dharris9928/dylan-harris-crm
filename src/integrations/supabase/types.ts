@@ -1050,6 +1050,36 @@ export type Database = {
         }
         Relationships: []
       }
+      duplicate_search_logs: {
+        Row: {
+          action_taken: string | null
+          created_at: string | null
+          id: string
+          results_found: number | null
+          search_parameters: Json | null
+          search_type: string
+          user_id: string
+        }
+        Insert: {
+          action_taken?: string | null
+          created_at?: string | null
+          id?: string
+          results_found?: number | null
+          search_parameters?: Json | null
+          search_type: string
+          user_id: string
+        }
+        Update: {
+          action_taken?: string | null
+          created_at?: string | null
+          id?: string
+          results_found?: number | null
+          search_parameters?: Json | null
+          search_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       enrichment_logs: {
         Row: {
           company_id: string
@@ -1850,6 +1880,20 @@ export type Database = {
       cleanup_rate_limit_tracking: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      find_duplicate_companies: {
+        Args: { max_results?: number; similarity_threshold?: number }
+        Returns: {
+          company1_created_by: string
+          company1_id: string
+          company1_name: string
+          company2_created_by: string
+          company2_id: string
+          company2_name: string
+          same_industry: boolean
+          same_state: boolean
+          similarity_score: number
+        }[]
       }
       get_company_hierarchy: {
         Args: Record<PropertyKey, never>

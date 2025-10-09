@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Users, FileText, Merge } from "lucide-react";
+import { Building2, Users, FileText, Merge, Search } from "lucide-react";
 import { UserManagement } from "@/components/settings/UserManagement";
 import { UserApprovalPanel } from "@/components/settings/UserApprovalPanel";
 import { DeletionApprovalPanel } from "@/components/settings/DeletionApprovalPanel";
@@ -11,6 +11,7 @@ import { ApprovalAuditLog } from "@/components/settings/ApprovalAuditLog";
 import { SecurityDashboard } from "@/components/settings/SecurityDashboard";
 import { BusinessContextSettings } from "@/components/settings/BusinessContextSettings";
 import { MergeCompaniesDialog } from "@/components/settings/MergeCompaniesDialog";
+import { DuplicateDetectionDialog } from "@/components/settings/DuplicateDetectionDialog";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ImportExportActivityLog } from "@/components/help/ImportExportActivityLog";
@@ -20,6 +21,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 const Settings = () => {
   const { data: userData } = useUserRole();
   const [isMergeDialogOpen, setIsMergeDialogOpen] = useState(false);
+  const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
   const builderSegments = [
     { name: "Production/Tract Builders", priority: "40%", description: "100-1,000+ homes annually" },
     { name: "Regional Mid-Volume Builders", priority: "25%", description: "25-100 homes annually" },
@@ -83,6 +85,17 @@ const Settings = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-semibold mb-2">Find Duplicate Companies</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Detect potential duplicate company records using intelligent fuzzy matching. Searches are logged with timestamps for audit purposes.
+                  </p>
+                  <Button onClick={() => setIsDuplicateDialogOpen(true)} variant="outline">
+                    <Search className="h-4 w-4 mr-2" />
+                    Find Duplicates
+                  </Button>
+                </div>
+                <Separator />
                 <div>
                   <h3 className="text-sm font-semibold mb-2">Merge Company Profiles</h3>
                   <p className="text-sm text-muted-foreground mb-4">
@@ -224,6 +237,11 @@ const Settings = () => {
         onSuccess={() => {
           // Data will automatically refresh via realtime subscriptions
         }}
+      />
+
+      <DuplicateDetectionDialog
+        open={isDuplicateDialogOpen}
+        onOpenChange={setIsDuplicateDialogOpen}
       />
     </div>
   );

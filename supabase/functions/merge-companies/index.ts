@@ -99,72 +99,72 @@ Deno.serve(async (req) => {
     };
 
     // Update contacts
-    const { error: contactsError, count: contactsCount } = await supabaseClient
+    const { data: contactsData, error: contactsError } = await supabaseClient
       .from('contacts')
       .update({ company_id: target_company_id })
       .eq('company_id', source_company_id)
-      .select('*', { count: 'exact', head: true });
+      .select('id');
 
     if (contactsError) {
       console.error('Error updating contacts:', contactsError);
     } else {
-      stats.contacts = contactsCount || 0;
+      stats.contacts = contactsData?.length || 0;
       console.log(`Updated ${stats.contacts} contacts`);
     }
 
     // Update outreach activities
-    const { error: activitiesError, count: activitiesCount } = await supabaseClient
+    const { data: activitiesData, error: activitiesError } = await supabaseClient
       .from('outreach_activities')
       .update({ company_id: target_company_id })
       .eq('company_id', source_company_id)
-      .select('*', { count: 'exact', head: true });
+      .select('id');
 
     if (activitiesError) {
       console.error('Error updating activities:', activitiesError);
     } else {
-      stats.activities = activitiesCount || 0;
+      stats.activities = activitiesData?.length || 0;
       console.log(`Updated ${stats.activities} activities`);
     }
 
     // Update company branches
-    const { error: branchesError, count: branchesCount } = await supabaseClient
+    const { data: branchesData, error: branchesError } = await supabaseClient
       .from('company_branches')
       .update({ company_id: target_company_id })
       .eq('company_id', source_company_id)
-      .select('*', { count: 'exact', head: true });
+      .select('id');
 
     if (branchesError) {
       console.error('Error updating branches:', branchesError);
     } else {
-      stats.branches = branchesCount || 0;
+      stats.branches = branchesData?.length || 0;
       console.log(`Updated ${stats.branches} branches`);
     }
 
     // Update installation history
-    const { error: installationsError, count: installationsCount } = await supabaseClient
+    const { data: installationsData, error: installationsError } = await supabaseClient
       .from('installation_history')
       .update({ company_id: target_company_id })
       .eq('company_id', source_company_id)
-      .select('*', { count: 'exact', head: true });
+      .select('id');
 
     if (installationsError) {
       console.error('Error updating installations:', installationsError);
     } else {
-      stats.installations = installationsCount || 0;
+      stats.installations = installationsData?.length || 0;
       console.log(`Updated ${stats.installations} installations`);
     }
 
     // Update company partner matches
-    const { error: partnerError, count: partnerCount } = await supabaseClient
+    const { data: partnerData, error: partnerError } = await supabaseClient
       .from('company_partner_matches')
       .update({ company_id: target_company_id })
       .eq('company_id', source_company_id)
-      .select('*', { count: 'exact', head: true });
+      .select('id');
 
     if (partnerError) {
       console.error('Error updating partner matches:', partnerError);
     } else {
-      stats.partner_matches = partnerCount || 0;
+      stats.partner_matches = partnerData?.length || 0;
       console.log(`Updated ${stats.partner_matches} partner matches`);
     }
 
@@ -175,56 +175,56 @@ Deno.serve(async (req) => {
       .eq('company_id', source_company_id);
 
     // Delete AI insights for source (will be regenerated if needed)
-    const { count: aiInsightsCount } = await supabaseClient
+    const { data: aiInsightsData } = await supabaseClient
       .from('company_ai_insights')
       .delete()
       .eq('company_id', source_company_id)
-      .select('*', { count: 'exact', head: true });
+      .select('id');
 
-    stats.ai_insights = aiInsightsCount || 0;
+    stats.ai_insights = aiInsightsData?.length || 0;
     console.log(`Deleted ${stats.ai_insights} AI insights (will be regenerated)`);
 
     // Delete scoring details for source (will be recalculated)
-    const { count: builderScoringCount } = await supabaseClient
+    const { data: builderScoringData } = await supabaseClient
       .from('builder_scoring_details')
       .delete()
       .eq('company_id', source_company_id)
-      .select('*', { count: 'exact', head: true });
+      .select('id');
 
-    const { count: contractorScoringCount } = await supabaseClient
+    const { data: contractorScoringData } = await supabaseClient
       .from('contractor_scoring_details')
       .delete()
       .eq('company_id', source_company_id)
-      .select('*', { count: 'exact', head: true });
+      .select('id');
 
-    stats.scoring_details = (builderScoringCount || 0) + (contractorScoringCount || 0);
+    stats.scoring_details = (builderScoringData?.length || 0) + (contractorScoringData?.length || 0);
     console.log(`Deleted ${stats.scoring_details} scoring records (will be recalculated)`);
 
     // Update communications
-    const { error: commsError, count: commsCount } = await supabaseClient
+    const { data: commsData, error: commsError } = await supabaseClient
       .from('company_communications')
       .update({ company_id: target_company_id })
       .eq('company_id', source_company_id)
-      .select('*', { count: 'exact', head: true });
+      .select('id');
 
     if (commsError) {
       console.error('Error updating communications:', commsError);
     } else {
-      stats.communications = commsCount || 0;
+      stats.communications = commsData?.length || 0;
       console.log(`Updated ${stats.communications} communications`);
     }
 
     // Update enrichment logs
-    const { error: enrichmentError, count: enrichmentCount } = await supabaseClient
+    const { data: enrichmentData, error: enrichmentError } = await supabaseClient
       .from('enrichment_logs')
       .update({ company_id: target_company_id })
       .eq('company_id', source_company_id)
-      .select('*', { count: 'exact', head: true });
+      .select('id');
 
     if (enrichmentError) {
       console.error('Error updating enrichment logs:', enrichmentError);
     } else {
-      stats.enrichment_logs = enrichmentCount || 0;
+      stats.enrichment_logs = enrichmentData?.length || 0;
       console.log(`Updated ${stats.enrichment_logs} enrichment logs`);
     }
 
@@ -273,7 +273,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Merge companies error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,

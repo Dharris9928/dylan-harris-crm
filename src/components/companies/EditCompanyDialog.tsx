@@ -418,16 +418,16 @@ export function EditCompanyDialog({ open, onClose, onOpenChange, onSuccess, comp
         </DialogHeader>
 
         <Tabs defaultValue="form" className="w-full">
-          <TabsList className="grid w-full grid-cols-9">
-            <TabsTrigger value="form">Company Details</TabsTrigger>
-            <TabsTrigger value="quality">Data Quality</TabsTrigger>
-            <TabsTrigger value="insights">AI Insights</TabsTrigger>
-            <TabsTrigger value="existing-contacts">Contacts</TabsTrigger>
-            <TabsTrigger value="contacts">Find Contacts</TabsTrigger>
-            <TabsTrigger value="opportunities">Opportunities</TabsTrigger>
-            <TabsTrigger value="communications">Communications</TabsTrigger>
-            <TabsTrigger value="similar">Similar Companies</TabsTrigger>
-            <TabsTrigger value="history">Enrichment Log</TabsTrigger>
+          <TabsList className="inline-flex w-full overflow-x-auto justify-start">
+            <TabsTrigger value="form" className="whitespace-nowrap">Company Details</TabsTrigger>
+            <TabsTrigger value="quality" className="whitespace-nowrap">Data Quality</TabsTrigger>
+            <TabsTrigger value="insights" className="whitespace-nowrap">AI Insights</TabsTrigger>
+            <TabsTrigger value="existing-contacts" className="whitespace-nowrap">Contacts</TabsTrigger>
+            <TabsTrigger value="contacts" className="whitespace-nowrap">Find Contacts</TabsTrigger>
+            <TabsTrigger value="opportunities" className="whitespace-nowrap">Opportunities</TabsTrigger>
+            <TabsTrigger value="communications" className="whitespace-nowrap">Communications</TabsTrigger>
+            <TabsTrigger value="similar" className="whitespace-nowrap">Similar Companies</TabsTrigger>
+            <TabsTrigger value="history" className="whitespace-nowrap">Enrichment Log</TabsTrigger>
           </TabsList>
           
           <TabsContent value="form">

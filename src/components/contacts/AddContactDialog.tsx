@@ -62,6 +62,7 @@ export function AddContactDialog({ open, onOpenChange, onSuccess, companyId, com
   const [companies, setCompanies] = useState<{ id: string; company_name: string }[]>([]);
   const [companySearch, setCompanySearch] = useState("");
   const [openCombobox, setOpenCombobox] = useState(false);
+  const [addAnother, setAddAnother] = useState(false);
   const debouncedSearch = useDebounce(companySearch, 300);
 
   const form = useForm<ContactFormData>({
@@ -119,9 +120,26 @@ export function AddContactDialog({ open, onOpenChange, onSuccess, companyId, com
     try {
       await createContact(data);
       toast.success("Contact added successfully!");
-      form.reset();
       onSuccess();
-      onOpenChange(false);
+      
+      if (addAnother) {
+        // Reset form but keep company selection if it was pre-filled
+        const currentCompanyId = form.getValues("company_id");
+        const currentCompanySearch = companySearch;
+        form.reset();
+        if (companyId) {
+          form.setValue("company_id", companyId);
+          setCompanySearch(companyName || "");
+        } else if (currentCompanyId) {
+          form.setValue("company_id", currentCompanyId);
+          setCompanySearch(currentCompanySearch);
+        }
+        setAddAnother(false);
+      } else {
+        form.reset();
+        setCompanySearch("");
+        onOpenChange(false);
+      }
     } catch (error: any) {
       toast.error(error.message || "Failed to add contact");
     }
@@ -355,12 +373,24 @@ export function AddContactDialog({ open, onOpenChange, onSuccess, companyId, com
                 )}
               />
             </div>
-            <DialogFooter>
+            <DialogFooter className="gap-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Adding..." : "Add Contact"}
+              <Button 
+                type="submit" 
+                variant="secondary"
+                disabled={form.formState.isSubmitting}
+                onClick={() => setAddAnother(true)}
+              >
+                {form.formState.isSubmitting && addAnother ? "Saving..." : "Save & Add Another"}
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={form.formState.isSubmitting}
+                onClick={() => setAddAnother(false)}
+              >
+                {form.formState.isSubmitting && !addAnother ? "Adding..." : "Add Contact"}
               </Button>
             </DialogFooter>
           </form>

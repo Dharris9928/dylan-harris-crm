@@ -84,6 +84,7 @@ const Companies = () => {
   const hasLinkedinFilter = searchParams.get("has_linkedin");
   const hasPartnerFilter = searchParams.get("has_partner");
   const lastContactFilter = searchParams.get("last_contact");
+  const enrichmentStatusFilter = searchParams.get("enrichment_status");
 
   // Persist sort selection
   useEffect(() => {
@@ -123,10 +124,10 @@ const Companies = () => {
   useEffect(() => {
     setCurrentPage(1);
     setSelectedRows([]);
-  }, [debouncedSearch, statusFilter, priorityFilter, segmentFilter, industryTypeFilter, stateFilter, cityFilter]);
+  }, [debouncedSearch, statusFilter, priorityFilter, segmentFilter, industryTypeFilter, stateFilter, cityFilter, enrichmentStatusFilter]);
 
   const { data: companies, isLoading, refetch } = useQuery({
-    queryKey: ["companies", debouncedSearch, statusFilter, priorityFilter, segmentFilter, industryTypeFilter, stateFilter, cityFilter],
+    queryKey: ["companies", debouncedSearch, statusFilter, priorityFilter, segmentFilter, industryTypeFilter, stateFilter, cityFilter, enrichmentStatusFilter],
     queryFn: async () => {
       let query = supabase
         .from("companies")
@@ -149,6 +150,31 @@ const Companies = () => {
       if (statusFilter) query = query.eq('status', statusFilter);
       if (priorityFilter) query = query.eq('priority_tier', priorityFilter);
       if (segmentFilter) query = query.eq('segment', segmentFilter);
+
+      // Apply enrichment status filter
+      if (enrichmentStatusFilter === 'enriched') {
+        const { data: enrichedIds } = await supabase
+          .from('enrichment_logs')
+          .select('company_id')
+          .eq('status', 'success');
+        
+        if (enrichedIds && enrichedIds.length > 0) {
+          const uniqueIds = [...new Set(enrichedIds.map(log => log.company_id))];
+          query = query.in('id', uniqueIds);
+        } else {
+          return [];
+        }
+      } else if (enrichmentStatusFilter === 'not-enriched') {
+        const { data: enrichedIds } = await supabase
+          .from('enrichment_logs')
+          .select('company_id')
+          .eq('status', 'success');
+        
+        if (enrichedIds && enrichedIds.length > 0) {
+          const uniqueIds = [...new Set(enrichedIds.map(log => log.company_id))];
+          query = query.not('id', 'in', `(${uniqueIds.join(',')})`);
+        }
+      }
 
       const { data, error } = await query;
       if (error) throw error;

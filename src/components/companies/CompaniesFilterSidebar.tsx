@@ -460,6 +460,45 @@ export function CompaniesFilterSidebar({ isCollapsed, onToggle }: CompaniesFilte
           </div>
         </FilterSection>
 
+        {/* Enrichment Status Filter */}
+        <FilterSection
+          title="Enrichment Status"
+          isCollapsed={collapsedSections.has('enrichment')}
+          onToggle={() => toggleSection('enrichment')}
+        >
+          <RadioGroup
+            value={searchParams.get("enrichment_status") || "all"}
+            onValueChange={(value) => {
+              const newParams = new URLSearchParams(searchParams);
+              if (value === "all") {
+                newParams.delete("enrichment_status");
+              } else {
+                newParams.set("enrichment_status", value);
+              }
+              setSearchParams(newParams);
+            }}
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="all" id="enrichment-all" />
+              <Label htmlFor="enrichment-all" className="text-sm font-normal cursor-pointer">
+                All Companies
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="enriched" id="enrichment-enriched" />
+              <Label htmlFor="enrichment-enriched" className="text-sm font-normal cursor-pointer">
+                Previously Enriched
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="not-enriched" id="enrichment-not-enriched" />
+              <Label htmlFor="enrichment-not-enriched" className="text-sm font-normal cursor-pointer">
+                Not Enriched Yet
+              </Label>
+            </div>
+          </RadioGroup>
+        </FilterSection>
+
         {/* Data Completeness Filter */}
         <FilterSection
           title="Data Completeness"

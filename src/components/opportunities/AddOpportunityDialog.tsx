@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { UserAssignmentSelect } from "@/components/companies/UserAssignmentSelect";
+import { SalesRepSelect } from "@/components/companies/SalesRepSelect";
 import { CompanySearchSelect } from "@/components/opportunities/CompanySearchSelect";
 import { OpportunityProductsForm } from "@/components/opportunities/OpportunityProductsForm";
 
@@ -203,10 +204,10 @@ export function AddOpportunityDialog({ open, onOpenChange }: AddOpportunityDialo
                   <FormItem>
                     <FormLabel>Assigned To</FormLabel>
                     <FormControl>
-                      <UserAssignmentSelect
+                      <SalesRepSelect
                         value={field.value}
                         onValueChange={field.onChange}
-                        placeholder="Select assignee..."
+                        placeholder="Select sales rep..."
                       />
                     </FormControl>
                     <FormMessage />

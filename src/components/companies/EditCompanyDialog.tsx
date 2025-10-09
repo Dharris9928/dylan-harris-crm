@@ -30,7 +30,7 @@ import { ApolloContactRecommendations } from './ApolloContactRecommendations';
 import { CommunicationsTab } from './CommunicationsTab';
 import { CompanyContactsList } from './CompanyContactsList';
 import { UserAssignmentSelect } from './UserAssignmentSelect';
-import { UnifiedAssignmentSelect } from './UnifiedAssignmentSelect';
+import { SalesRepSelect } from './SalesRepSelect';
 import { CompanyOpportunitiesTab } from '../opportunities/CompanyOpportunitiesTab';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -206,15 +206,7 @@ export function EditCompanyDialog({ open, onClose, onOpenChange, onSuccess, comp
       setSegment(company.segment || '');
       
       setStatus(company.status || 'Lead');
-      
-      // Handle unified assignment (check both user and sales rep assignments)
-      if (company.assigned_to) {
-        setAssignedTo(`user:${company.assigned_to}`);
-      } else if ((company as any).assigned_to_sales_rep_id) {
-        setAssignedTo(`salesrep:${(company as any).assigned_to_sales_rep_id}`);
-      } else {
-        setAssignedTo('');
-      }
+      setAssignedTo((company as any).assigned_to_sales_rep_id || '');
       
       // Parent-Subsidiary Relationship
       setCompanyType((company.company_type as 'standalone' | 'parent' | 'subsidiary') || 'standalone');
@@ -290,24 +282,12 @@ export function EditCompanyDialog({ open, onClose, onOpenChange, onSuccess, comp
     setSaving(true);
 
     try {
-      // Parse assignment value to determine type and ID
-      let parsedAssignedTo = null;
-      let parsedAssignedToSalesRep = null;
-      
-      if (assignedTo && assignedTo !== 'unassigned') {
-        if (assignedTo.startsWith('user:')) {
-          parsedAssignedTo = assignedTo.replace('user:', '');
-        } else if (assignedTo.startsWith('salesrep:')) {
-          parsedAssignedToSalesRep = assignedTo.replace('salesrep:', '');
-        }
-      }
-      
       const companyData: any = {
         company_name: companyName,
         industry_type: industryType,
         status: status as any,
-        assigned_to: parsedAssignedTo,
-        assigned_to_sales_rep_id: parsedAssignedToSalesRep,
+        assigned_to: null,
+        assigned_to_sales_rep_id: assignedTo === 'unassigned' ? null : (assignedTo || null),
         
         // Parent-Subsidiary Relationship
         company_type: companyType,
@@ -536,13 +516,13 @@ export function EditCompanyDialog({ open, onClose, onOpenChange, onSuccess, comp
 
               <div>
                 <Label htmlFor="assigned_to">Assigned To</Label>
-                <UnifiedAssignmentSelect 
+                <SalesRepSelect 
                   value={assignedTo}
                   onValueChange={(v) => {
                     setAssignedTo(v);
                     markChanged();
                   }}
-                  placeholder="Assign to user or sales rep..."
+                  placeholder="Assign to sales rep..."
                 />
               </div>
 

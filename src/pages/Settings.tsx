@@ -3,18 +3,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Users, FileText } from "lucide-react";
+import { Building2, Users, FileText, Merge } from "lucide-react";
 import { UserManagement } from "@/components/settings/UserManagement";
 import { UserApprovalPanel } from "@/components/settings/UserApprovalPanel";
 import { DeletionApprovalPanel } from "@/components/settings/DeletionApprovalPanel";
 import { ApprovalAuditLog } from "@/components/settings/ApprovalAuditLog";
 import { SecurityDashboard } from "@/components/settings/SecurityDashboard";
 import { BusinessContextSettings } from "@/components/settings/BusinessContextSettings";
+import { MergeCompaniesDialog } from "@/components/settings/MergeCompaniesDialog";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ImportExportActivityLog } from "@/components/help/ImportExportActivityLog";
 import { EnrichmentErrorLog } from "@/components/help/EnrichmentErrorLog";
+import { useUserRole } from "@/hooks/useUserRole";
+
 const Settings = () => {
+  const { data: userData } = useUserRole();
+  const [isMergeDialogOpen, setIsMergeDialogOpen] = useState(false);
   const builderSegments = [
     { name: "Production/Tract Builders", priority: "40%", description: "100-1,000+ homes annually" },
     { name: "Regional Mid-Volume Builders", priority: "25%", description: "25-100 homes annually" },
@@ -65,6 +70,33 @@ const Settings = () => {
         <BusinessContextSettings />
         
         <SecurityDashboard />
+
+        {/* Admin Tools Section */}
+        {userData?.role === 'admin' && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Merge className="h-5 w-5 text-primary" />
+                <CardTitle>Admin Tools</CardTitle>
+              </div>
+              <CardDescription>Advanced administrative functions</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-semibold mb-2">Merge Company Profiles</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Combine duplicate company profiles by transferring all contacts, activities, and data from one company to another.
+                  </p>
+                  <Button onClick={() => setIsMergeDialogOpen(true)} variant="outline">
+                    <Merge className="h-4 w-4 mr-2" />
+                    Merge Companies
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* System Activity Logs Section */}
         <Card>
@@ -185,6 +217,14 @@ const Settings = () => {
           </CardContent>
         </Card>
       </div>
+
+      <MergeCompaniesDialog
+        open={isMergeDialogOpen}
+        onOpenChange={setIsMergeDialogOpen}
+        onSuccess={() => {
+          // Data will automatically refresh via realtime subscriptions
+        }}
+      />
     </div>
   );
 };

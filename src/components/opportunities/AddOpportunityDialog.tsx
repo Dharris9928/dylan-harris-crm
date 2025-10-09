@@ -37,7 +37,7 @@ const opportunitySchema = z.object({
   company_id: z.string().min(1, "Company is required"),
   assigned_to: z.string().optional(),
   opportunity_name: z.string().min(1, "Opportunity name is required"),
-  status: z.enum(["New", "In Progress", "Won", "Lost", "On Hold"]),
+  status: z.enum(["Open", "Proposal", "Committed", "Purchased", "Declined"]),
   estimated_value: z.string().optional(),
   expected_close_date: z.string().optional(),
   notes: z.string().optional(),
@@ -62,7 +62,7 @@ export function AddOpportunityDialog({ open, onOpenChange }: AddOpportunityDialo
   const form = useForm<z.infer<typeof opportunitySchema>>({
     resolver: zodResolver(opportunitySchema),
     defaultValues: {
-      status: "New",
+      status: "Open",
     },
   });
 
@@ -184,11 +184,11 @@ export function AddOpportunityDialog({ open, onOpenChange }: AddOpportunityDialo
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="New">New</SelectItem>
-                        <SelectItem value="In Progress">In Progress</SelectItem>
-                        <SelectItem value="Won">Won</SelectItem>
-                        <SelectItem value="Lost">Lost</SelectItem>
-                        <SelectItem value="On Hold">On Hold</SelectItem>
+                        <SelectItem value="Open">Open</SelectItem>
+                        <SelectItem value="Proposal">Proposal</SelectItem>
+                        <SelectItem value="Committed">Committed</SelectItem>
+                        <SelectItem value="Purchased">Purchased</SelectItem>
+                        <SelectItem value="Declined">Declined</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

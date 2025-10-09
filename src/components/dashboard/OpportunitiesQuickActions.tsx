@@ -19,7 +19,7 @@ export function OpportunitiesQuickActions() {
       if (error) throw error;
 
       const total = opportunities?.length || 0;
-      const inProgress = opportunities?.filter((o: any) => o.status === 'In Progress').length || 0;
+      const inProgress = opportunities?.filter((o: any) => o.status === 'Proposal' || o.status === 'Committed').length || 0;
       const totalValue = opportunities?.reduce((sum: number, o: any) => 
         sum + (parseFloat(o.estimated_value) || 0), 0) || 0;
 

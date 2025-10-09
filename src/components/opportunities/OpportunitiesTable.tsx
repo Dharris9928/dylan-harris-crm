@@ -28,11 +28,11 @@ interface OpportunitiesTableProps {
 }
 
 const statusColors: Record<string, string> = {
-  "New": "bg-blue-500",
-  "In Progress": "bg-yellow-500",
-  "Won": "bg-green-500",
-  "Lost": "bg-red-500",
-  "On Hold": "bg-gray-500",
+  "Open": "bg-blue-500",
+  "Proposal": "bg-yellow-500",
+  "Committed": "bg-purple-500",
+  "Purchased": "bg-green-500",
+  "Declined": "bg-red-500",
 };
 
 export function OpportunitiesTable({ opportunities, isLoading }: OpportunitiesTableProps) {

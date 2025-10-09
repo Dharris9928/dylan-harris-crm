@@ -13,21 +13,29 @@ export function UserAssignmentSelect({ value, onValueChange, placeholder = "Sele
   const { data: users, isLoading } = useQuery({
     queryKey: ['users-for-assignment'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First get all approved profiles
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select(`
-          id,
-          first_name,
-          last_name,
-          approval_status,
-          user_roles!inner(role)
-        `)
+        .select('id, first_name, last_name, approval_status')
         .eq('approval_status', 'approved')
-        .in('user_roles.role', ['sales_rep', 'sales_manager', 'admin'])
         .order('first_name');
 
-      if (error) throw error;
-      return data;
+      if (profilesError) throw profilesError;
+      if (!profiles) return [];
+
+      // Then get roles for these users
+      const userIds = profiles.map(p => p.id);
+      const { data: roles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .in('user_id', userIds)
+        .in('role', ['sales_rep', 'sales_manager', 'admin']);
+
+      if (rolesError) throw rolesError;
+
+      // Filter profiles to only include users with the required roles
+      const roleUserIds = new Set(roles?.map(r => r.user_id) || []);
+      return profiles.filter(p => roleUserIds.has(p.id));
     },
   });
 

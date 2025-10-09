@@ -6,7 +6,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { MoreVertical, Edit, ExternalLink, Trash2, Mail, Phone, Copy, RefreshCw } from "lucide-react";
+import { MoreVertical, Edit, ExternalLink, Trash2, Mail, Phone, Copy, RefreshCw, CalendarPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useState } from "react";
 import { calculateLeadScore } from "@/lib/scoring/leadScoring";
+import { AddActivityDialog } from "@/components/activities/AddActivityDialog";
 
 interface QuickActionsMenuProps {
   company: any;
@@ -30,6 +31,7 @@ interface QuickActionsMenuProps {
 
 export function QuickActionsMenu({ company, onEdit, onDelete }: QuickActionsMenuProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showActivityDialog, setShowActivityDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRecalculating, setIsRecalculating] = useState(false);
   const { toast } = useToast();
@@ -112,6 +114,11 @@ export function QuickActionsMenu({ company, onEdit, onDelete }: QuickActionsMenu
             <RefreshCw className={`h-4 w-4 mr-2 ${isRecalculating ? 'animate-spin' : ''}`} />
             {isRecalculating ? 'Calculating...' : 'Recalculate Score'}
           </DropdownMenuItem>
+
+          <DropdownMenuItem onClick={() => setShowActivityDialog(true)}>
+            <CalendarPlus className="h-4 w-4 mr-2" />
+            Log Activity
+          </DropdownMenuItem>
           
           {company.website_url && (
             <DropdownMenuItem asChild>
@@ -177,6 +184,16 @@ export function QuickActionsMenu({ company, onEdit, onDelete }: QuickActionsMenu
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AddActivityDialog
+        open={showActivityDialog}
+        onOpenChange={setShowActivityDialog}
+        onSuccess={() => {
+          setShowActivityDialog(false);
+        }}
+        companyId={company.id}
+        companyName={company.company_name}
+      />
     </>
   );
 }

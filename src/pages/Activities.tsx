@@ -2,13 +2,15 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, Calendar } from "lucide-react";
+import { Activity, Calendar, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
+import { AddActivityDialog } from "@/components/activities/AddActivityDialog";
 
 const Activities = () => {
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [dateRange, setDateRange] = useState<{
     from: Date;
     to: Date;
@@ -21,7 +23,7 @@ const Activities = () => {
     };
   });
 
-  const { data: activities, isLoading } = useQuery({
+  const { data: activities, isLoading, refetch } = useQuery({
     queryKey: ["activities", dateRange],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -61,6 +63,10 @@ const Activities = () => {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button onClick={() => setIsAddDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Activity
+          </Button>
           {!isCurrentMonth && (
             <Button variant="outline" onClick={resetToCurrentMonth}>
               Current Month
@@ -148,6 +154,15 @@ const Activities = () => {
           ))}
         </div>
       )}
+
+      <AddActivityDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        onSuccess={() => {
+          refetch();
+          setIsAddDialogOpen(false);
+        }}
+      />
     </div>
   );
 };

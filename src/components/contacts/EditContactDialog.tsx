@@ -18,7 +18,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface Contact {
   id: string;
@@ -47,6 +63,9 @@ const contactMethods = ["Email", "Phone", "LinkedIn", "Text"];
 export function EditContactDialog({ open, onOpenChange, onSuccess, contact }: EditContactDialogProps) {
   const [loading, setLoading] = useState(false);
   const [companies, setCompanies] = useState<{ id: string; company_name: string }[]>([]);
+  const [companySearch, setCompanySearch] = useState("");
+  const [openCombobox, setOpenCombobox] = useState(false);
+  const debouncedSearch = useDebounce(companySearch, 300);
   const [formData, setFormData] = useState({
     first_name: contact.first_name,
     last_name: contact.last_name,
@@ -63,14 +82,38 @@ export function EditContactDialog({ open, onOpenChange, onSuccess, contact }: Ed
   useEffect(() => {
     if (open) {
       loadCompanies();
+      loadInitialCompanyName();
     }
   }, [open]);
 
-  const loadCompanies = async () => {
+  useEffect(() => {
+    if (debouncedSearch || open) {
+      loadCompanies(debouncedSearch);
+    }
+  }, [debouncedSearch, open]);
+
+  const loadInitialCompanyName = async () => {
     const { data } = await supabase
+      .from("companies")
+      .select("company_name")
+      .eq("id", contact.company_id)
+      .single();
+    if (data) {
+      setCompanySearch(data.company_name);
+    }
+  };
+
+  const loadCompanies = async (search: string = "") => {
+    let query = supabase
       .from("companies")
       .select("id, company_name")
       .order("company_name");
+    
+    if (search) {
+      query = query.ilike("company_name", `%${search}%`);
+    }
+    
+    const { data } = await query.limit(50);
     if (data) setCompanies(data);
   };
 
@@ -141,21 +184,58 @@ export function EditContactDialog({ open, onOpenChange, onSuccess, contact }: Ed
             </div>
             <div className="grid gap-2">
               <Label htmlFor="company_id">Company *</Label>
-              <Select
-                value={formData.company_id}
-                onValueChange={(value) => setFormData({ ...formData, company_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {companies.map((company) => (
-                    <SelectItem key={company.id} value={company.id}>
-                      {company.company_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className={cn(
+                      "justify-between",
+                      !formData.company_id && "text-muted-foreground"
+                    )}
+                  >
+                    {formData.company_id
+                      ? companies.find((company) => company.id === formData.company_id)?.company_name || companySearch
+                      : "Search for a company..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput 
+                      placeholder="Search companies..." 
+                      value={companySearch}
+                      onValueChange={setCompanySearch}
+                    />
+                    <CommandList>
+                      <CommandEmpty>No company found.</CommandEmpty>
+                      <CommandGroup>
+                        {companies.map((company) => (
+                          <CommandItem
+                            key={company.id}
+                            value={company.company_name}
+                            onSelect={() => {
+                              setFormData({ ...formData, company_id: company.id });
+                              setCompanySearch(company.company_name);
+                              setOpenCombobox(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                company.id === formData.company_id
+                                  ? "opacity-100"
+                                  : "opacity-0"
+                              )}
+                            />
+                            {company.company_name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="title">Job Title</Label>

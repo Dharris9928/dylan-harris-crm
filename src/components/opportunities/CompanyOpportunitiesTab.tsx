@@ -64,12 +64,13 @@ export function CompanyOpportunitiesTab({ companyId }: CompanyOpportunitiesTabPr
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Opportunity Name</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Products</TableHead>
-              <TableHead>Estimated Value</TableHead>
-              <TableHead>Assigned To</TableHead>
-              <TableHead>Expected Close</TableHead>
+            <TableHead>Opportunity Name</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Products</TableHead>
+            <TableHead>Estimated Value</TableHead>
+            <TableHead>Assigned To</TableHead>
+            <TableHead>Expected Close</TableHead>
+            <TableHead>Notes</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -111,6 +112,15 @@ export function CompanyOpportunitiesTab({ companyId }: CompanyOpportunitiesTabPr
                   {opportunity.expected_close_date
                     ? format(new Date(opportunity.expected_close_date), "MMM d, yyyy")
                     : "—"}
+                </TableCell>
+                <TableCell className="max-w-xs">
+                  {opportunity.notes ? (
+                    <span className="text-sm text-muted-foreground truncate block">
+                      {opportunity.notes}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

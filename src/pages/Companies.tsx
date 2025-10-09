@@ -126,15 +126,31 @@ const Companies = () => {
   }, [debouncedSearch, statusFilter, priorityFilter, segmentFilter, industryTypeFilter, stateFilter, cityFilter]);
 
   const { data: companies, isLoading, refetch } = useQuery({
-    queryKey: ["companies"],
+    queryKey: ["companies", debouncedSearch, statusFilter, priorityFilter, segmentFilter, industryTypeFilter, stateFilter, cityFilter],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("companies")
         .select(`
           *,
           parent_company:companies!parent_company_id(id, company_name)
         `)
         .order("created_at", { ascending: false });
+
+      // Apply server-side search to ensure consistency with pickers
+      if (debouncedSearch && debouncedSearch.length >= 2) {
+        const s = debouncedSearch.replace(/[%_,]/g, ""); // sanitize wildcards
+        query = query.or(
+          `company_name.ilike.%${s}%,website_url.ilike.%${s}%,city.ilike.%${s}%,primary_phone.ilike.%${s}%,nest_pro_partner_id.ilike.%${s}%,linkedin_company_url.ilike.%${s}%`
+        );
+      }
+
+      // Light server-side filtering for accuracy (mirrors UI filters)
+      if (industryTypeFilter) query = query.eq('industry_type', industryTypeFilter);
+      if (statusFilter) query = query.eq('status', statusFilter);
+      if (priorityFilter) query = query.eq('priority_tier', priorityFilter);
+      if (segmentFilter) query = query.eq('segment', segmentFilter);
+
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },

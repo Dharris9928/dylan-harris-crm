@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Edit, Mail, Phone, Linkedin } from "lucide-react";
+import { Edit, Mail, Phone, Linkedin, Trash2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -10,6 +10,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { DeleteRecordDialog } from "@/components/common/DeleteRecordDialog";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface Contact {
   id: string;
@@ -29,10 +32,13 @@ interface ContactTableProps {
   contacts: Contact[];
   isLoading: boolean;
   onEdit: (contact: Contact) => void;
+  onDelete?: () => void;
 }
 
-export function ContactTable({ contacts, isLoading, onEdit }: ContactTableProps) {
+export function ContactTable({ contacts, isLoading, onEdit, onDelete }: ContactTableProps) {
   const navigate = useNavigate();
+  const { data: userData } = useUserRole();
+  const [deleteContact, setDeleteContact] = useState<Contact | null>(null);
   
   const getTierColor = (tier: string) => {
     const tierMap: Record<string, string> = {
@@ -122,14 +128,45 @@ export function ContactTable({ contacts, isLoading, onEdit }: ContactTableProps)
                 </div>
               </TableCell>
               <TableCell>
-                <Button variant="ghost" size="sm" onClick={() => onEdit(contact)}>
-                  <Edit className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="sm" onClick={() => onEdit(contact)}>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  {userData?.role === 'admin' && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setDeleteContact(contact)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
+
+      {deleteContact && (
+        <DeleteRecordDialog
+          open={!!deleteContact}
+          onOpenChange={(open) => !open && setDeleteContact(null)}
+          onSuccess={() => {
+            setDeleteContact(null);
+            onDelete?.();
+          }}
+          tableName="contacts"
+          recordId={deleteContact.id}
+          recordName={`${deleteContact.first_name} ${deleteContact.last_name}`}
+          recordDetails={{
+            title: deleteContact.title,
+            email: deleteContact.email,
+            company: deleteContact.companies?.company_name,
+          }}
+        />
+      )}
     </div>
   );
 }

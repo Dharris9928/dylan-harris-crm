@@ -75,6 +75,7 @@ const Contacts = () => {
           setSelectedContact(contact);
           setIsEditDialogOpen(true);
         }}
+        onDelete={() => refetch()}
       />
 
       <AddContactDialog

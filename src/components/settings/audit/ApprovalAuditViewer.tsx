@@ -18,22 +18,36 @@ export function ApprovalAuditViewer() {
     queryFn: async () => {
       let query = supabase
         .from('approval_audit_log')
-        .select(`
-          *,
-          user:user_id(id),
-          user_profiles:user_id(first_name, last_name),
-          approver:approved_by(id),
-          approver_profiles:approved_by(first_name, last_name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(100);
 
       if (statusFilter !== "all") {
-        query = query.eq('new_status', statusFilter);
+        query = query.eq('new_status', statusFilter as any);
       }
 
-      const { data } = await query;
-      return data || [];
+      const { data: auditLogs } = await query;
+      
+      if (!auditLogs || auditLogs.length === 0) return [];
+      
+      // Fetch user and approver profiles separately
+      const userIds = [...new Set(auditLogs.map(log => log.user_id))];
+      const approverIds = [...new Set(auditLogs.map(log => log.approved_by).filter(Boolean))];
+      const allIds = [...new Set([...userIds, ...approverIds])];
+      
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', allIds);
+      
+      // Map profiles to logs
+      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+      
+      return auditLogs.map(log => ({
+        ...log,
+        user_profile: profileMap.get(log.user_id),
+        approver_profile: log.approved_by ? profileMap.get(log.approved_by) : null
+      }));
     }
   });
 
@@ -41,10 +55,10 @@ export function ApprovalAuditViewer() {
     if (!searchTerm) return true;
     const searchLower = searchTerm.toLowerCase();
     return (
-      log.user_profiles?.first_name?.toLowerCase().includes(searchLower) ||
-      log.user_profiles?.last_name?.toLowerCase().includes(searchLower) ||
-      log.approver_profiles?.first_name?.toLowerCase().includes(searchLower) ||
-      log.approver_profiles?.last_name?.toLowerCase().includes(searchLower)
+      log.user_profile?.first_name?.toLowerCase().includes(searchLower) ||
+      log.user_profile?.last_name?.toLowerCase().includes(searchLower) ||
+      log.approver_profile?.first_name?.toLowerCase().includes(searchLower) ||
+      log.approver_profile?.last_name?.toLowerCase().includes(searchLower)
     );
   });
 
@@ -54,10 +68,10 @@ export function ApprovalAuditViewer() {
     const headers = ['Date', 'User', 'Previous Status', 'New Status', 'Approved By', 'Notes', 'IP Address'];
     const rows = filteredLogs.map(log => [
       new Date(log.created_at).toLocaleString(),
-      `${log.user_profiles?.first_name} ${log.user_profiles?.last_name}`,
+      `${log.user_profile?.first_name || ''} ${log.user_profile?.last_name || ''}`.trim() || 'Unknown',
       log.previous_status || 'N/A',
       log.new_status,
-      log.approver_profiles ? `${log.approver_profiles.first_name} ${log.approver_profiles.last_name}` : 'System',
+      log.approver_profile ? `${log.approver_profile.first_name} ${log.approver_profile.last_name}` : 'System',
       log.notes || 'N/A',
       log.ip_address || 'N/A'
     ]);
@@ -142,7 +156,9 @@ export function ApprovalAuditViewer() {
                       {new Date(log.created_at).toLocaleString()}
                     </TableCell>
                     <TableCell>
-                      {log.user_profiles?.first_name} {log.user_profiles?.last_name}
+                      {log.user_profile?.first_name && log.user_profile?.last_name
+                        ? `${log.user_profile.first_name} ${log.user_profile.last_name}`
+                        : 'Unknown User'}
                     </TableCell>
                     <TableCell>
                       {log.previous_status ? (
@@ -157,8 +173,8 @@ export function ApprovalAuditViewer() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {log.approver_profiles ? (
-                        `${log.approver_profiles.first_name} ${log.approver_profiles.last_name}`
+                      {log.approver_profile ? (
+                        `${log.approver_profile.first_name} ${log.approver_profile.last_name}`
                       ) : (
                         <span className="text-muted-foreground">System</span>
                       )}

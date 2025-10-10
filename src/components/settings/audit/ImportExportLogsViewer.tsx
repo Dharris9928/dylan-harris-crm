@@ -18,10 +18,7 @@ export function ImportExportLogsViewer() {
     queryFn: async () => {
       let query = supabase
         .from('import_export_logs')
-        .select(`
-          *,
-          profiles:user_id(first_name, last_name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(100);
 
@@ -29,8 +26,24 @@ export function ImportExportLogsViewer() {
         query = query.eq('activity_type', activityFilter);
       }
 
-      const { data } = await query;
-      return data || [];
+      const { data: importExportLogs } = await query;
+      
+      if (!importExportLogs || importExportLogs.length === 0) return [];
+      
+      // Fetch user profiles separately
+      const userIds = [...new Set(importExportLogs.map(log => log.user_id))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', userIds);
+      
+      // Map profiles to logs
+      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+      
+      return importExportLogs.map(log => ({
+        ...log,
+        user_profile: profileMap.get(log.user_id)
+      }));
     }
   });
 
@@ -38,8 +51,8 @@ export function ImportExportLogsViewer() {
     if (!searchTerm) return true;
     const searchLower = searchTerm.toLowerCase();
     return (
-      log.profiles?.first_name?.toLowerCase().includes(searchLower) ||
-      log.profiles?.last_name?.toLowerCase().includes(searchLower) ||
+      log.user_profile?.first_name?.toLowerCase().includes(searchLower) ||
+      log.user_profile?.last_name?.toLowerCase().includes(searchLower) ||
       log.table_name?.toLowerCase().includes(searchLower) ||
       log.file_format?.toLowerCase().includes(searchLower)
     );
@@ -51,7 +64,7 @@ export function ImportExportLogsViewer() {
     const headers = ['Date', 'User', 'Activity', 'Table', 'Format', 'Records', 'Success', 'Failed', 'Duplicates'];
     const rows = filteredLogs.map(log => [
       new Date(log.created_at).toLocaleString(),
-      `${log.profiles?.first_name} ${log.profiles?.last_name}`,
+      `${log.user_profile?.first_name || ''} ${log.user_profile?.last_name || ''}`.trim() || 'Unknown',
       log.activity_type,
       log.table_name,
       log.file_format || 'N/A',
@@ -140,7 +153,9 @@ export function ImportExportLogsViewer() {
                       {new Date(log.created_at).toLocaleString()}
                     </TableCell>
                     <TableCell>
-                      {log.profiles?.first_name} {log.profiles?.last_name}
+                      {log.user_profile?.first_name && log.user_profile?.last_name
+                        ? `${log.user_profile.first_name} ${log.user_profile.last_name}`
+                        : 'Unknown User'}
                     </TableCell>
                     <TableCell>
                       <Badge variant={getActivityBadgeVariant(log.activity_type)} className="gap-1">

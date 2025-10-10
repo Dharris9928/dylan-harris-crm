@@ -21,7 +21,6 @@ export function ContactAccessLogsViewer() {
         .from('contact_access_logs')
         .select(`
           *,
-          profiles:user_id(first_name, last_name),
           contacts(first_name, last_name),
           companies(company_name)
         `)
@@ -38,8 +37,24 @@ export function ContactAccessLogsViewer() {
         query = query.gte('accessed_at', daysAgo.toISOString());
       }
 
-      const { data } = await query;
-      return data || [];
+      const { data: accessLogs } = await query;
+      
+      if (!accessLogs || accessLogs.length === 0) return [];
+      
+      // Fetch user profiles separately
+      const userIds = [...new Set(accessLogs.map(log => log.user_id))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', userIds);
+      
+      // Map profiles to logs
+      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+      
+      return accessLogs.map(log => ({
+        ...log,
+        user_profile: profileMap.get(log.user_id)
+      }));
     }
   });
 
@@ -47,8 +62,8 @@ export function ContactAccessLogsViewer() {
     if (!searchTerm) return true;
     const searchLower = searchTerm.toLowerCase();
     return (
-      log.profiles?.first_name?.toLowerCase().includes(searchLower) ||
-      log.profiles?.last_name?.toLowerCase().includes(searchLower) ||
+      log.user_profile?.first_name?.toLowerCase().includes(searchLower) ||
+      log.user_profile?.last_name?.toLowerCase().includes(searchLower) ||
       log.contacts?.first_name?.toLowerCase().includes(searchLower) ||
       log.contacts?.last_name?.toLowerCase().includes(searchLower) ||
       log.companies?.company_name?.toLowerCase().includes(searchLower)
@@ -61,9 +76,9 @@ export function ContactAccessLogsViewer() {
     const headers = ['Date', 'User', 'Action', 'Contact', 'Company', 'IP Address'];
     const rows = filteredLogs.map(log => [
       new Date(log.accessed_at).toLocaleString(),
-      `${log.profiles?.first_name} ${log.profiles?.last_name}`,
+      `${log.user_profile?.first_name || ''} ${log.user_profile?.last_name || ''}`.trim() || 'Unknown',
       log.action,
-      `${log.contacts?.first_name} ${log.contacts?.last_name}`,
+      `${log.contacts?.first_name || ''} ${log.contacts?.last_name || ''}`.trim() || 'N/A',
       log.companies?.company_name || 'N/A',
       log.ip_address || 'N/A'
     ]);
@@ -158,7 +173,9 @@ export function ContactAccessLogsViewer() {
                       {new Date(log.accessed_at).toLocaleString()}
                     </TableCell>
                     <TableCell>
-                      {log.profiles?.first_name} {log.profiles?.last_name}
+                      {log.user_profile?.first_name && log.user_profile?.last_name
+                        ? `${log.user_profile.first_name} ${log.user_profile.last_name}`
+                        : 'Unknown User'}
                     </TableCell>
                     <TableCell>
                       <Badge variant={getActionBadgeVariant(log.action)}>
@@ -166,11 +183,13 @@ export function ContactAccessLogsViewer() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {log.contacts?.first_name} {log.contacts?.last_name}
+                      {log.contacts?.first_name && log.contacts?.last_name
+                        ? `${log.contacts.first_name} ${log.contacts.last_name}`
+                        : 'N/A'}
                     </TableCell>
                     <TableCell>{log.companies?.company_name || 'N/A'}</TableCell>
                     <TableCell className="font-mono text-xs text-muted-foreground">
-                      {log.ip_address || 'N/A'}
+                      {String(log.ip_address || 'N/A')}
                     </TableCell>
                   </TableRow>
                 ))

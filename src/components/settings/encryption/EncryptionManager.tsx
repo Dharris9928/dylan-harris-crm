@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { toast } from "sonner";
 
 export function EncryptionManager() {
   const [isMigrating, setIsMigrating] = useState(false);
+  const toastId = useRef<string | number | null>(null);
   const queryClient = useQueryClient();
 
   // Fetch encryption status
@@ -62,44 +63,60 @@ export function EncryptionManager() {
     }
   });
 
-  // Migrate contacts mutation
-  const migrateMutation = useMutation({
-    mutationFn: async (batchSize: number = 100) => {
-      const { data, error } = await supabase.rpc('batch_migrate_contacts_encryption', {
-        batch_size: batchSize
-      });
+// Migrate contacts mutation
+const migrateMutation = useMutation({
+  mutationFn: async (batchSize: number = 100) => {
+    const { data, error } = await supabase.rpc('batch_migrate_contacts_encryption', {
+      batch_size: batchSize
+    });
 
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (data) => {
-      if (data && data.length > 0) {
-        const result = data[0];
-        
-        if (result.total_migrated === 0) {
-          toast.success('All contacts already encrypted');
-          setIsMigrating(false);
+    if (error) throw error;
+    return data;
+  },
+  onSuccess: (data) => {
+    if (data && data.length > 0) {
+      const result = data[0];
+
+      // Initialize a single updatable toast
+      if (!toastId.current) {
+        toastId.current = toast.loading('Encrypting contacts...');
+      }
+
+      if (result.total_migrated === 0) {
+        toast.success('All contacts already encrypted', { id: toastId.current || undefined });
+        toastId.current = null;
+        setIsMigrating(false);
+      } else {
+        // Update the same toast instead of stacking
+        toast.message(`Encrypted ${result.total_migrated} contacts (${result.completion_percentage}% complete)`, {
+          id: toastId.current || undefined,
+          duration: 1200,
+        });
+
+        // Continue migrating if not complete
+        if (result.completion_percentage < 100) {
+          setTimeout(() => migrateMutation.mutate(100), 400);
         } else {
-          toast.success(`Encrypted ${result.total_migrated} contacts (${result.completion_percentage}% complete)`);
-          
-          // Continue migrating if not complete
-          if (result.completion_percentage < 100) {
-            setTimeout(() => migrateMutation.mutate(100), 1000);
-          } else {
-            setIsMigrating(false);
-            toast.success('Encryption migration completed!');
-          }
+          setIsMigrating(false);
+          toast.success('Encryption migration completed!', { id: toastId.current || undefined });
+          toastId.current = null;
         }
       }
-      
-      queryClient.invalidateQueries({ queryKey: ['encryption-status'] });
-      queryClient.invalidateQueries({ queryKey: ['encryption-audit-logs'] });
-    },
-    onError: (error: any) => {
-      toast.error(error.message || 'Encryption migration failed');
-      setIsMigrating(false);
     }
-  });
+
+    queryClient.invalidateQueries({ queryKey: ['encryption-status'] });
+    queryClient.invalidateQueries({ queryKey: ['encryption-audit-logs'] });
+  },
+  onError: (error: any) => {
+    if (toastId.current) {
+      toast.error(error.message || 'Encryption migration failed', { id: toastId.current as string });
+      toastId.current = null;
+    } else {
+      toast.error(error.message || 'Encryption migration failed');
+    }
+    setIsMigrating(false);
+  }
+});
 
   const handleStartMigration = () => {
     if (confirm('This will encrypt all contact emails and phone numbers. This operation may take several minutes for large datasets. Continue?')) {

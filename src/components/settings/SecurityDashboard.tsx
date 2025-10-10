@@ -4,9 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Shield, AlertTriangle, Users, Clock, Database, Activity, FileText } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Shield, AlertTriangle, Users, Clock, Database, Activity, FileText, Eye, UserCheck, FileDown } from "lucide-react";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
+import { ContactAccessLogsViewer } from "./audit/ContactAccessLogsViewer";
+import { ApprovalAuditViewer } from "./audit/ApprovalAuditViewer";
+import { ImportExportLogsViewer } from "./audit/ImportExportLogsViewer";
 
 export function SecurityDashboard() {
   // Fetch security monitoring dashboard
@@ -76,8 +79,28 @@ export function SecurityDashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
+    <Tabs defaultValue="overview" className="space-y-6">
+      <TabsList className="grid w-full grid-cols-4">
+        <TabsTrigger value="overview">
+          <Shield className="h-4 w-4 mr-2" />
+          Overview
+        </TabsTrigger>
+        <TabsTrigger value="contact-access">
+          <Eye className="h-4 w-4 mr-2" />
+          Contact Access
+        </TabsTrigger>
+        <TabsTrigger value="approvals">
+          <UserCheck className="h-4 w-4 mr-2" />
+          Approvals
+        </TabsTrigger>
+        <TabsTrigger value="import-export">
+          <FileDown className="h-4 w-4 mr-2" />
+          Import/Export
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="overview" className="space-y-6">
+        <Card>
         <CardHeader>
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="space-y-1.5">
@@ -89,12 +112,6 @@ export function SecurityDashboard() {
                 Real-time security metrics and alerts for your CRM
               </CardDescription>
             </div>
-            <Link to="/help" className="shrink-0">
-              <Button variant="default" size="sm" className="w-full md:w-auto">
-                <FileText className="h-4 w-4 mr-2" />
-                View Activity Logs
-              </Button>
-            </Link>
           </div>
         </CardHeader>
         <CardContent>
@@ -284,6 +301,19 @@ export function SecurityDashboard() {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </TabsContent>
+
+      <TabsContent value="contact-access">
+        <ContactAccessLogsViewer />
+      </TabsContent>
+
+      <TabsContent value="approvals">
+        <ApprovalAuditViewer />
+      </TabsContent>
+
+      <TabsContent value="import-export">
+        <ImportExportLogsViewer />
+      </TabsContent>
+    </Tabs>
   );
 }

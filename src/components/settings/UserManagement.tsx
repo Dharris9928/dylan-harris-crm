@@ -72,32 +72,24 @@ export function UserManagement() {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      const { data: profiles, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Use admin function to get all profiles (includes audit logging)
+      const { data: profiles, error } = await supabase.rpc('admin_get_all_profiles');
 
       if (error) {
-        if (error.code === 'PGRST301') {
+        if (error.code === 'PGRST301' || error.message?.includes('Admin access required')) {
+          toast.error('Admin access required to view users');
           return;
         }
         throw error;
       }
 
-      // Get user emails via secure edge function
-      const userIds = (profiles || []).map(p => p.id);
-      
-      const { data: emailData, error: emailError } = await supabase.functions.invoke('get-user-emails', {
-        body: { userIds }
-      });
-
-      if (emailError) {
-        console.error('Error fetching user emails:', emailError);
-        toast.error('Failed to load user emails');
+      if (!profiles) {
+        setUsers([]);
         return;
       }
 
       // Get roles from user_roles table
+      const userIds = profiles.map(p => p.id);
       const { data: rolesData, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id, role')
@@ -112,13 +104,17 @@ export function UserManagement() {
         return acc;
       }, {} as Record<string, string>);
 
-      const usersWithEmails = (profiles || []).map((profile) => ({
-        ...profile,
-        email: emailData?.userEmails?.[profile.id] || 'Unknown',
+      // Map profiles to UserProfile format
+      const usersWithRoles = profiles.map((profile) => ({
+        id: profile.id,
+        email: profile.user_email || 'Unknown',
+        first_name: profile.first_name,
+        last_name: profile.last_name,
+        created_at: profile.created_at,
         role: rolesMap[profile.id] || 'sales_rep',
       } as UserProfile));
 
-      setUsers(usersWithEmails);
+      setUsers(usersWithRoles);
     } catch (error) {
       console.error('Error loading users:', error);
       toast.error('Failed to load users');

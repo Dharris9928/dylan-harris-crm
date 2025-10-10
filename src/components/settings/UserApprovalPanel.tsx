@@ -26,24 +26,32 @@ export function UserApprovalPanel() {
     try {
       setLoading(true);
       
-      // Fetch pending users from profiles
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name, created_at, approval_status')
-        .eq('approval_status', 'pending')
-        .order('created_at', { ascending: false });
+      // Use admin function to get all profiles, then filter for pending
+      const { data: profiles, error: profilesError } = await supabase.rpc('admin_get_all_profiles');
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        if (profilesError.message?.includes('Admin access required')) {
+          toast({
+            title: 'Access Denied',
+            description: 'Admin access required to view pending users',
+            variant: 'destructive'
+          });
+          return;
+        }
+        throw profilesError;
+      }
 
-      if (profiles && profiles.length > 0) {
-        // Get emails from auth.users via edge function
-        const { data: emailData } = await supabase.functions.invoke('get-user-emails', {
-          body: { userIds: profiles.map(p => p.id) }
-        });
+      // Filter for pending users only
+      const pendingProfiles = (profiles || []).filter(p => p.approval_status === 'pending');
 
-        const usersWithEmails = profiles.map(profile => ({
-          ...profile,
-          email: emailData?.emails?.[profile.id] || 'No email'
+      if (pendingProfiles && pendingProfiles.length > 0) {
+        const usersWithEmails = pendingProfiles.map(profile => ({
+          id: profile.id,
+          first_name: profile.first_name,
+          last_name: profile.last_name,
+          created_at: profile.created_at,
+          approval_status: profile.approval_status,
+          email: profile.user_email || 'No email'
         }));
 
         setPendingUsers(usersWithEmails);

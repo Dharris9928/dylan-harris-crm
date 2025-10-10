@@ -2266,6 +2266,37 @@ export type Database = {
       }
     }
     Functions: {
+      admin_get_all_profiles: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          approval_status: Database["public"]["Enums"]["approval_status"]
+          approved_at: string
+          created_at: string
+          first_name: string
+          id: string
+          last_name: string
+          role_frozen: boolean
+          role_frozen_at: string
+          role_frozen_reason: string
+          user_email: string
+        }[]
+      }
+      admin_get_profile: {
+        Args: { _user_id: string }
+        Returns: {
+          approval_status: Database["public"]["Enums"]["approval_status"]
+          approved_at: string
+          created_at: string
+          first_name: string
+          id: string
+          last_name: string
+          role_frozen: boolean
+          role_frozen_at: string
+          role_frozen_reason: string
+          user_email: string
+          user_role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
       anonymize_ipv4: {
         Args: { ip_addr: unknown }
         Returns: unknown

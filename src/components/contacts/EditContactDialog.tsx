@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { logSingleContactView } from "@/lib/contacts/logContactAccess";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -83,8 +84,10 @@ export function EditContactDialog({ open, onOpenChange, onSuccess, contact }: Ed
     if (open) {
       loadCompanies();
       loadInitialCompanyName();
+      // Log contact access when dialog opens
+      logSingleContactView(contact.id);
     }
-  }, [open]);
+  }, [open, contact.id]);
 
   useEffect(() => {
     if (debouncedSearch || open) {

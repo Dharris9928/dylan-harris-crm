@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { logBulkContactView } from '@/lib/contacts/logContactAccess';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -46,6 +47,12 @@ export function CompanyContactsList({ companyId, companyName }: CompanyContactsL
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      
+      // Log bulk contact view when contacts are fetched
+      if (data && data.length > 0) {
+        logBulkContactView(data.map(c => c.id));
+      }
+      
       return data;
     },
   });

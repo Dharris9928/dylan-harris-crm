@@ -90,6 +90,45 @@ export type Database = {
           },
         ]
       }
+      allowed_email_domains: {
+        Row: {
+          added_at: string
+          added_by: string | null
+          domain: string
+          domain_type: string
+          id: string
+          is_active: boolean
+          last_verified_at: string | null
+          mx_records_valid: boolean | null
+          notes: string | null
+          verification_status: string | null
+        }
+        Insert: {
+          added_at?: string
+          added_by?: string | null
+          domain: string
+          domain_type?: string
+          id?: string
+          is_active?: boolean
+          last_verified_at?: string | null
+          mx_records_valid?: boolean | null
+          notes?: string | null
+          verification_status?: string | null
+        }
+        Update: {
+          added_at?: string
+          added_by?: string | null
+          domain?: string
+          domain_type?: string
+          id?: string
+          is_active?: boolean
+          last_verified_at?: string | null
+          mx_records_valid?: boolean | null
+          notes?: string | null
+          verification_status?: string | null
+        }
+        Relationships: []
+      }
       approval_audit_log: {
         Row: {
           approved_by: string | null
@@ -127,6 +166,45 @@ export type Database = {
             | null
           user_agent?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      blocked_signup_attempts: {
+        Row: {
+          additional_details: Json | null
+          attempted_at: string
+          blocked_reason: string
+          email: string
+          email_domain: string
+          id: string
+          ip_address: unknown | null
+          is_disposable: boolean | null
+          mx_records_checked: boolean | null
+          user_agent: string | null
+        }
+        Insert: {
+          additional_details?: Json | null
+          attempted_at?: string
+          blocked_reason: string
+          email: string
+          email_domain: string
+          id?: string
+          ip_address?: unknown | null
+          is_disposable?: boolean | null
+          mx_records_checked?: boolean | null
+          user_agent?: string | null
+        }
+        Update: {
+          additional_details?: Json | null
+          attempted_at?: string
+          blocked_reason?: string
+          email?: string
+          email_domain?: string
+          id?: string
+          ip_address?: unknown | null
+          is_disposable?: boolean | null
+          mx_records_checked?: boolean | null
+          user_agent?: string | null
         }
         Relationships: []
       }
@@ -1920,6 +1998,10 @@ export type Database = {
         Args: { _company_id: string; _user_id: string }
         Returns: boolean
       }
+      check_email_domain_allowed: {
+        Args: { email_address: string }
+        Returns: boolean
+      }
       check_rate_limit: {
         Args: { _endpoint: string; _user_id: string; _window_minutes?: number }
         Returns: Json
@@ -2004,6 +2086,16 @@ export type Database = {
       is_user_approved: {
         Args: { _user_id: string }
         Returns: boolean
+      }
+      log_blocked_signup: {
+        Args: {
+          _details?: Json
+          _email: string
+          _ip_address?: unknown
+          _is_disposable?: boolean
+          _reason: string
+        }
+        Returns: string
       }
       log_security_event: {
         Args: { _event_details?: Json; _event_type: string }

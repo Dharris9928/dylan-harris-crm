@@ -13,6 +13,8 @@ import { BusinessContextSettings } from "@/components/settings/BusinessContextSe
 import { SalesRepManagement } from "@/components/settings/SalesRepManagement";
 import { MergeCompaniesDialog } from "@/components/settings/MergeCompaniesDialog";
 import { DuplicateDetectionDialog } from "@/components/settings/DuplicateDetectionDialog";
+import { AllowedDomainsManager } from "@/components/settings/domain/AllowedDomainsManager";
+import { BlockedSignupsViewer } from "@/components/settings/domain/BlockedSignupsViewer";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ImportExportActivityLog } from "@/components/help/ImportExportActivityLog";
@@ -73,6 +75,14 @@ const Settings = () => {
         <BusinessContextSettings />
         
         <SecurityDashboard />
+
+        {/* Domain Security Section - Admin Only */}
+        {userData?.role === 'admin' && (
+          <>
+            <AllowedDomainsManager />
+            <BlockedSignupsViewer />
+          </>
+        )}
 
         <Card>
           <CardHeader>

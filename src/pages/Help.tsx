@@ -45,7 +45,7 @@ const Help = () => {
     { value: 'activities', label: 'Activities', keywords: 'activities outreach types outcomes sequences calendar' },
     { value: 'ai-features', label: 'AI Features', keywords: 'ai features scoring prioritization outreach strategy batch usage logs' },
     { value: 'reports', label: 'Reports', keywords: 'reports analytics scoring breakdown distribution segment performance enrichment' },
-    { value: 'settings', label: 'Settings', keywords: 'settings user management security dashboard deletion approval integrations business context' },
+    { value: 'settings', label: 'Settings', keywords: 'settings user management security dashboard deletion approval integrations business context access controls audit logs encryption data warehouse sync bigquery' },
     { value: 'activity-logs', label: 'Activity Logs', keywords: 'logs import export enrichment ai usage monitoring tracking' },
   ];
 
@@ -1239,6 +1239,131 @@ const Help = () => {
                         <li>Admin approves or rejects with feedback</li>
                         <li>Audit log preserves complete history</li>
                       </ol>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="access-controls">
+                  <AccordionTrigger>Access Controls & Audit Logs</AccordionTrigger>
+                  <AccordionContent className="space-y-3">
+                    <p className="text-sm">
+                      Comprehensive monitoring and logging of sensitive data access
+                    </p>
+                    <div>
+                      <h4 className="font-medium mb-2">Contact Access Logging</h4>
+                      <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                        <li>Every contact view is automatically logged with timestamp</li>
+                        <li>Track who accessed which contacts and when</li>
+                        <li>IP addresses recorded for security audits</li>
+                        <li>Export operations are specially flagged</li>
+                        <li>Full audit trail for compliance requirements</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-medium mb-2">Bulk Access Detection</h4>
+                      <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                        <li>Automatic alerts for unusual access patterns</li>
+                        <li>Threshold: 50+ contacts in 10 minutes triggers alert</li>
+                        <li>Admins notified of potential data exfiltration</li>
+                        <li>Review and investigate suspicious activity</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-medium mb-2">Approval Audit Trail</h4>
+                      <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                        <li>Complete history of user approval status changes</li>
+                        <li>Who approved/rejected and when</li>
+                        <li>Status transitions tracked with timestamps</li>
+                        <li>Notes and reasons preserved</li>
+                      </ul>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="encryption">
+                  <AccordionTrigger>Data Encryption</AccordionTrigger>
+                  <AccordionContent className="space-y-3">
+                    <p className="text-sm">
+                      Enterprise-grade encryption for sensitive contact information
+                    </p>
+                    <div>
+                      <h4 className="font-medium mb-2">What Gets Encrypted</h4>
+                      <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                        <li>Contact email addresses</li>
+                        <li>Phone numbers (work and mobile)</li>
+                        <li>All personally identifiable information (PII)</li>
+                        <li>Encrypted at rest in the database</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-medium mb-2">How It Works</h4>
+                      <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                        <li>AES-256 encryption algorithm</li>
+                        <li>Encryption keys stored securely in vault</li>
+                        <li>Automatic decryption when authorized users access data</li>
+                        <li>Version tracking for key rotation</li>
+                        <li>Migration tools for updating encryption</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-medium mb-2">Admin Controls (Admin Only)</h4>
+                      <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                        <li>Monitor encryption status and coverage</li>
+                        <li>Run batch encryption migrations</li>
+                        <li>Audit encryption operations</li>
+                        <li>Setup and configure production encryption keys</li>
+                      </ul>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="data-warehouse">
+                  <AccordionTrigger>Data Warehouse Sync</AccordionTrigger>
+                  <AccordionContent className="space-y-3">
+                    <p className="text-sm">
+                      Automated synchronization with external data warehouse (BigQuery)
+                    </p>
+                    <div>
+                      <h4 className="font-medium mb-2">Overview</h4>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Automatically sync your CRM data to BigQuery for advanced analytics, reporting, and data science use cases.
+                      </p>
+                      <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                        <li>Real-time or scheduled data synchronization</li>
+                        <li>Configurable sync frequency</li>
+                        <li>Selective table synchronization</li>
+                        <li>Error handling and retry logic</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-medium mb-2">Setup Requirements (Admin Only)</h4>
+                      <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
+                        <li>Create Google Cloud project and BigQuery dataset</li>
+                        <li>Create service account with BigQuery permissions</li>
+                        <li>Add service account credentials to system secrets</li>
+                        <li>Configure sync settings in Settings → Data Warehouse</li>
+                        <li>Enable automatic sync or trigger manual syncs</li>
+                      </ol>
+                    </div>
+                    <div>
+                      <h4 className="font-medium mb-2">What Gets Synced</h4>
+                      <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                        <li>Companies table with all enrichment data</li>
+                        <li>Contacts table (encrypted fields handled securely)</li>
+                        <li>Activities and communications history</li>
+                        <li>Scoring details and AI insights</li>
+                        <li>Configurable to include/exclude specific tables</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-medium mb-2">Monitoring & Logs</h4>
+                      <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                        <li>View sync history with timestamps</li>
+                        <li>Track success/failure rates</li>
+                        <li>Review error details for troubleshooting</li>
+                        <li>Monitor data freshness</li>
+                        <li>Automatic log cleanup (90-day retention)</li>
+                      </ul>
                     </div>
                   </AccordionContent>
                 </AccordionItem>

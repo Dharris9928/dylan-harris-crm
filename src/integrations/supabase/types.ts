@@ -85,6 +85,13 @@ export type Database = {
             foreignKeyName: "ai_usage_logs_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
+            referencedRelation: "companies_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_usage_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
             referencedRelation: "companies_financial_masked"
             referencedColumns: ["id"]
           },
@@ -387,6 +394,13 @@ export type Database = {
             foreignKeyName: "builder_scoring_details_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: true
+            referencedRelation: "companies_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "builder_scoring_details_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
             referencedRelation: "companies_financial_masked"
             referencedColumns: ["id"]
           },
@@ -489,6 +503,7 @@ export type Database = {
           created_by: string
           current_smart_home_offerings: string[] | null
           emergency_service_percentage: number | null
+          encryption_version: number | null
           facebook_url: string | null
           financial_health_rating: string | null
           franchise_name: string | null
@@ -527,7 +542,9 @@ export type Database = {
           positive_reviews_reputation: boolean | null
           price_point_category: string | null
           primary_email: string | null
+          primary_email_encrypted: string | null
           primary_phone: string | null
+          primary_phone_encrypted: string | null
           priority_tier: string | null
           profitability_level: string | null
           revenue_growth_indicators: boolean | null
@@ -570,6 +587,7 @@ export type Database = {
           created_by: string
           current_smart_home_offerings?: string[] | null
           emergency_service_percentage?: number | null
+          encryption_version?: number | null
           facebook_url?: string | null
           financial_health_rating?: string | null
           franchise_name?: string | null
@@ -608,7 +626,9 @@ export type Database = {
           positive_reviews_reputation?: boolean | null
           price_point_category?: string | null
           primary_email?: string | null
+          primary_email_encrypted?: string | null
           primary_phone?: string | null
+          primary_phone_encrypted?: string | null
           priority_tier?: string | null
           profitability_level?: string | null
           revenue_growth_indicators?: boolean | null
@@ -651,6 +671,7 @@ export type Database = {
           created_by?: string
           current_smart_home_offerings?: string[] | null
           emergency_service_percentage?: number | null
+          encryption_version?: number | null
           facebook_url?: string | null
           financial_health_rating?: string | null
           franchise_name?: string | null
@@ -689,7 +710,9 @@ export type Database = {
           positive_reviews_reputation?: boolean | null
           price_point_category?: string | null
           primary_email?: string | null
+          primary_email_encrypted?: string | null
           primary_phone?: string | null
+          primary_phone_encrypted?: string | null
           priority_tier?: string | null
           profitability_level?: string | null
           revenue_growth_indicators?: boolean | null
@@ -734,6 +757,13 @@ export type Database = {
             columns: ["parent_company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companies_parent_company_id_fkey"
+            columns: ["parent_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies_decrypted"
             referencedColumns: ["id"]
           },
           {
@@ -794,6 +824,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: true
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_ai_insights_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies_decrypted"
             referencedColumns: ["id"]
           },
           {
@@ -869,6 +906,13 @@ export type Database = {
             foreignKeyName: "company_branches_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
+            referencedRelation: "companies_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_branches_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
             referencedRelation: "companies_financial_masked"
             referencedColumns: ["id"]
           },
@@ -935,6 +979,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_communications_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies_decrypted"
             referencedColumns: ["id"]
           },
           {
@@ -1017,6 +1068,13 @@ export type Database = {
             foreignKeyName: "company_partner_matches_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
+            referencedRelation: "companies_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_partner_matches_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
             referencedRelation: "companies_financial_masked"
             referencedColumns: ["id"]
           },
@@ -1066,6 +1124,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_access_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies_decrypted"
             referencedColumns: ["id"]
           },
           {
@@ -1200,6 +1265,13 @@ export type Database = {
             foreignKeyName: "contacts_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
+            referencedRelation: "companies_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contacts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
             referencedRelation: "companies_financial_masked"
             referencedColumns: ["id"]
           },
@@ -1278,6 +1350,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: true
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_scoring_details_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies_decrypted"
             referencedColumns: ["id"]
           },
           {
@@ -1500,6 +1579,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrichment_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies_decrypted"
             referencedColumns: ["id"]
           },
           {
@@ -1765,6 +1851,13 @@ export type Database = {
             foreignKeyName: "installation_history_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
+            referencedRelation: "companies_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "installation_history_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
             referencedRelation: "companies_financial_masked"
             referencedColumns: ["id"]
           },
@@ -1895,6 +1988,13 @@ export type Database = {
             foreignKeyName: "outreach_activities_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
+            referencedRelation: "companies_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_activities_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
             referencedRelation: "companies_financial_masked"
             referencedColumns: ["id"]
           },
@@ -2009,6 +2109,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pilot_programs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies_decrypted"
             referencedColumns: ["id"]
           },
           {
@@ -2327,6 +2434,13 @@ export type Database = {
             foreignKeyName: "segmentation_scores_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
+            referencedRelation: "companies_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "segmentation_scores_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
             referencedRelation: "companies_financial_masked"
             referencedColumns: ["id"]
           },
@@ -2533,6 +2647,13 @@ export type Database = {
             foreignKeyName: "training_certifications_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
+            referencedRelation: "companies_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_certifications_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
             referencedRelation: "companies_financial_masked"
             referencedColumns: ["id"]
           },
@@ -2669,6 +2790,102 @@ export type Database = {
       }
     }
     Views: {
+      companies_decrypted: {
+        Row: {
+          address_line1: string | null
+          annual_revenue_range: string | null
+          assigned_to: string | null
+          assigned_to_sales_rep_id: string | null
+          city: string | null
+          company_name: string | null
+          created_at: string | null
+          created_by: string | null
+          encryption_version: number | null
+          id: string | null
+          industry_type: string | null
+          lead_score: number | null
+          linkedin_company_url: string | null
+          primary_email: string | null
+          primary_phone: string | null
+          priority_tier: string | null
+          segment: string | null
+          state: string | null
+          status: string | null
+          total_employees: number | null
+          updated_at: string | null
+          website_url: string | null
+          years_in_business: number | null
+          zip: string | null
+        }
+        Insert: {
+          address_line1?: string | null
+          annual_revenue_range?: string | null
+          assigned_to?: string | null
+          assigned_to_sales_rep_id?: string | null
+          city?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          encryption_version?: number | null
+          id?: string | null
+          industry_type?: string | null
+          lead_score?: number | null
+          linkedin_company_url?: string | null
+          primary_email?: never
+          primary_phone?: never
+          priority_tier?: string | null
+          segment?: string | null
+          state?: string | null
+          status?: string | null
+          total_employees?: number | null
+          updated_at?: string | null
+          website_url?: string | null
+          years_in_business?: number | null
+          zip?: string | null
+        }
+        Update: {
+          address_line1?: string | null
+          annual_revenue_range?: string | null
+          assigned_to?: string | null
+          assigned_to_sales_rep_id?: string | null
+          city?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          encryption_version?: number | null
+          id?: string | null
+          industry_type?: string | null
+          lead_score?: number | null
+          linkedin_company_url?: string | null
+          primary_email?: never
+          primary_phone?: never
+          priority_tier?: string | null
+          segment?: string | null
+          state?: string | null
+          status?: string | null
+          total_employees?: number | null
+          updated_at?: string | null
+          website_url?: string | null
+          years_in_business?: number | null
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "companies_assigned_to_sales_rep_id_fkey"
+            columns: ["assigned_to_sales_rep_id"]
+            isOneToOne: false
+            referencedRelation: "sales_reps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companies_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies_financial_masked: {
         Row: {
           annual_revenue_range: string | null
@@ -2799,6 +3016,13 @@ export type Database = {
             foreignKeyName: "contacts_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
+            referencedRelation: "companies_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contacts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
             referencedRelation: "companies_financial_masked"
             referencedColumns: ["id"]
           },
@@ -2884,6 +3108,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contacts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies_decrypted"
             referencedColumns: ["id"]
           },
           {
@@ -2978,6 +3209,13 @@ export type Database = {
             foreignKeyName: "contacts_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
+            referencedRelation: "companies_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contacts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
             referencedRelation: "companies_financial_masked"
             referencedColumns: ["id"]
           },
@@ -3021,6 +3259,14 @@ export type Database = {
         Returns: {
           records_anonymized: number
           table_name: string
+        }[]
+      }
+      batch_migrate_companies_encryption: {
+        Args: { _batch_size?: number }
+        Returns: {
+          completion_percentage: number
+          total_companies: number
+          total_migrated: number
         }[]
       }
       batch_migrate_contacts_encryption: {
@@ -3201,6 +3447,10 @@ export type Database = {
       mask_pii_field: {
         Args: { _field_name: string; _field_value: string; _table_name: string }
         Returns: string
+      }
+      migrate_company_encryption: {
+        Args: { _company_id: string }
+        Returns: boolean
       }
       migrate_contact_encryption: {
         Args: { contact_id: string }

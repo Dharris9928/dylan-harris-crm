@@ -59,3 +59,9 @@ verify_jwt = true
 
 [functions.sync-to-warehouse]
 verify_jwt = true
+
+[functions.check-signup-rate-limit]
+verify_jwt = false
+
+[functions.merge-companies]
+verify_jwt = true

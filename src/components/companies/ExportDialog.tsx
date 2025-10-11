@@ -15,6 +15,8 @@ import Papa from "papaparse";
 import * as XLSX from "xlsx";
 import { Download, FileText, Table } from "lucide-react";
 import { logContactExport } from "@/lib/contacts/logContactAccess";
+import { useExportQuota } from "@/hooks/useExportQuota";
+import { ExportApprovalRequestDialog } from "@/components/settings/ExportApprovalRequestDialog";
 
 interface ExportDialogProps {
   open: boolean;
@@ -47,7 +49,9 @@ export function ExportDialog({ open, onClose, selectedIds, filters, totalCount }
     branches: false,
   });
   const [isExporting, setIsExporting] = useState(false);
+  const [showApprovalDialog, setShowApprovalDialog] = useState(false);
   const { toast } = useToast();
+  const { checkQuota, logExport } = useExportQuota();
 
   const buildSelectQuery = () => {
     let query = selectedFields.join(',');
@@ -72,6 +76,27 @@ export function ExportDialog({ open, onClose, selectedIds, filters, totalCount }
   const handleExport = async () => {
     setIsExporting(true);
     try {
+      const exportCount = getExportCount();
+      
+      // Check quota first
+      const quotaCheck = await checkQuota(exportCount, 'companies');
+      
+      if (!quotaCheck.allowed) {
+        toast({
+          title: "Export Limit Exceeded",
+          description: quotaCheck.reason,
+          variant: "destructive",
+        });
+        setIsExporting(false);
+        return;
+      }
+      
+      if (quotaCheck.requires_approval) {
+        setShowApprovalDialog(true);
+        setIsExporting(false);
+        return;
+      }
+      
       // Build query - use type assertion to avoid deep type instantiation
       let query: any = supabase.from("companies").select(`
         *,
@@ -171,7 +196,15 @@ export function ExportDialog({ open, onClose, selectedIds, filters, totalCount }
         }
       }
 
-      // Log export activity
+      // Log export activity with quota system
+      await logExport(
+        'companies',
+        exportData.length,
+        exportFormat.toUpperCase() as 'CSV' | 'EXCEL',
+        exportScope === 'filtered' ? filters : null
+      );
+      
+      // Also log in import_export_logs for backwards compatibility
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         try {
@@ -224,11 +257,12 @@ export function ExportDialog({ open, onClose, selectedIds, filters, totalCount }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Export Companies</DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Export Companies</DialogTitle>
+          </DialogHeader>
 
         <div className="space-y-6">
           {/* Export Scope */}
@@ -323,6 +357,23 @@ export function ExportDialog({ open, onClose, selectedIds, filters, totalCount }
         </div>
       </DialogContent>
     </Dialog>
+    
+    <ExportApprovalRequestDialog
+      open={showApprovalDialog}
+      onOpenChange={setShowApprovalDialog}
+      tableName="companies"
+      recordCount={getExportCount()}
+      exportType={exportFormat.toUpperCase()}
+      filterCriteria={exportScope === 'filtered' ? filters : null}
+      onApprovalRequested={() => {
+        toast({
+          title: "Approval Requested",
+          description: "An admin will review your export request.",
+        });
+        onClose();
+      }}
+    />
+    </>
   );
 }
 

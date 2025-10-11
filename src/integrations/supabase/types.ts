@@ -1511,6 +1511,126 @@ export type Database = {
           },
         ]
       }
+      export_approval_requests: {
+        Row: {
+          business_justification: string
+          created_at: string
+          expires_at: string
+          export_type: string
+          filter_criteria: Json | null
+          id: string
+          record_count: number
+          requested_by: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          table_name: string
+        }
+        Insert: {
+          business_justification: string
+          created_at?: string
+          expires_at?: string
+          export_type: string
+          filter_criteria?: Json | null
+          id?: string
+          record_count: number
+          requested_by: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          table_name: string
+        }
+        Update: {
+          business_justification?: string
+          created_at?: string
+          expires_at?: string
+          export_type?: string
+          filter_criteria?: Json | null
+          id?: string
+          record_count?: number
+          requested_by?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          table_name?: string
+        }
+        Relationships: []
+      }
+      export_logs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          export_type: string
+          filter_criteria: Json | null
+          id: string
+          ip_address: unknown | null
+          record_count: number
+          status: string
+          table_name: string
+          user_agent: string | null
+          user_id: string
+          watermark: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          export_type: string
+          filter_criteria?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          record_count: number
+          status?: string
+          table_name: string
+          user_agent?: string | null
+          user_id: string
+          watermark?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          export_type?: string
+          filter_criteria?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          record_count?: number
+          status?: string
+          table_name?: string
+          user_agent?: string | null
+          user_id?: string
+          watermark?: string | null
+        }
+        Relationships: []
+      }
+      export_quotas: {
+        Row: {
+          created_at: string
+          daily_limit: number
+          id: string
+          requires_approval_threshold: number
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          daily_limit: number
+          id?: string
+          requires_approval_threshold?: number
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          daily_limit?: number
+          id?: string
+          requires_approval_threshold?: number
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       field_permissions: {
         Row: {
           created_at: string
@@ -2923,6 +3043,10 @@ export type Database = {
         Args: { email_address: string }
         Returns: boolean
       }
+      check_export_quota: {
+        Args: { _record_count: number; _table_name: string; _user_id: string }
+        Returns: Json
+      }
       check_rate_limit: {
         Args: { _endpoint: string; _user_id: string; _window_minutes?: number }
         Returns: Json
@@ -2930,6 +3054,10 @@ export type Database = {
       check_signup_rate_limit: {
         Args: { _email: string; _ip_address?: unknown }
         Returns: Json
+      }
+      cleanup_expired_approvals: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       cleanup_old_records: {
         Args: Record<PropertyKey, never>
@@ -2950,6 +3078,10 @@ export type Database = {
       decrypt_text: {
         Args: { encrypted_text: string }
         Returns: string
+      }
+      detect_bulk_export: {
+        Args: { _current_export_count: number; _user_id: string }
+        Returns: undefined
       }
       encrypt_text: {
         Args: { plain_text: string }
@@ -3047,6 +3179,18 @@ export type Database = {
           _ip_address?: unknown
           _is_disposable?: boolean
           _reason: string
+        }
+        Returns: string
+      }
+      log_export_activity: {
+        Args: {
+          _export_type: string
+          _filter_criteria?: Json
+          _ip_address?: unknown
+          _record_count: number
+          _table_name: string
+          _user_agent?: string
+          _user_id: string
         }
         Returns: string
       }

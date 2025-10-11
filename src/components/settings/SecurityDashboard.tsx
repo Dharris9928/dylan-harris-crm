@@ -13,8 +13,14 @@ import { ImportExportLogsViewer } from "./audit/ImportExportLogsViewer";
 import { ComprehensiveAuditViewer } from "./audit/ComprehensiveAuditViewer";
 import { AuthEventsLog } from "./audit/AuthEventsLog";
 import { ActiveSessionsManager } from "./ActiveSessionsManager";
+import { ExportActivityLog } from "./ExportActivityLog";
+import { ExportApprovalPanel } from "./ExportApprovalPanel";
+import { useUserRole } from "@/hooks/useUserRole";
 
 export function SecurityDashboard() {
+  const { data: userRoleData } = useUserRole();
+  const userRole = userRoleData?.role;
+  
   // Fetch security monitoring dashboard
   const { data: securityStats, isLoading } = useQuery({
     queryKey: ['security-dashboard'],
@@ -83,7 +89,7 @@ export function SecurityDashboard() {
 
   return (
     <Tabs defaultValue="overview" className="space-y-6">
-      <TabsList className="grid w-full grid-cols-6">
+      <TabsList className={`grid w-full ${userRole === 'admin' ? 'grid-cols-8' : 'grid-cols-7'}`}>
         <TabsTrigger value="overview">
           <Shield className="h-4 w-4 mr-2" />
           Overview
@@ -108,6 +114,16 @@ export function SecurityDashboard() {
           <UserCheck className="h-4 w-4 mr-2" />
           Approvals
         </TabsTrigger>
+        <TabsTrigger value="exports">
+          <FileDown className="h-4 w-4 mr-2" />
+          Exports
+        </TabsTrigger>
+        {userRole === 'admin' && (
+          <TabsTrigger value="export-approvals">
+            <FileText className="h-4 w-4 mr-2" />
+            Export Approvals
+          </TabsTrigger>
+        )}
       </TabsList>
 
       <TabsContent value="overview" className="space-y-6">
@@ -333,6 +349,16 @@ export function SecurityDashboard() {
       <TabsContent value="approvals">
         <ApprovalAuditViewer />
       </TabsContent>
+
+      <TabsContent value="exports">
+        <ExportActivityLog />
+      </TabsContent>
+
+      {userRole === 'admin' && (
+        <TabsContent value="export-approvals">
+          <ExportApprovalPanel />
+        </TabsContent>
+      )}
     </Tabs>
   );
 }

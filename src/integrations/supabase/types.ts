@@ -2898,23 +2898,23 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          annual_revenue_range?: never
+          annual_revenue_range?: string | null
           company_name?: string | null
           created_at?: string | null
-          financial_health_rating?: never
+          financial_health_rating?: string | null
           id?: string | null
           industry_type?: string | null
-          profitability_level?: never
+          profitability_level?: string | null
           updated_at?: string | null
         }
         Update: {
-          annual_revenue_range?: never
+          annual_revenue_range?: string | null
           company_name?: string | null
           created_at?: string | null
-          financial_health_rating?: never
+          financial_health_rating?: string | null
           id?: string | null
           industry_type?: string | null
-          profitability_level?: never
+          profitability_level?: string | null
           updated_at?: string | null
         }
         Relationships: []

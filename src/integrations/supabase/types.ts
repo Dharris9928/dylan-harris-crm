@@ -1383,6 +1383,51 @@ export type Database = {
           },
         ]
       }
+      compliance_documents: {
+        Row: {
+          change_summary: string | null
+          content: string
+          created_at: string | null
+          document_type: string
+          effective_date: string
+          id: string
+          is_current: boolean | null
+          published_at: string | null
+          published_by: string | null
+          requires_user_acceptance: boolean | null
+          updated_at: string | null
+          version: string
+        }
+        Insert: {
+          change_summary?: string | null
+          content: string
+          created_at?: string | null
+          document_type: string
+          effective_date: string
+          id?: string
+          is_current?: boolean | null
+          published_at?: string | null
+          published_by?: string | null
+          requires_user_acceptance?: boolean | null
+          updated_at?: string | null
+          version: string
+        }
+        Update: {
+          change_summary?: string | null
+          content?: string
+          created_at?: string | null
+          document_type?: string
+          effective_date?: string
+          id?: string
+          is_current?: boolean | null
+          published_at?: string | null
+          published_by?: string | null
+          requires_user_acceptance?: boolean | null
+          updated_at?: string | null
+          version?: string
+        }
+        Relationships: []
+      }
       contact_access_logs: {
         Row: {
           accessed_at: string | null
@@ -1781,6 +1826,169 @@ export type Database = {
           reviewed_by?: string | null
           status?: string
           table_name?: string
+        }
+        Relationships: []
+      }
+      document_acceptances: {
+        Row: {
+          acceptance_method: string | null
+          accepted_at: string | null
+          document_id: string
+          id: string
+          ip_address: unknown | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          acceptance_method?: string | null
+          accepted_at?: string | null
+          document_id: string
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          acceptance_method?: string | null
+          accepted_at?: string | null
+          document_id?: string
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_acceptances_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dpa_agreements: {
+        Row: {
+          agreement_url: string | null
+          counterparty_name: string
+          counterparty_type: string
+          created_at: string | null
+          data_categories: string[] | null
+          expiry_date: string | null
+          id: string
+          notes: string | null
+          processing_purposes: string[] | null
+          renewal_reminder_sent: boolean | null
+          retention_period: string | null
+          signed_by_them: string | null
+          signed_by_us: string | null
+          signed_date: string | null
+          status: string
+          template_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          agreement_url?: string | null
+          counterparty_name: string
+          counterparty_type: string
+          created_at?: string | null
+          data_categories?: string[] | null
+          expiry_date?: string | null
+          id?: string
+          notes?: string | null
+          processing_purposes?: string[] | null
+          renewal_reminder_sent?: boolean | null
+          retention_period?: string | null
+          signed_by_them?: string | null
+          signed_by_us?: string | null
+          signed_date?: string | null
+          status?: string
+          template_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          agreement_url?: string | null
+          counterparty_name?: string
+          counterparty_type?: string
+          created_at?: string | null
+          data_categories?: string[] | null
+          expiry_date?: string | null
+          id?: string
+          notes?: string | null
+          processing_purposes?: string[] | null
+          renewal_reminder_sent?: boolean | null
+          retention_period?: string | null
+          signed_by_them?: string | null
+          signed_by_us?: string | null
+          signed_date?: string | null
+          status?: string
+          template_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dpa_agreements_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "dpa_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dpa_templates: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_active: boolean | null
+          jurisdiction: string
+          last_reviewed_date: string | null
+          legal_approved: boolean | null
+          legal_approved_at: string | null
+          legal_approved_by: string | null
+          next_review_date: string | null
+          notes: string | null
+          template_content: string
+          template_name: string
+          template_type: string
+          updated_at: string | null
+          version: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          jurisdiction: string
+          last_reviewed_date?: string | null
+          legal_approved?: boolean | null
+          legal_approved_at?: string | null
+          legal_approved_by?: string | null
+          next_review_date?: string | null
+          notes?: string | null
+          template_content: string
+          template_name: string
+          template_type: string
+          updated_at?: string | null
+          version: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          jurisdiction?: string
+          last_reviewed_date?: string | null
+          legal_approved?: boolean | null
+          legal_approved_at?: string | null
+          legal_approved_by?: string | null
+          next_review_date?: string | null
+          notes?: string | null
+          template_content?: string
+          template_name?: string
+          template_type?: string
+          updated_at?: string | null
+          version?: string
         }
         Relationships: []
       }

@@ -29,23 +29,37 @@ export function MFAEnrollmentDialog({ open, onOpenChange, onSuccess }: MFAEnroll
     try {
       setIsLoading(true);
       
-      // First, check for any existing unverified factors and remove them
-      const { data: factors } = await supabase.auth.mfa.listFactors();
-      
-      if (factors?.totp && factors.totp.length > 0) {
-        // Unenroll any existing factors
-        for (const factor of factors.totp) {
-          try {
-            await supabase.auth.mfa.unenroll({ factorId: factor.id });
-          } catch (e) {
-            console.error('Failed to unenroll existing factor:', e);
-          }
+      // Fetch existing factors first
+      const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
+      if (factorsError) {
+        console.error('Error listing MFA factors:', factorsError);
+      }
+      const existingTotp = factorsData?.totp ?? [];
+
+      // If there's already a verified TOTP factor, reuse it (no need to enroll another)
+      const verified = existingTotp.find((f: any) => f.status === 'verified');
+      if (verified) {
+        setFactorId(verified.id);
+        setStep('verify');
+        toast.message('Using your existing authenticator factor. Enter a code to verify.');
+        return;
+      }
+
+      // Remove any stale/unverified factors to avoid name conflicts
+      const unverified = existingTotp.filter((f: any) => f.status !== 'verified');
+      for (const factor of unverified) {
+        try {
+          await supabase.auth.mfa.unenroll({ factorId: factor.id });
+        } catch (e) {
+          console.error('Failed to unenroll existing factor:', e);
         }
       }
       
-      // Now enroll a new factor
+      // Enroll a new factor with a unique friendly name to avoid conflict
+      const friendlyName = `Authenticator ${new Date().toISOString()}`;
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: 'totp',
+        friendlyName,
       });
 
       if (error) throw error;
@@ -56,7 +70,7 @@ export function MFAEnrollmentDialog({ open, onOpenChange, onSuccess }: MFAEnroll
       setStep('verify');
     } catch (error: any) {
       toast.error('Failed to start MFA enrollment', {
-        description: error.message,
+        description: error.message || 'Please try again',
       });
     } finally {
       setIsLoading(false);

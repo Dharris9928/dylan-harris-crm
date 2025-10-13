@@ -19,6 +19,7 @@ import { RoleExpirationManager } from "@/components/settings/RoleExpirationManag
 import { VulnerabilityDashboard } from "@/components/settings/VulnerabilityDashboard";
 import { SecurityPatchManager } from "@/components/settings/SecurityPatchManager";
 import { SecurityTestingLog } from "@/components/settings/SecurityTestingLog";
+import { SOC2ComplianceDashboard } from "@/components/settings/SOC2ComplianceDashboard";
 import { AllowedDomainsManager } from "@/components/settings/domain/AllowedDomainsManager";
 import { BlockedSignupsViewer } from "@/components/settings/domain/BlockedSignupsViewer";
 import { EncryptionManager } from "@/components/settings/encryption/EncryptionManager";
@@ -129,6 +130,11 @@ const Settings = () => {
             <SecurityPatchManager />
             <SecurityTestingLog />
           </>
+        )}
+
+        {/* SOC 2 Type II Preparation - Admin Only */}
+        {userData?.role === 'admin' && (
+          <SOC2ComplianceDashboard />
         )}
 
         <Card>

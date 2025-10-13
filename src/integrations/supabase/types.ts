@@ -657,6 +657,129 @@ export type Database = {
         }
         Relationships: []
       }
+      business_continuity_tests: {
+        Row: {
+          conducted_by: string | null
+          corrective_actions: string | null
+          created_at: string | null
+          duration_minutes: number | null
+          findings: string | null
+          id: string
+          issues_identified: string | null
+          next_test_date: string | null
+          result: string
+          rpo_actual_minutes: number | null
+          rpo_target_minutes: number | null
+          rto_actual_minutes: number | null
+          rto_target_minutes: number | null
+          test_date: string | null
+          test_description: string
+          test_type: string
+        }
+        Insert: {
+          conducted_by?: string | null
+          corrective_actions?: string | null
+          created_at?: string | null
+          duration_minutes?: number | null
+          findings?: string | null
+          id?: string
+          issues_identified?: string | null
+          next_test_date?: string | null
+          result: string
+          rpo_actual_minutes?: number | null
+          rpo_target_minutes?: number | null
+          rto_actual_minutes?: number | null
+          rto_target_minutes?: number | null
+          test_date?: string | null
+          test_description: string
+          test_type: string
+        }
+        Update: {
+          conducted_by?: string | null
+          corrective_actions?: string | null
+          created_at?: string | null
+          duration_minutes?: number | null
+          findings?: string | null
+          id?: string
+          issues_identified?: string | null
+          next_test_date?: string | null
+          result?: string
+          rpo_actual_minutes?: number | null
+          rpo_target_minutes?: number | null
+          rto_actual_minutes?: number | null
+          rto_target_minutes?: number | null
+          test_date?: string | null
+          test_description?: string
+          test_type?: string
+        }
+        Relationships: []
+      }
+      change_management_log: {
+        Row: {
+          affected_systems: string[] | null
+          approved_by: string | null
+          change_description: string
+          change_type: string
+          change_window: string | null
+          created_at: string | null
+          documentation_url: string | null
+          id: string
+          impact_assessment: string | null
+          implemented_at: string | null
+          implemented_by: string | null
+          requested_by: string | null
+          risk_level: string
+          rollback_plan: string | null
+          scheduled_date: string | null
+          stakeholders_notified: boolean | null
+          status: string
+          testing_evidence: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          affected_systems?: string[] | null
+          approved_by?: string | null
+          change_description: string
+          change_type: string
+          change_window?: string | null
+          created_at?: string | null
+          documentation_url?: string | null
+          id?: string
+          impact_assessment?: string | null
+          implemented_at?: string | null
+          implemented_by?: string | null
+          requested_by?: string | null
+          risk_level: string
+          rollback_plan?: string | null
+          scheduled_date?: string | null
+          stakeholders_notified?: boolean | null
+          status?: string
+          testing_evidence?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          affected_systems?: string[] | null
+          approved_by?: string | null
+          change_description?: string
+          change_type?: string
+          change_window?: string | null
+          created_at?: string | null
+          documentation_url?: string | null
+          id?: string
+          impact_assessment?: string | null
+          implemented_at?: string | null
+          implemented_by?: string | null
+          requested_by?: string | null
+          risk_level?: string
+          rollback_plan?: string | null
+          scheduled_date?: string | null
+          stakeholders_notified?: boolean | null
+          status?: string
+          testing_evidence?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           address_line1: string | null
@@ -2660,6 +2783,75 @@ export type Database = {
         }
         Relationships: []
       }
+      security_incidents: {
+        Row: {
+          affected_systems: string[] | null
+          affected_users_count: number | null
+          assigned_to: string | null
+          contained_at: string | null
+          created_at: string | null
+          detected_at: string | null
+          follow_up_actions: string | null
+          id: string
+          impact_description: string | null
+          incident_summary: string
+          incident_type: string
+          lessons_learned: string | null
+          remediation_steps: string | null
+          reported_at: string | null
+          reported_by: string | null
+          resolved_at: string | null
+          root_cause: string | null
+          severity: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          affected_systems?: string[] | null
+          affected_users_count?: number | null
+          assigned_to?: string | null
+          contained_at?: string | null
+          created_at?: string | null
+          detected_at?: string | null
+          follow_up_actions?: string | null
+          id?: string
+          impact_description?: string | null
+          incident_summary: string
+          incident_type: string
+          lessons_learned?: string | null
+          remediation_steps?: string | null
+          reported_at?: string | null
+          reported_by?: string | null
+          resolved_at?: string | null
+          root_cause?: string | null
+          severity: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          affected_systems?: string[] | null
+          affected_users_count?: number | null
+          assigned_to?: string | null
+          contained_at?: string | null
+          created_at?: string | null
+          detected_at?: string | null
+          follow_up_actions?: string | null
+          id?: string
+          impact_description?: string | null
+          incident_summary?: string
+          incident_type?: string
+          lessons_learned?: string | null
+          remediation_steps?: string | null
+          reported_at?: string | null
+          reported_by?: string | null
+          resolved_at?: string | null
+          root_cause?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       security_patches: {
         Row: {
           affected_components: string[] | null
@@ -2978,6 +3170,45 @@ export type Database = {
           },
         ]
       }
+      system_availability_log: {
+        Row: {
+          check_type: string
+          checked_at: string | null
+          created_at: string | null
+          details: Json | null
+          error_count: number | null
+          id: string
+          response_time_ms: number | null
+          status: string
+          system_name: string
+          uptime_percentage: number | null
+        }
+        Insert: {
+          check_type: string
+          checked_at?: string | null
+          created_at?: string | null
+          details?: Json | null
+          error_count?: number | null
+          id?: string
+          response_time_ms?: number | null
+          status: string
+          system_name: string
+          uptime_percentage?: number | null
+        }
+        Update: {
+          check_type?: string
+          checked_at?: string | null
+          created_at?: string | null
+          details?: Json | null
+          error_count?: number | null
+          id?: string
+          response_time_ms?: number | null
+          status?: string
+          system_name?: string
+          uptime_percentage?: number | null
+        }
+        Relationships: []
+      }
       training_certifications: {
         Row: {
           certification_issued: boolean | null
@@ -3260,6 +3491,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      vendor_risk_assessments: {
+        Row: {
+          assessed_by: string | null
+          assessment_date: string | null
+          compliance_issues: string | null
+          contract_end_date: string | null
+          contract_start_date: string | null
+          created_at: string | null
+          data_access_level: string | null
+          has_gdpr_compliance: boolean | null
+          has_iso27001_certification: boolean | null
+          has_soc2_certification: boolean | null
+          id: string
+          next_review_date: string | null
+          risk_level: string
+          risk_mitigation_measures: string | null
+          security_assessment_score: number | null
+          services_provided: string
+          status: string
+          updated_at: string | null
+          vendor_category: string
+          vendor_name: string
+        }
+        Insert: {
+          assessed_by?: string | null
+          assessment_date?: string | null
+          compliance_issues?: string | null
+          contract_end_date?: string | null
+          contract_start_date?: string | null
+          created_at?: string | null
+          data_access_level?: string | null
+          has_gdpr_compliance?: boolean | null
+          has_iso27001_certification?: boolean | null
+          has_soc2_certification?: boolean | null
+          id?: string
+          next_review_date?: string | null
+          risk_level: string
+          risk_mitigation_measures?: string | null
+          security_assessment_score?: number | null
+          services_provided: string
+          status?: string
+          updated_at?: string | null
+          vendor_category: string
+          vendor_name: string
+        }
+        Update: {
+          assessed_by?: string | null
+          assessment_date?: string | null
+          compliance_issues?: string | null
+          contract_end_date?: string | null
+          contract_start_date?: string | null
+          created_at?: string | null
+          data_access_level?: string | null
+          has_gdpr_compliance?: boolean | null
+          has_iso27001_certification?: boolean | null
+          has_soc2_certification?: boolean | null
+          id?: string
+          next_review_date?: string | null
+          risk_level?: string
+          risk_mitigation_measures?: string | null
+          security_assessment_score?: number | null
+          services_provided?: string
+          status?: string
+          updated_at?: string | null
+          vendor_category?: string
+          vendor_name?: string
+        }
+        Relationships: []
       }
       vulnerability_scans: {
         Row: {

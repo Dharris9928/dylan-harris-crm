@@ -13,6 +13,9 @@ import { BusinessContextSettings } from "@/components/settings/BusinessContextSe
 import { SalesRepManagement } from "@/components/settings/SalesRepManagement";
 import { MergeCompaniesDialog } from "@/components/settings/MergeCompaniesDialog";
 import { DuplicateDetectionDialog } from "@/components/settings/DuplicateDetectionDialog";
+import { AccessReviewDashboard } from "@/components/settings/AccessReviewDashboard";
+import { InactiveUserDetection } from "@/components/settings/InactiveUserDetection";
+import { RoleExpirationManager } from "@/components/settings/RoleExpirationManager";
 import { AllowedDomainsManager } from "@/components/settings/domain/AllowedDomainsManager";
 import { BlockedSignupsViewer } from "@/components/settings/domain/BlockedSignupsViewer";
 import { EncryptionManager } from "@/components/settings/encryption/EncryptionManager";
@@ -104,6 +107,15 @@ const Settings = () => {
             <EncryptionSetupGuide />
             <EncryptionUsageGuide />
             <DataWarehouseSync />
+          </>
+        )}
+
+        {/* Access Review & Certification Section - Admin/Manager Only */}
+        {userData?.hasElevatedAccess && (
+          <>
+            <AccessReviewDashboard />
+            <RoleExpirationManager />
+            <InactiveUserDetection />
           </>
         )}
 

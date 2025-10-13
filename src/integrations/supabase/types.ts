@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_reviews: {
+        Row: {
+          access_expires_at: string | null
+          created_at: string
+          id: string
+          justification: string | null
+          new_role: Database["public"]["Enums"]["app_role"] | null
+          previous_role: Database["public"]["Enums"]["app_role"] | null
+          review_type: string
+          reviewed_at: string | null
+          reviewer_id: string
+          reviewer_notes: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          access_expires_at?: string | null
+          created_at?: string
+          id?: string
+          justification?: string | null
+          new_role?: Database["public"]["Enums"]["app_role"] | null
+          previous_role?: Database["public"]["Enums"]["app_role"] | null
+          review_type: string
+          reviewed_at?: string | null
+          reviewer_id: string
+          reviewer_notes?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          access_expires_at?: string | null
+          created_at?: string
+          id?: string
+          justification?: string | null
+          new_role?: Database["public"]["Enums"]["app_role"] | null
+          previous_role?: Database["public"]["Enums"]["app_role"] | null
+          review_type?: string
+          reviewed_at?: string | null
+          reviewer_id?: string
+          reviewer_notes?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_usage_logs: {
         Row: {
           ai_model: string
@@ -3023,6 +3068,10 @@ export type Database = {
           created_by: string | null
           id: string
           last_access_at: string | null
+          last_activity_at: string | null
+          last_reviewed_at: string | null
+          last_reviewed_by: string | null
+          review_required_by: string | null
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
@@ -3032,6 +3081,10 @@ export type Database = {
           created_by?: string | null
           id?: string
           last_access_at?: string | null
+          last_activity_at?: string | null
+          last_reviewed_at?: string | null
+          last_reviewed_by?: string | null
+          review_required_by?: string | null
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
@@ -3041,6 +3094,10 @@ export type Database = {
           created_by?: string | null
           id?: string
           last_access_at?: string | null
+          last_activity_at?: string | null
+          last_reviewed_at?: string | null
+          last_reviewed_by?: string | null
+          review_required_by?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
@@ -3674,6 +3731,16 @@ export type Database = {
       detect_bulk_export: {
         Args: { _current_export_count: number; _user_id: string }
         Returns: undefined
+      }
+      detect_inactive_users: {
+        Args: { _days_inactive?: number }
+        Returns: {
+          days_inactive: number
+          email: string
+          last_activity: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }[]
       }
       encrypt_text: {
         Args: { plain_text: string }

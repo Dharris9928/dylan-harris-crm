@@ -164,6 +164,134 @@ export type Database = {
         }
         Relationships: []
       }
+      api_audit_log: {
+        Row: {
+          api_key_id: string | null
+          created_at: string
+          created_date: string
+          endpoint: string
+          error_message: string | null
+          id: string
+          ip_address: unknown | null
+          method: string
+          query_parameters: Json | null
+          request_body: Json | null
+          request_headers: Json | null
+          response_time_ms: number | null
+          status_code: number | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          api_key_id?: string | null
+          created_at?: string
+          created_date?: string
+          endpoint: string
+          error_message?: string | null
+          id?: string
+          ip_address?: unknown | null
+          method: string
+          query_parameters?: Json | null
+          request_body?: Json | null
+          request_headers?: Json | null
+          response_time_ms?: number | null
+          status_code?: number | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          api_key_id?: string | null
+          created_at?: string
+          created_date?: string
+          endpoint?: string
+          error_message?: string | null
+          id?: string
+          ip_address?: unknown | null
+          method?: string
+          query_parameters?: Json | null
+          request_body?: Json | null
+          request_headers?: Json | null
+          response_time_ms?: number | null
+          status_code?: number | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_audit_log_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_keys: {
+        Row: {
+          allowed_endpoints: string[] | null
+          allowed_ips: unknown[] | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          key_hash: string
+          key_name: string
+          key_prefix: string
+          last_used_at: string | null
+          permission_level: Database["public"]["Enums"]["api_permission"]
+          rate_limit_per_hour: number | null
+          rate_limit_per_minute: number | null
+          revocation_reason: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          status: Database["public"]["Enums"]["api_key_status"]
+          updated_at: string
+          usage_count: number | null
+          user_id: string
+        }
+        Insert: {
+          allowed_endpoints?: string[] | null
+          allowed_ips?: unknown[] | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          key_hash: string
+          key_name: string
+          key_prefix: string
+          last_used_at?: string | null
+          permission_level?: Database["public"]["Enums"]["api_permission"]
+          rate_limit_per_hour?: number | null
+          rate_limit_per_minute?: number | null
+          revocation_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          status?: Database["public"]["Enums"]["api_key_status"]
+          updated_at?: string
+          usage_count?: number | null
+          user_id: string
+        }
+        Update: {
+          allowed_endpoints?: string[] | null
+          allowed_ips?: unknown[] | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          key_hash?: string
+          key_name?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          permission_level?: Database["public"]["Enums"]["api_permission"]
+          rate_limit_per_hour?: number | null
+          rate_limit_per_minute?: number | null
+          revocation_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          status?: Database["public"]["Enums"]["api_key_status"]
+          updated_at?: string
+          usage_count?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       approval_audit_log: {
         Row: {
           approved_by: string | null
@@ -3285,6 +3413,10 @@ export type Database = {
         Args: { _field_name: string; _table_name: string; _user_id: string }
         Returns: boolean
       }
+      check_api_key_rate_limit: {
+        Args: { _api_key_id: string; _endpoint: string }
+        Returns: Json
+      }
       check_email_domain_allowed: {
         Args: { email_address: string }
         Returns: boolean
@@ -3303,6 +3435,10 @@ export type Database = {
       }
       cleanup_expired_approvals: {
         Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      cleanup_old_api_logs: {
+        Args: { _retention_days?: number }
         Returns: number
       }
       cleanup_old_records: {
@@ -3406,6 +3542,23 @@ export type Database = {
         Args: { _user_id: string }
         Returns: boolean
       }
+      log_api_call: {
+        Args: {
+          _api_key_id: string
+          _endpoint: string
+          _error_message?: string
+          _ip_address?: unknown
+          _method: string
+          _query_parameters?: Json
+          _request_body?: Json
+          _request_headers?: Json
+          _response_time_ms?: number
+          _status_code: number
+          _user_agent?: string
+          _user_id: string
+        }
+        Returns: string
+      }
       log_auth_event: {
         Args: {
           _email_attempted?: string
@@ -3460,6 +3613,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      revoke_api_key: {
+        Args: { _key_id: string; _reason?: string }
+        Returns: boolean
+      }
       revoke_expired_access: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -3485,6 +3642,16 @@ export type Database = {
         Args: { _hours?: number; _user_id: string }
         Returns: boolean
       }
+      validate_api_key: {
+        Args: { _endpoint: string; _ip_address?: unknown; _key_hash: string }
+        Returns: {
+          error_reason: string
+          is_valid: boolean
+          key_id: string
+          permission_level: Database["public"]["Enums"]["api_permission"]
+          user_id: string
+        }[]
+      }
     }
     Enums: {
       activity_outcome:
@@ -3504,6 +3671,8 @@ export type Database = {
         | "Meeting"
         | "Demo"
         | "Training"
+      api_key_status: "active" | "revoked" | "expired"
+      api_permission: "read_only" | "read_write" | "admin"
       app_role: "admin" | "sales_manager" | "sales_rep" | "read_only"
       approval_status: "pending" | "approved" | "rejected"
       contact_method: "Email" | "Phone" | "LinkedIn" | "Text"
@@ -3680,6 +3849,8 @@ export const Constants = {
         "Demo",
         "Training",
       ],
+      api_key_status: ["active", "revoked", "expired"],
+      api_permission: ["read_only", "read_write", "admin"],
       app_role: ["admin", "sales_manager", "sales_rep", "read_only"],
       approval_status: ["pending", "approved", "rejected"],
       contact_method: ["Email", "Phone", "LinkedIn", "Text"],

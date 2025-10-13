@@ -28,6 +28,22 @@ export function MFAEnrollmentDialog({ open, onOpenChange, onSuccess }: MFAEnroll
   const handleEnroll = async () => {
     try {
       setIsLoading(true);
+      
+      // First, check for any existing unverified factors and remove them
+      const { data: factors } = await supabase.auth.mfa.listFactors();
+      
+      if (factors?.totp && factors.totp.length > 0) {
+        // Unenroll any existing factors
+        for (const factor of factors.totp) {
+          try {
+            await supabase.auth.mfa.unenroll({ factorId: factor.id });
+          } catch (e) {
+            console.error('Failed to unenroll existing factor:', e);
+          }
+        }
+      }
+      
+      // Now enroll a new factor
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: 'totp',
       });

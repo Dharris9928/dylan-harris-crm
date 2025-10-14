@@ -77,10 +77,20 @@ const handler = async (req: Request): Promise<Response> => {
       `;
 
     // Send email to user
+    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "Lovable <onboarding@resend.dev>";
+
+    if (!Deno.env.get("RESEND_API_KEY")) {
+      console.error("RESEND_API_KEY is not configured. Unable to send password reset email.");
+      return new Response(
+        JSON.stringify({ error: "Email service not configured (missing RESEND_API_KEY)" }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     const emailResponse = await resend.emails.send({
-      from: "CRM Notifications <notifications@nestpro-connector.com>",
+      from: fromEmail,
       to: [userEmail],
-      subject: "Password Reset Confirmation",
+      subject: resetByAdmin && tempPassword ? "Your Temporary Password and Reset Instructions" : "Password Reset Confirmation",
       html: htmlContent,
     });
 

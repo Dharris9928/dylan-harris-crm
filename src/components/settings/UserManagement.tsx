@@ -90,15 +90,31 @@ export function UserManagement() {
   const loadUsers = async () => {
     setLoading(true);
     try {
+      console.log('Loading users via admin-list-profiles...');
+      
       // Get all profiles with invitation tracking fields via edge function (admin only)
       const { data: listData, error: profilesError } = await supabase.functions.invoke('admin-list-profiles');
       
+      console.log('admin-list-profiles response:', { listData, profilesError });
+      
       if (profilesError) {
         console.error('Error fetching profiles:', profilesError);
-        throw profilesError;
+        // Fallback: try direct query (will be limited by RLS)
+        console.log('Trying fallback direct query...');
+        const { data: fallbackProfiles, error: fallbackError } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, approval_status, created_at, temp_password, invitation_email_sent_at, invitation_email_delivered_at, invitation_email_opened_at, invitation_email_status, approved_at, approved_by');
+        
+        if (fallbackError) {
+          throw fallbackError;
+        }
+        
+        console.log('Fallback profiles:', fallbackProfiles);
+        listData.profiles = fallbackProfiles;
       }
 
       const profiles = listData?.profiles || [];
+      console.log('Profiles loaded:', profiles);
 
       if (profiles.length === 0) {
         setApprovedUsers([]);

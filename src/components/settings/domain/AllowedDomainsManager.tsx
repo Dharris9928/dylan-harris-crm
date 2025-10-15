@@ -262,14 +262,21 @@ export function AllowedDomainsManager() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => verifyDomainMutation.mutate(domain.domain)}
-                          disabled={verifyDomainMutation.isPending}
-                        >
-                          Verify
-                        </Button>
+                        {domain.verification_status === 'verified' && domain.mx_records_valid ? (
+                          <Badge variant="default" className="gap-1">
+                            <CheckCircle className="h-3 w-3" />
+                            Verified
+                          </Badge>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => verifyDomainMutation.mutate(domain.domain)}
+                            disabled={verifyDomainMutation.isPending}
+                          >
+                            Verify
+                          </Button>
+                        )}
                         <Button
                           size="sm"
                           variant="outline"

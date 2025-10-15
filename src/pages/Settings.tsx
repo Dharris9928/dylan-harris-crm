@@ -24,6 +24,7 @@ import { SecurityTestingLog } from "@/components/settings/SecurityTestingLog";
 import { SOC2ComplianceDashboard } from "@/components/settings/SOC2ComplianceDashboard";
 import { AllowedDomainsManager } from "@/components/settings/domain/AllowedDomainsManager";
 import { BlockedSignupsViewer } from "@/components/settings/domain/BlockedSignupsViewer";
+import { SignupAttemptsLog } from "@/components/settings/domain/SignupAttemptsLog";
 import { EncryptionManager } from "@/components/settings/encryption/EncryptionManager";
 import { EncryptionSetupGuide } from "@/components/settings/encryption/EncryptionSetupGuide";
 import { EncryptionUsageGuide } from "@/components/settings/encryption/EncryptionUsageGuide";
@@ -228,6 +229,7 @@ const Settings = () => {
             <>
               <SecurityGrowthTracker />
               <AllowedDomainsManager />
+              <SignupAttemptsLog />
               <BlockedSignupsViewer />
             </>
           )}

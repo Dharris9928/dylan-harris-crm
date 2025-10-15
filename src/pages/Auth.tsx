@@ -37,6 +37,7 @@ const Auth = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [tempPassword, setTempPassword] = useState("");
+  const [requiresPasswordChange, setRequiresPasswordChange] = useState(false);
 
   useEffect(() => {
     // Check if this is a password reset flow
@@ -113,6 +114,16 @@ const Auth = () => {
           console.error('Failed to log auth event:', logError);
         }
         throw error;
+      }
+
+      // Check if user needs to change password (temporary password)
+      if (data.user?.user_metadata?.requires_password_change) {
+        toast.info('You must change your temporary password');
+        setIsResettingPassword(true);
+        setRequiresPasswordChange(true);
+        setTempPassword(password); // Store current temp password
+        setLoading(false);
+        return;
       }
 
       // Log successful login
@@ -244,11 +255,38 @@ const Auth = () => {
         return;
       }
 
-      // Use the new code-based reset system
+      // Check if this is a temporary password change (user is logged in)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.user_metadata?.requires_password_change && tempPassword) {
+        // Update password directly since user is already authenticated
+        const { error: updateError } = await supabase.auth.updateUser({
+          password: newPassword
+        });
+
+        if (updateError) throw updateError;
+
+        // Clear the requires_password_change flag
+        const { error: metadataError } = await supabase.auth.updateUser({
+          data: { requires_password_change: false }
+        });
+
+        if (metadataError) console.error('Failed to update metadata:', metadataError);
+
+        toast.success("Password updated successfully! You can now access the system.");
+        setIsResettingPassword(false);
+        setEmail("");
+        setTempPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        navigate("/");
+        return;
+      }
+
+      // Otherwise, use the code-based reset system
       const { data, error } = await supabase.functions.invoke('verify-reset-code', {
         body: {
           email: email,
-          code: tempPassword, // Reusing tempPassword field for reset code
+          code: tempPassword,
           newPassword: newPassword
         }
       });
@@ -307,17 +345,21 @@ const Auth = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="temp-password">Reset Code</Label>
+                <Label htmlFor="temp-password">{requiresPasswordChange ? 'Current Temporary Password' : 'Reset Code'}</Label>
                 <PasswordInput
                   id="temp-password"
                   value={tempPassword}
                   onChange={(e) => setTempPassword(e.target.value)}
-                  placeholder="Enter 6-digit code from email"
+                  placeholder={requiresPasswordChange ? "Enter your temporary password" : "Enter 6-digit code from email"}
                   required
-                  maxLength={6}
+                  maxLength={requiresPasswordChange ? undefined : 6}
+                  disabled={requiresPasswordChange}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Enter the 6-digit code you received from your administrator
+                  {requiresPasswordChange 
+                    ? 'You were given a temporary password - you must change it now' 
+                    : 'Enter the 6-digit code you received from your administrator'
+                  }
                 </p>
               </div>
               <div className="space-y-2">

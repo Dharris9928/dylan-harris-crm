@@ -11,7 +11,7 @@ import { PasswordRequirements } from "@/components/ui/password-requirements";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Shield, ShieldAlert, ShieldCheck, Eye, Key, Pencil } from "lucide-react";
+import { Shield, ShieldAlert, ShieldCheck, Eye, Key, Pencil, Plus } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Tooltip,
@@ -19,6 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { AddUserDialog } from "./AddUserDialog";
 
 interface UserProfile {
   id: string;
@@ -35,6 +36,7 @@ export function UserManagement() {
   const [loading, setLoading] = useState(true);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [resetting, setResetting] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -301,10 +303,18 @@ export function UserManagement() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>User Management</CardTitle>
-        <CardDescription>
-          Manage user roles and security clearances. Only administrators can modify user permissions.
-        </CardDescription>
+        <div className="flex items-start justify-between">
+          <div>
+            <CardTitle>User Management</CardTitle>
+            <CardDescription>
+              Manage user roles and security clearances. Only administrators can modify user permissions.
+            </CardDescription>
+          </div>
+          <Button onClick={() => setAddUserDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add User
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -513,6 +523,12 @@ export function UserManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AddUserDialog
+        open={addUserDialogOpen}
+        onOpenChange={setAddUserDialogOpen}
+        onUserAdded={loadUsers}
+      />
     </Card>
   );
 }

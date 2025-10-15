@@ -406,7 +406,7 @@ export function EditCompanyDialog({ open, onClose, onOpenChange, onSuccess, comp
   return (
     <>
       <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle>Edit Company</DialogTitle>

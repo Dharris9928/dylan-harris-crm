@@ -5,11 +5,23 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { AddOpportunityDialog } from "@/components/opportunities/AddOpportunityDialog";
 import { OpportunitiesTable } from "@/components/opportunities/OpportunitiesTable";
+import { ViewSelector, ViewType } from "@/components/views/ViewSelector";
+import { OpportunitiesKanbanView } from "@/components/opportunities/OpportunitiesKanbanView";
+import { OpportunitiesCalendarView } from "@/components/opportunities/OpportunitiesCalendarView";
+import { OpportunitiesGalleryView } from "@/components/opportunities/OpportunitiesGalleryView";
+import { OpportunitiesListView } from "@/components/opportunities/OpportunitiesListView";
+import { FormView } from "@/components/views/FormView";
+import { useToast } from "@/hooks/use-toast";
+import { EditOpportunityDialog } from "@/components/opportunities/EditOpportunityDialog";
 
 export default function Opportunities() {
+  const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedOpportunity, setSelectedOpportunity] = useState<any>(null);
+  const [currentView, setCurrentView] = useState<ViewType>('grid');
 
-  const { data: opportunities, isLoading } = useQuery({
+  const { data: opportunities, isLoading, refetch } = useQuery({
     queryKey: ['opportunities'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -27,6 +39,114 @@ export default function Opportunities() {
     },
   });
 
+  const handleUpdateOpportunity = async (id: string, updates: any) => {
+    try {
+      const { error } = await supabase
+        .from('opportunities' as any)
+        .update(updates)
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      await refetch();
+      toast({
+        title: "Success",
+        description: "Opportunity updated successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update opportunity",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSelectOpportunity = (opportunity: any) => {
+    setSelectedOpportunity(opportunity);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleFormSubmit = async (data: any) => {
+    try {
+      const { data: user } = await supabase.auth.getUser();
+      
+      const { error } = await supabase
+        .from('opportunities' as any)
+        .insert([{
+          opportunity_name: data.opportunity_name,
+          company_id: data.company_id,
+          stage: data.stage || 'prospecting',
+          amount: data.amount,
+          expected_close_date: data.expected_close_date,
+          notes: data.notes,
+          created_by: user.user?.id,
+        }]);
+      
+      if (error) throw error;
+      
+      await refetch();
+      toast({
+        title: "Success",
+        description: "Opportunity created successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create opportunity",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const renderView = () => {
+    if (isLoading) return <OpportunitiesTable opportunities={[]} isLoading={true} />;
+    
+    const data = opportunities || [];
+    
+    switch (currentView) {
+      case 'kanban':
+        return <OpportunitiesKanbanView opportunities={data} onUpdate={handleUpdateOpportunity} />;
+      case 'calendar':
+        return <OpportunitiesCalendarView opportunities={data} onSelectEvent={handleSelectOpportunity} />;
+      case 'gallery':
+        return <OpportunitiesGalleryView opportunities={data} onSelectItem={handleSelectOpportunity} />;
+      case 'list':
+        return <OpportunitiesListView opportunities={data} onSelectItem={handleSelectOpportunity} />;
+      case 'form':
+        return <FormView 
+          formTitle="Create New Opportunity"
+          formDescription="Fill out the form below to create a new sales opportunity"
+          fields={[
+            { name: 'opportunity_name', label: 'Opportunity Name', type: 'text', required: true },
+            { name: 'company_id', label: 'Company ID', type: 'text', required: true, helpText: 'Enter the company UUID' },
+            { 
+              name: 'stage', 
+              label: 'Stage', 
+              type: 'select', 
+              required: true,
+              options: [
+                { value: 'prospecting', label: 'Prospecting' },
+                { value: 'qualification', label: 'Qualification' },
+                { value: 'proposal', label: 'Proposal' },
+                { value: 'negotiation', label: 'Negotiation' },
+                { value: 'closed_won', label: 'Closed Won' },
+                { value: 'closed_lost', label: 'Closed Lost' },
+              ]
+            },
+            { name: 'amount', label: 'Estimated Value', type: 'number', placeholder: '0' },
+            { name: 'expected_close_date', label: 'Expected Close Date', type: 'text', placeholder: 'YYYY-MM-DD' },
+            { name: 'notes', label: 'Notes', type: 'textarea', maxLength: 500 },
+          ]}
+          onSubmit={handleFormSubmit}
+          successMessage="Opportunity created successfully!"
+        />;
+      case 'grid':
+      default:
+        return <OpportunitiesTable opportunities={data} isLoading={false} />;
+    }
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -36,18 +156,32 @@ export default function Opportunities() {
             Manage sales opportunities and track product quotes
           </p>
         </div>
-        <Button onClick={() => setIsAddDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Opportunity
-        </Button>
+        <div className="flex items-center gap-2">
+          <ViewSelector 
+            currentView={currentView} 
+            onViewChange={setCurrentView}
+          />
+          <Button onClick={() => setIsAddDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Opportunity
+          </Button>
+        </div>
       </div>
 
-      <OpportunitiesTable opportunities={opportunities || []} isLoading={isLoading} />
+      {renderView()}
 
       <AddOpportunityDialog
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
       />
+
+      {selectedOpportunity && (
+        <EditOpportunityDialog
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          opportunity={selectedOpportunity}
+        />
+      )}
     </div>
   );
 }

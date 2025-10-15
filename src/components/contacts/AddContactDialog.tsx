@@ -167,7 +167,7 @@ export function AddContactDialog({ open, onOpenChange, onSuccess, onAdded, compa
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={(e) => e.preventDefault()}>
+          <form onSubmit={form.handleSubmit((data) => onSubmit(data, false))}>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <FormField
@@ -398,9 +398,8 @@ export function AddContactDialog({ open, onOpenChange, onSuccess, onAdded, compa
                 {form.formState.isSubmitting ? "Saving..." : "Save & Add Another"}
               </Button>
               <Button 
-                type="button" 
+                type="submit"
                 disabled={form.formState.isSubmitting}
-                onClick={form.handleSubmit((data) => onSubmit(data, false))}
               >
                 {form.formState.isSubmitting ? "Adding..." : "Add Contact"}
               </Button>

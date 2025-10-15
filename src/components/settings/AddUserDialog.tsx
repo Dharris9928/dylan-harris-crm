@@ -28,7 +28,9 @@ export function AddUserDialog({ open, onOpenChange, onUserAdded }: AddUserDialog
     useTemporaryPassword: false
   });
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     // Validation
     if (!form.email || !form.firstName || !form.lastName) {
       toast.error('Please fill in all required fields');
@@ -138,7 +140,7 @@ export function AddUserDialog({ open, onOpenChange, onUserAdded }: AddUserDialog
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email Address *</Label>
             <Input
@@ -217,16 +219,16 @@ export function AddUserDialog({ open, onOpenChange, onUserAdded }: AddUserDialog
               A secure temporary password will be generated and displayed to you. Please provide it to the user securely. They will be required to change it upon first login.
             </div>
           )}
-        </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? 'Creating...' : 'Create User'}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Creating...' : 'Create User'}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

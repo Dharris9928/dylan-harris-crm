@@ -77,7 +77,9 @@ export function ExportApprovalRequestDialog({
     },
   });
 
-  const handleSubmit = () => {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
     if (!justification.trim()) {
       toast({
         title: 'Justification Required',
@@ -102,42 +104,44 @@ export function ExportApprovalRequestDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Export Details:</strong>
-            <ul className="mt-2 text-sm space-y-1">
-              <li>• Table: <span className="font-medium">{tableName}</span></li>
-              <li>• Records: <span className="font-medium">{recordCount}</span></li>
-              <li>• Format: <span className="font-medium">{exportType}</span></li>
-            </ul>
-          </AlertDescription>
-        </Alert>
+        <form onSubmit={handleSubmit}>
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Export Details:</strong>
+              <ul className="mt-2 text-sm space-y-1">
+                <li>• Table: <span className="font-medium">{tableName}</span></li>
+                <li>• Records: <span className="font-medium">{recordCount}</span></li>
+                <li>• Format: <span className="font-medium">{exportType}</span></li>
+              </ul>
+            </AlertDescription>
+          </Alert>
 
-        <div className="space-y-2">
-          <Label htmlFor="justification">
-            Business Justification <span className="text-destructive">*</span>
-          </Label>
-          <Textarea
-            id="justification"
-            placeholder="Explain why you need to export this data and how it will be used..."
-            value={justification}
-            onChange={(e) => setJustification(e.target.value)}
-            className="min-h-[100px]"
-          />
-          <p className="text-xs text-muted-foreground">
-            Your request will expire after 24 hours if not reviewed.
-          </p>
-        </div>
+          <div className="space-y-2 mt-4">
+            <Label htmlFor="justification">
+              Business Justification <span className="text-destructive">*</span>
+            </Label>
+            <Textarea
+              id="justification"
+              placeholder="Explain why you need to export this data and how it will be used..."
+              value={justification}
+              onChange={(e) => setJustification(e.target.value)}
+              className="min-h-[100px]"
+            />
+            <p className="text-xs text-muted-foreground">
+              Your request will expire after 24 hours if not reviewed.
+            </p>
+          </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={requestApproval.isPending}>
-            Submit Request
-          </Button>
-        </DialogFooter>
+          <DialogFooter className="mt-4">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={requestApproval.isPending}>
+              Submit Request
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

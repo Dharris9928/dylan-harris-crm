@@ -39,6 +39,7 @@ export function UserManagement() {
   const [approvedUsers, setApprovedUsers] = useState<UserProfile[]>([]);
   const [invitedUsers, setInvitedUsers] = useState<UserProfile[]>([]);
   const [pendingSignups, setPendingSignups] = useState<UserProfile[]>([]);
+  const [selectedRoles, setSelectedRoles] = useState<Record<string, 'admin' | 'sales_manager' | 'sales_rep' | 'read_only'>>({});
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
@@ -103,17 +104,17 @@ export function UserManagement() {
         return;
       }
 
-      // Get emails from auth.users via admin function
-      const { data: adminProfiles, error: adminError } = await supabase.rpc('admin_get_all_profiles');
+      // Get emails from auth.users via edge function
+      const { data: emailsData, error: emailsError } = await supabase.functions.invoke('get-user-emails', {
+        body: { userIds: profiles.map(p => p.id) }
+      });
       
-      if (adminError) {
-        console.error('Error fetching admin profiles:', adminError);
+      if (emailsError) {
+        console.error('Error fetching user emails:', emailsError);
+        toast.error('Failed to load user emails');
       }
 
-      const emailsMap = (adminProfiles || []).reduce((acc, profile) => {
-        acc[profile.id] = profile.email;
-        return acc;
-      }, {} as Record<string, string>);
+      const emailsMap = emailsData?.emails || {};
 
       // Get roles from user_roles table
       const userIds = profiles.map(p => p.id);
@@ -150,6 +151,13 @@ export function UserManagement() {
       const approved = allUsers.filter(u => u.approval_status === 'approved');
       const invited = allUsers.filter(u => u.temp_password && u.approval_status === 'pending');
       const signups = allUsers.filter(u => !u.temp_password && u.approval_status === 'pending');
+
+      // Initialize selected roles for pending signups
+      const initialRoles: Record<string, 'admin' | 'sales_manager' | 'sales_rep' | 'read_only'> = {};
+      signups.forEach(user => {
+        initialRoles[user.id] = user.role;
+      });
+      setSelectedRoles(initialRoles);
 
       setApprovedUsers(approved);
       setInvitedUsers(invited);
@@ -497,11 +505,12 @@ export function UserManagement() {
                     <TableCell className="font-mono text-sm">{user.email}</TableCell>
                     <TableCell>
                       <Select
-                        value={user.role}
+                        value={selectedRoles[user.id] || user.role}
                         onValueChange={(value) => {
-                          setPendingSignups(prev => 
-                            prev.map(u => u.id === user.id ? { ...u, role: value as any } : u)
-                          );
+                          setSelectedRoles(prev => ({ 
+                            ...prev, 
+                            [user.id]: value as 'admin' | 'sales_manager' | 'sales_rep' | 'read_only'
+                          }));
                         }}
                       >
                         <SelectTrigger className="w-40">
@@ -520,7 +529,7 @@ export function UserManagement() {
                         <Button
                           variant="default"
                           size="sm"
-                          onClick={() => handleApproveUser(user.id, user.role)}
+                          onClick={() => handleApproveUser(user.id, selectedRoles[user.id] || user.role)}
                         >
                           Approve
                         </Button>

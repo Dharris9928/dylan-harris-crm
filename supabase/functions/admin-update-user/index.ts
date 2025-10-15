@@ -30,9 +30,9 @@ serve(async (req) => {
     const authUpdates: { email?: string; password?: string } = {};
     if (email) authUpdates.email = email;
     if (password) {
-      if (password.length < 8 || password.length > 15) {
+      if (password.length < 8 || password.length > 20) {
         return new Response(
-          JSON.stringify({ error: 'Password must be 8-15 characters' }),
+          JSON.stringify({ error: 'Password must be 8-20 characters' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }

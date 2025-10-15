@@ -52,59 +52,25 @@ export function AddUserDialog({ open, onOpenChange, onUserAdded }: AddUserDialog
 
     setLoading(true);
     try {
-      // Generate temporary password if needed
-      const actualPassword = form.useTemporaryPassword 
-        ? `Temp${Math.random().toString(36).slice(2, 10)}!`
-        : form.password;
-
-      // Create user via admin API
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: form.email,
-        password: actualPassword,
-        email_confirm: true,
-        user_metadata: {
-          first_name: form.firstName,
-          last_name: form.lastName,
-          requires_password_change: form.useTemporaryPassword
+      // Call edge function to create user (requires admin privileges)
+      const { data, error } = await supabase.functions.invoke('admin-create-user', {
+        body: {
+          email: form.email,
+          firstName: form.firstName,
+          lastName: form.lastName,
+          password: form.password,
+          role: form.role,
+          useTemporaryPassword: form.useTemporaryPassword
         }
       });
 
-      if (authError) throw authError;
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
 
-      if (!authData.user) {
-        throw new Error('User creation failed');
-      }
-
-      // Create profile with temp password and email tracking
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: authData.user.id,
-          first_name: form.firstName,
-          last_name: form.lastName,
-          approval_status: 'approved',
-          approved_at: new Date().toISOString(),
-          temp_password: form.useTemporaryPassword ? actualPassword : null,
-          invitation_email_sent_at: form.useTemporaryPassword ? new Date().toISOString() : null,
-          invitation_email_status: form.useTemporaryPassword ? 'sent' : 'not_applicable'
-        });
-
-      if (profileError) throw profileError;
-
-      // Assign role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: authData.user.id,
-          role: form.role
-        });
-
-      if (roleError) throw roleError;
-
-      // Send password to admin for distribution
-      if (form.useTemporaryPassword) {
+      // Show success message with temp password if generated
+      if (form.useTemporaryPassword && data.temporaryPassword) {
         toast.success(
-          `User created successfully! Temporary password: ${actualPassword}`,
+          `User created successfully! Temporary password: ${data.temporaryPassword}`,
           { duration: 15000 }
         );
       } else {

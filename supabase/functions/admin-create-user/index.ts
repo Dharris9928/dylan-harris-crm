@@ -71,26 +71,26 @@ serve(async (req) => {
       );
     }
 
-    // Create profile with temp password and email tracking
+    // Wait a bit for the trigger to create the profile
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Update profile with temp password and email tracking
+    // (profile is created by handle_new_user trigger)
     const { error: profileError } = await supabase
       .from('profiles')
-      .insert({
-        id: authData.user.id,
-        first_name: firstName,
-        last_name: lastName,
-        approval_status: 'approved',
-        approved_at: new Date().toISOString(),
+      .update({
         temp_password: useTemporaryPassword ? actualPassword : null,
         invitation_email_sent_at: useTemporaryPassword ? new Date().toISOString() : null,
         invitation_email_status: useTemporaryPassword ? 'sent' : 'not_applicable'
-      });
+      })
+      .eq('id', authData.user.id);
 
     if (profileError) {
-      console.error("Profile error:", profileError);
+      console.error("Profile update error:", profileError);
       // Try to clean up the auth user
       await supabase.auth.admin.deleteUser(authData.user.id);
       return new Response(
-        JSON.stringify({ error: `Failed to create profile: ${profileError.message}` }),
+        JSON.stringify({ error: `Failed to update profile: ${profileError.message}` }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

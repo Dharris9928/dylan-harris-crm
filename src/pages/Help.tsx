@@ -104,7 +104,7 @@ const Help = () => {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-5 lg:grid-cols-11 w-full">
+        <TabsList className="w-full h-auto flex flex-wrap justify-start gap-1">
           <TabsTrigger value="getting-started">Getting Started</TabsTrigger>
           <TabsTrigger value="companies">Companies</TabsTrigger>
           <TabsTrigger value="contacts">Contacts</TabsTrigger>

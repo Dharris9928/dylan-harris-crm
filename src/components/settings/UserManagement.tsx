@@ -90,10 +90,9 @@ export function UserManagement() {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      // Get all profiles with invitation tracking fields
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name, approval_status, created_at, temp_password, invitation_email_sent_at, invitation_email_opened_at, invitation_email_status');
+      // Get all profiles with invitation tracking fields via edge function (admin only)
+      const { data: listData, error: profilesError } = await supabase.functions.invoke('admin-list-profiles');
+      const profiles = listData?.profiles;
 
       if (profilesError) throw profilesError;
 
@@ -414,27 +413,38 @@ export function UserManagement() {
   return (
     <div className="space-y-6">
       {/* Pending User Invites */}
-      {invitedUsers.length > 0 && (
-        <Card>
-          <CardHeader>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
             <CardTitle>Pending User Invites</CardTitle>
-            <CardDescription>
-              Users who have been invited but haven't logged in yet
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
+            {invitedUsers.length > 0 && (
+              <Badge variant="secondary">{invitedUsers.length}</Badge>
+            )}
+          </div>
+          <CardDescription>
+            Users who have been invited but haven't logged in yet
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Temp Password</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {invitedUsers.length === 0 ? (
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Temp Password</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableCell colSpan={5} className="text-muted-foreground text-center py-6">
+                    No pending invites
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {invitedUsers.map((user) => (
+              ) : (
+                invitedUsers.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell>
                       {user.first_name && user.last_name 
@@ -468,34 +478,45 @@ export function UserManagement() {
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       {/* Pending Sign-Up Requests */}
-      {pendingSignups.length > 0 && (
-        <Card>
-          <CardHeader>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
             <CardTitle>Pending Sign-Up Requests</CardTitle>
-            <CardDescription>
-              Users who signed up and are waiting for approval
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
+            {pendingSignups.length > 0 && (
+              <Badge variant="destructive">{pendingSignups.length}</Badge>
+            )}
+          </div>
+          <CardDescription>
+            Users who signed up and are waiting for approval
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Assign Role</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {pendingSignups.length === 0 ? (
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Assign Role</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableCell colSpan={4} className="text-muted-foreground text-center py-6">
+                    No pending sign-up requests
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pendingSignups.map((user) => (
+              ) : (
+                pendingSignups.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell>
                       {user.first_name && user.last_name 
@@ -543,12 +564,12 @@ export function UserManagement() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       {/* Approved Users */}
       <Card>

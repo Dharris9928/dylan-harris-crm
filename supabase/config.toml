@@ -74,3 +74,12 @@ verify_jwt = true
 
 [functions.verify-reset-code]
 verify_jwt = false
+
+[functions.admin-list-profiles]
+verify_jwt = true
+
+[functions.resend-invitation]
+verify_jwt = true
+
+[functions.admin-create-user]
+verify_jwt = true

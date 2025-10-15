@@ -92,11 +92,15 @@ export function UserManagement() {
     try {
       // Get all profiles with invitation tracking fields via edge function (admin only)
       const { data: listData, error: profilesError } = await supabase.functions.invoke('admin-list-profiles');
-      const profiles = listData?.profiles;
+      
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        throw profilesError;
+      }
 
-      if (profilesError) throw profilesError;
+      const profiles = listData?.profiles || [];
 
-      if (!profiles) {
+      if (profiles.length === 0) {
         setApprovedUsers([]);
         setInvitedUsers([]);
         setPendingSignups([]);
@@ -146,10 +150,19 @@ export function UserManagement() {
         approval_status: profile.approval_status,
       } as UserProfile));
 
+      console.log('All users loaded:', allUsers);
+
       // Separate users into categories
-      const approved = allUsers.filter(u => u.approval_status === 'approved');
-      const invited = allUsers.filter(u => u.temp_password && u.approval_status === 'pending');
+      // Invited users: have temp_password (regardless of approval status, they need to login first)
+      const invited = allUsers.filter(u => u.temp_password);
+      // Sign-up requests: no temp_password AND pending approval
       const signups = allUsers.filter(u => !u.temp_password && u.approval_status === 'pending');
+      // Active users: approved AND no temp_password (have logged in)
+      const approved = allUsers.filter(u => u.approval_status === 'approved' && !u.temp_password);
+
+      console.log('Invited users:', invited);
+      console.log('Pending signups:', signups);
+      console.log('Approved users:', approved);
 
       // Initialize selected roles for pending signups
       const initialRoles: Record<string, 'admin' | 'sales_manager' | 'sales_rep' | 'read_only'> = {};

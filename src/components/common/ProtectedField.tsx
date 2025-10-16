@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { useFieldPermissions } from '@/hooks/useFieldPermissions';
 import { Lock } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { RequestAccessButton } from './RequestAccessButton';
 
 interface ProtectedFieldProps {
   tableName: string;
@@ -9,6 +10,9 @@ interface ProtectedFieldProps {
   value: string | null | undefined;
   children?: ReactNode;
   showLockIcon?: boolean;
+  recordId?: string;
+  recordName?: string;
+  enableAccessRequest?: boolean;
 }
 
 export function ProtectedField({
@@ -16,7 +20,10 @@ export function ProtectedField({
   fieldName,
   value,
   children,
-  showLockIcon = true
+  showLockIcon = true,
+  recordId,
+  recordName,
+  enableAccessRequest = false
 }: ProtectedFieldProps) {
   const { canAccessField, maskField, isLoading } = useFieldPermissions();
 
@@ -28,6 +35,34 @@ export function ProtectedField({
   const displayValue = hasAccess 
     ? value 
     : maskField(value || '', tableName, fieldName);
+
+  // If no access and access requests are enabled, show request button
+  if (!hasAccess && enableAccessRequest && recordId) {
+    return (
+      <div className="inline-flex items-center gap-2">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex items-center gap-1 text-muted-foreground">
+                <Lock className="h-3 w-3" />
+                {displayValue}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Request access to view this field</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <RequestAccessButton
+          tableName={tableName as 'companies' | 'contacts' | 'opportunities'}
+          recordId={recordId}
+          recordName={recordName}
+          size="sm"
+          variant="ghost"
+        />
+      </div>
+    );
+  }
 
   if (!hasAccess && showLockIcon) {
     return (

@@ -48,6 +48,7 @@ import { ImportExportLogsViewer } from "@/components/settings/audit/ImportExport
 import { TeamManagement } from "@/components/settings/TeamManagement";
 import { ApprovalAuditViewer } from "@/components/settings/audit/ApprovalAuditViewer";
 import { ContactAccessLogsViewer } from "@/components/settings/audit/ContactAccessLogsViewer";
+import { AccessRequestsPanel } from "@/components/settings/AccessRequestsPanel";
 
 const Settings = () => {
   const { data: userData } = useUserRole();
@@ -244,6 +245,7 @@ const Settings = () => {
 
         {/* Security Settings */}
         <TabsContent value="security" className="space-y-6 mt-6">
+          <AccessRequestsPanel />
           <MFAManagement />
           <SecurityDashboard />
           

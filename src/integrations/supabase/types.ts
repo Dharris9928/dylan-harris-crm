@@ -3186,6 +3186,87 @@ export type Database = {
         }
         Relationships: []
       }
+      record_access_approvals: {
+        Row: {
+          access_level: string
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          record_id: string
+          table_name: string
+          user_id: string
+        }
+        Insert: {
+          access_level?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          record_id: string
+          table_name: string
+          user_id: string
+        }
+        Update: {
+          access_level?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          record_id?: string
+          table_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      record_access_requests: {
+        Row: {
+          created_at: string | null
+          id: string
+          justification: string | null
+          record_id: string
+          requested_at: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          table_name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          justification?: string | null
+          record_id: string
+          requested_at?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          table_name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          justification?: string | null
+          record_id?: string
+          requested_at?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          table_name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       sales_reps: {
         Row: {
           active: boolean
@@ -4638,6 +4719,10 @@ export type Database = {
           table_name: string
         }[]
       }
+      approve_access_request: {
+        Args: { _access_level?: string; _request_id: string }
+        Returns: boolean
+      }
       batch_migrate_companies_encryption: {
         Args: { _batch_size?: number }
         Returns: {
@@ -4668,6 +4753,10 @@ export type Database = {
       }
       can_access_field: {
         Args: { _field_name: string; _table_name: string; _user_id: string }
+        Returns: boolean
+      }
+      can_view_basic_info: {
+        Args: { _record_id: string; _table_name: string; _user_id: string }
         Returns: boolean
       }
       check_api_key_rate_limit: {
@@ -4741,6 +4830,10 @@ export type Database = {
       decrypt_text: {
         Args: { encrypted_text: string }
         Returns: string
+      }
+      deny_access_request: {
+        Args: { _request_id: string; _review_notes?: string }
+        Returns: boolean
       }
       detect_bulk_export: {
         Args: { _current_export_count: number; _user_id: string }
@@ -4820,6 +4913,10 @@ export type Database = {
       }
       has_elevated_access: {
         Args: { _user_id: string }
+        Returns: boolean
+      }
+      has_record_access: {
+        Args: { _record_id: string; _table_name: string; _user_id: string }
         Returns: boolean
       }
       has_role: {

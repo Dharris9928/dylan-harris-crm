@@ -74,14 +74,23 @@ serve(async (req) => {
     // Wait a bit for the trigger to create the profile
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    // Update profile with temp password and email tracking
+    // Get the admin user ID for approval tracking
+    const authHeader = req.headers.get('Authorization');
+    const token = authHeader?.replace('Bearer ', '') || '';
+    const { data: { user: adminUser } } = await supabase.auth.getUser(token);
+
+    // Update profile with temp password, email tracking, and auto-approve invited users
     // (profile is created by handle_new_user trigger)
     const { error: profileError } = await supabase
       .from('profiles')
       .update({
         temp_password: useTemporaryPassword ? actualPassword : null,
         invitation_email_sent_at: useTemporaryPassword ? new Date().toISOString() : null,
-        invitation_email_status: useTemporaryPassword ? 'sent' : 'not_applicable'
+        invitation_email_status: useTemporaryPassword ? 'sent' : 'not_applicable',
+        // Auto-approve invited users (those with temp passwords)
+        approval_status: useTemporaryPassword ? 'approved' : 'pending',
+        approved_at: useTemporaryPassword ? new Date().toISOString() : null,
+        approved_by: useTemporaryPassword ? adminUser?.id : null
       })
       .eq('id', authData.user.id);
 

@@ -46,12 +46,21 @@ serve(async (req) => {
       );
     }
 
-    // Update invitation tracking
+    // Get the admin user ID for approval tracking
+    const authHeader = req.headers.get('Authorization');
+    const token = authHeader?.replace('Bearer ', '') || '';
+    const { data: { user: adminUser } } = await supabase.auth.getUser(token);
+
+    // Update invitation tracking and auto-approve if not already approved
     const { error: updateError } = await supabase
       .from('profiles')
       .update({
         invitation_email_sent_at: new Date().toISOString(),
-        invitation_email_status: 'sent'
+        invitation_email_status: 'sent',
+        // Auto-approve invited users when resending invitation
+        approval_status: 'approved',
+        approved_at: new Date().toISOString(),
+        approved_by: adminUser?.id
       })
       .eq('id', userId);
 

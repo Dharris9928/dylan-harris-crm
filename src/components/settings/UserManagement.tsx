@@ -168,10 +168,13 @@ export function UserManagement() {
       console.log('All users loaded:', allUsers);
 
       // Separate users into categories
-      // Invited users: have temp_password (regardless of approval status, they need to login first)
-      const invited = allUsers.filter(u => u.temp_password);
-      // Sign-up requests: no temp_password AND pending approval
-      const signups = allUsers.filter(u => !u.temp_password && u.approval_status === 'pending');
+      // Invited users: have temp_password AND approved (they were invited by admin)
+      const invited = allUsers.filter(u => u.temp_password && u.approval_status === 'approved');
+      // Sign-up requests: no temp_password AND pending approval OR have temp_password but NOT approved
+      const signups = allUsers.filter(u => 
+        (!u.temp_password && u.approval_status === 'pending') ||
+        (u.temp_password && u.approval_status === 'pending')
+      );
       // Active users: approved AND no temp_password (have logged in)
       const approved = allUsers.filter(u => u.approval_status === 'approved' && !u.temp_password);
 

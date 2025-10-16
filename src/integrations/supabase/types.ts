@@ -4658,6 +4658,14 @@ export type Database = {
         Args: { _company_id: string; _user_id: string }
         Returns: boolean
       }
+      can_access_company_decrypted: {
+        Args: { _company_id: string }
+        Returns: boolean
+      }
+      can_access_contact_decrypted: {
+        Args: { _contact_id: string }
+        Returns: boolean
+      }
       can_access_field: {
         Args: { _field_name: string; _table_name: string; _user_id: string }
         Returns: boolean

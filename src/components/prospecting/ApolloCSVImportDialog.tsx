@@ -192,10 +192,8 @@ export function ApolloCSVImportDialog({
       }
     }}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" onInteractOutside={(e) => {
-        // Prevent closing when clicking outside during import or preview
-        if (step === 'importing' || step === 'preview') {
-          e.preventDefault();
-        }
+        // Prevent closing when clicking outside - users must use buttons
+        e.preventDefault();
       }}>
         <DialogHeader>
           <DialogTitle>Import from Apollo.io</DialogTitle>

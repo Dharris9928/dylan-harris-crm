@@ -382,10 +382,8 @@ export function ApolloContactImportDialog({ onSuccess }: { onSuccess?: () => voi
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl" onInteractOutside={(e) => {
-        // Prevent closing when clicking outside during import
-        if (importing || result) {
-          e.preventDefault();
-        }
+        // Prevent closing when clicking outside - users must use buttons
+        e.preventDefault();
       }}>
         <DialogHeader>
           <DialogTitle>Import Contacts from Apollo</DialogTitle>

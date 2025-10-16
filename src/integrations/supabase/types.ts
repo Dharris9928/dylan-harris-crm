@@ -59,6 +59,36 @@ export type Database = {
         }
         Relationships: []
       }
+      account_status_changes: {
+        Row: {
+          changed_by: string
+          created_at: string
+          id: string
+          new_status: string
+          old_status: string
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          changed_by: string
+          created_at?: string
+          id?: string
+          new_status: string
+          old_status: string
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          changed_by?: string
+          created_at?: string
+          id?: string
+          new_status?: string
+          old_status?: string
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_usage_logs: {
         Row: {
           ai_model: string
@@ -3049,6 +3079,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_status: string
           approval_status: Database["public"]["Enums"]["approval_status"] | null
           approved_at: string | null
           approved_by: string | null
@@ -3061,10 +3092,14 @@ export type Database = {
           invitation_email_status: string | null
           last_name: string | null
           role: Database["public"]["Enums"]["app_role"] | null
+          status_change_reason: string | null
+          status_changed_at: string | null
+          status_changed_by: string | null
           temp_password: string | null
           updated_at: string | null
         }
         Insert: {
+          account_status?: string
           approval_status?:
             | Database["public"]["Enums"]["approval_status"]
             | null
@@ -3079,10 +3114,14 @@ export type Database = {
           invitation_email_status?: string | null
           last_name?: string | null
           role?: Database["public"]["Enums"]["app_role"] | null
+          status_change_reason?: string | null
+          status_changed_at?: string | null
+          status_changed_by?: string | null
           temp_password?: string | null
           updated_at?: string | null
         }
         Update: {
+          account_status?: string
           approval_status?:
             | Database["public"]["Enums"]["approval_status"]
             | null
@@ -3097,6 +3136,9 @@ export type Database = {
           invitation_email_status?: string | null
           last_name?: string | null
           role?: Database["public"]["Enums"]["app_role"] | null
+          status_change_reason?: string | null
+          status_changed_at?: string | null
+          status_changed_by?: string | null
           temp_password?: string | null
           updated_at?: string | null
         }
@@ -4911,6 +4953,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_account_active: {
+        Args: { _user_id: string }
         Returns: boolean
       }
       is_approved_with_role: {

@@ -126,6 +126,31 @@ const Auth = () => {
         return;
       }
 
+      // Check account status
+      if (data.user) {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('account_status')
+          .eq('id', data.user.id)
+          .single();
+
+        if (profileError) {
+          console.error('Error checking account status:', profileError);
+        } else if (profile?.account_status === 'suspended') {
+          // Log out the user immediately
+          await supabase.auth.signOut();
+          toast.error('Your account has been suspended. Please contact an administrator.');
+          setLoading(false);
+          return;
+        } else if (profile?.account_status === 'deactivated') {
+          // Log out the user immediately
+          await supabase.auth.signOut();
+          toast.error('Your account has been deactivated. Please contact an administrator.');
+          setLoading(false);
+          return;
+        }
+      }
+
       // Log successful login
       if (data.user) {
         try {

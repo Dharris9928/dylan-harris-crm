@@ -10,8 +10,9 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { PasswordRequirements } from "@/components/ui/password-requirements";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from "sonner";
-import { Shield, ShieldAlert, ShieldCheck, Eye, Key, Pencil, Plus, Mail } from "lucide-react";
+import { Shield, ShieldAlert, ShieldCheck, Eye, Key, Pencil, Plus, Mail, Ban, UserX, CheckCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Tooltip,
@@ -33,6 +34,7 @@ interface UserProfile {
   invitation_email_opened_at?: string | null;
   invitation_email_status?: string | null;
   approval_status?: string;
+  account_status?: 'active' | 'suspended' | 'deactivated';
 }
 
 export function UserManagement() {
@@ -45,10 +47,14 @@ export function UserManagement() {
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [resetting, setResetting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [reminding, setReminding] = useState(false);
+  const [changingStatus, setChangingStatus] = useState(false);
+  const [targetStatus, setTargetStatus] = useState<'active' | 'suspended' | 'deactivated'>('active');
+  const [statusReason, setStatusReason] = useState('');
   const [editForm, setEditForm] = useState({
     email: "",
     firstName: "",
@@ -102,9 +108,9 @@ export function UserManagement() {
         console.error('Error fetching profiles:', profilesError);
         // Fallback: direct query (RLS may limit results)
         console.log('Trying fallback direct query...');
-        const { data: fallbackProfiles, error: fallbackError } = await supabase
+      const { data: fallbackProfiles, error: fallbackError } = await supabase
           .from('profiles')
-          .select('id, first_name, last_name, approval_status, created_at, temp_password, invitation_email_sent_at, invitation_email_delivered_at, invitation_email_opened_at, invitation_email_status, approved_at, approved_by');
+          .select('id, first_name, last_name, approval_status, created_at, temp_password, invitation_email_sent_at, invitation_email_delivered_at, invitation_email_opened_at, invitation_email_status, approved_at, approved_by, account_status');
         if (fallbackError) {
           throw fallbackError;
         }
@@ -163,6 +169,7 @@ export function UserManagement() {
         invitation_email_opened_at: profile.invitation_email_opened_at,
         invitation_email_status: profile.invitation_email_status,
         approval_status: profile.approval_status,
+        account_status: profile.account_status || 'active',
       } as UserProfile));
 
       console.log('All users loaded:', allUsers);
@@ -387,6 +394,92 @@ export function UserManagement() {
     } catch (error) {
       console.error('Error rejecting user:', error);
       toast.error('Failed to reject user');
+    }
+  };
+
+  const handleChangeAccountStatus = async (userId: string, newStatus: 'active' | 'suspended' | 'deactivated') => {
+    setSelectedUserId(userId);
+    setTargetStatus(newStatus);
+    setStatusReason('');
+    setStatusDialogOpen(true);
+  };
+
+  const confirmStatusChange = async () => {
+    if (!selectedUserId) return;
+
+    setChangingStatus(true);
+    try {
+      // Get current status
+      const user = approvedUsers.find(u => u.id === selectedUserId);
+      const oldStatus = user?.account_status || 'active';
+
+      // Update account status
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          account_status: targetStatus,
+          status_changed_at: new Date().toISOString(),
+          status_changed_by: currentUser?.id,
+          status_change_reason: statusReason
+        })
+        .eq('id', selectedUserId);
+
+      if (profileError) throw profileError;
+
+      // Log the status change
+      const { error: logError } = await supabase
+        .from('account_status_changes')
+        .insert({
+          user_id: selectedUserId,
+          old_status: oldStatus,
+          new_status: targetStatus,
+          changed_by: currentUser?.id || '',
+          reason: statusReason
+        });
+
+      if (logError) console.error('Error logging status change:', logError);
+
+      const statusLabels = {
+        active: 'activated',
+        suspended: 'suspended',
+        deactivated: 'deactivated'
+      };
+
+      toast.success(`User account ${statusLabels[targetStatus]} successfully`);
+      setStatusDialogOpen(false);
+      setSelectedUserId(null);
+      setStatusReason('');
+      loadUsers();
+    } catch (error) {
+      console.error('Error changing account status:', error);
+      toast.error('Failed to change account status');
+    } finally {
+      setChangingStatus(false);
+    }
+  };
+
+  const getAccountStatusBadge = (status: 'active' | 'suspended' | 'deactivated' | undefined) => {
+    if (!status || status === 'active') {
+      return (
+        <Badge variant="default" className="gap-1">
+          <CheckCircle className="h-3 w-3" />
+          Active
+        </Badge>
+      );
+    } else if (status === 'suspended') {
+      return (
+        <Badge variant="destructive" className="gap-1">
+          <Ban className="h-3 w-3" />
+          Suspended
+        </Badge>
+      );
+    } else {
+      return (
+        <Badge variant="outline" className="gap-1">
+          <UserX className="h-3 w-3" />
+          Deactivated
+        </Badge>
+      );
     }
   };
 
@@ -627,6 +720,7 @@ export function UserManagement() {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -640,6 +734,7 @@ export function UserManagement() {
                     </TableCell>
                     <TableCell className="font-mono text-sm">{user.email}</TableCell>
                     <TableCell>{getRoleBadge(user.role)}</TableCell>
+                    <TableCell>{getAccountStatusBadge(user.account_status)}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
                         {user.id === currentUser?.id ? (
@@ -695,6 +790,59 @@ export function UserManagement() {
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
+                            {user.account_status === 'active' ? (
+                              <>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleChangeAccountStatus(user.id, 'suspended')}
+                                      >
+                                        <Ban className="h-4 w-4" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Suspend account (temporary)</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleChangeAccountStatus(user.id, 'deactivated')}
+                                      >
+                                        <UserX className="h-4 w-4" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Deactivate account (permanent)</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </>
+                            ) : (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="default"
+                                      size="sm"
+                                      onClick={() => handleChangeAccountStatus(user.id, 'active')}
+                                    >
+                                      <CheckCircle className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Reactivate account</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
                           </>
                         )}
                       </div>
@@ -829,6 +977,74 @@ export function UserManagement() {
         onOpenChange={setAddUserDialogOpen}
         onUserAdded={loadUsers}
       />
+
+      <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {targetStatus === 'active' ? 'Reactivate' : targetStatus === 'suspended' ? 'Suspend' : 'Deactivate'} User Account
+            </DialogTitle>
+            <DialogDescription>
+              {targetStatus === 'active' 
+                ? 'This will restore full access to the user account.'
+                : targetStatus === 'suspended'
+                ? 'This will temporarily suspend the user account. The user will not be able to log in or access any data.'
+                : 'This will permanently deactivate the user account. The user will not be able to log in or access any data.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="status-reason">Reason {targetStatus !== 'active' && '(Required)'}</Label>
+              <Textarea
+                id="status-reason"
+                value={statusReason}
+                onChange={(e) => setStatusReason(e.target.value)}
+                placeholder={
+                  targetStatus === 'suspended' 
+                    ? 'e.g., Policy violation, security concern, pending investigation...'
+                    : targetStatus === 'deactivated'
+                    ? 'e.g., Employment terminated, contract ended...'
+                    : 'e.g., Investigation cleared, suspension period ended...'
+                }
+                className="min-h-[100px]"
+              />
+            </div>
+            {targetStatus !== 'active' && (
+              <Alert>
+                <ShieldAlert className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Warning:</strong> The user will immediately lose access to the system and all data.
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setStatusDialogOpen(false);
+                setSelectedUserId(null);
+                setStatusReason('');
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant={targetStatus === 'active' ? 'default' : 'destructive'}
+              onClick={confirmStatusChange}
+              disabled={changingStatus || (targetStatus !== 'active' && !statusReason.trim())}
+            >
+              {changingStatus 
+                ? 'Processing...' 
+                : targetStatus === 'active' 
+                ? 'Reactivate Account' 
+                : targetStatus === 'suspended'
+                ? 'Suspend Account'
+                : 'Deactivate Account'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

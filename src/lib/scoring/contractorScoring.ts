@@ -49,9 +49,8 @@ export async function calculateContractorScore(companyId: string): Promise<Contr
     throw new Error('Company not found');
   }
 
-  if (company.industry_type !== 'Contractor') {
-    throw new Error('Company is not a Contractor');
-  }
+  // This scoring algorithm is used for Contractors and similar industry types
+  // (Energy Implementer, Engineer/Architect, Partner/Other)
 
   const scoring: ContractorScoringBreakdown = {
     volumeScore: 0,

@@ -2491,6 +2491,87 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          access_expiring: boolean
+          access_requests: boolean
+          access_revoked: boolean
+          access_status: boolean
+          appeal_submitted: boolean
+          communication_requests: boolean
+          created_at: string
+          delivery_method: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_expiring?: boolean
+          access_requests?: boolean
+          access_revoked?: boolean
+          access_status?: boolean
+          appeal_submitted?: boolean
+          communication_requests?: boolean
+          created_at?: string
+          delivery_method?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_expiring?: boolean
+          access_requests?: boolean
+          access_revoked?: boolean
+          access_status?: boolean
+          appeal_submitted?: boolean
+          communication_requests?: boolean
+          created_at?: string
+          delivery_method?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          action_required: boolean
+          created_at: string
+          id: string
+          link_url: string | null
+          message: string
+          read: boolean
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          action_required?: boolean
+          created_at?: string
+          id?: string
+          link_url?: string | null
+          message: string
+          read?: boolean
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          action_required?: boolean
+          created_at?: string
+          id?: string
+          link_url?: string | null
+          message?: string
+          read?: boolean
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       opportunities: {
         Row: {
           amount: number | null
@@ -4577,6 +4658,17 @@ export type Database = {
       cleanup_rate_limit_tracking: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      create_notification: {
+        Args: {
+          p_action_required?: boolean
+          p_link_url?: string
+          p_message: string
+          p_title: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: string
       }
       decrypt_text: {
         Args: { encrypted_text: string }

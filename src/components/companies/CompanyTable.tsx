@@ -4,6 +4,7 @@ import { ExternalLink, Edit, Star, Building2, Users } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { QuickActionsMenu } from "./QuickActionsMenu";
 import { EnrichmentStatusBadge } from "./EnrichmentStatusBadge";
+import { ProtectedField } from "@/components/common/ProtectedField";
 import {
   Select,
   SelectContent,
@@ -253,10 +254,18 @@ export function CompanyTable({
                 {columnVisibility.companyName && (
                   <TableCell className="font-medium">
                     <button 
-                      className="text-primary hover:underline text-left"
+                      className="text-primary hover:underline text-left flex items-center gap-2"
                       onClick={() => onEdit(company)}
                     >
-                      {company.company_name}
+                      <ProtectedField
+                        tableName="companies"
+                        fieldName="company_name"
+                        value={company.company_name}
+                        showLockIcon={false}
+                        recordId={company.id}
+                        recordName={company.company_name}
+                        enableAccessRequest={true}
+                      />
                     </button>
                   </TableCell>
                 )}

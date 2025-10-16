@@ -32,7 +32,11 @@ export function ProtectedField({
   }
 
   const hasAccess = canAccessField(tableName, fieldName);
-  const displayValue = hasAccess 
+  
+  // For identifying fields like company_name, always show the value
+  // so users can identify which record they're requesting access to
+  const isIdentifyingField = fieldName === 'company_name' || fieldName === 'name';
+  const displayValue = (hasAccess || isIdentifyingField)
     ? value 
     : maskField(value || '', tableName, fieldName);
 

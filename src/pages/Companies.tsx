@@ -174,9 +174,8 @@ const Companies = () => {
           }
           break;
         case 'all_records':
-          if (!hasElevatedAccess) {
-            query = query.eq('created_by', user.id);
-          }
+          // No filtering - all authenticated users can see all companies
+          // Field-level permissions will control what data is visible
           break;
       }
 

@@ -409,53 +409,83 @@ export function CompanyTable({
 
               {columnVisibility.annualVolume && (
                 <TableCell>
-                  {company.annual_volume ? (
-                    <div className="text-sm">
-                      <span className="font-semibold">{company.annual_volume.toLocaleString()}</span>
-                      <span className="text-muted-foreground ml-1">
-                        {company.industry_type === 'Builder' ? 'homes' : 'calls'}/yr
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
+                  <ProtectedField
+                    tableName="companies"
+                    fieldName="annual_volume"
+                    value={company.annual_volume ? `${company.annual_volume.toLocaleString()} ${company.industry_type === 'Builder' ? 'homes' : 'calls'}/yr` : '-'}
+                  >
+                    {company.annual_volume ? (
+                      <div className="text-sm">
+                        <span className="font-semibold">{company.annual_volume.toLocaleString()}</span>
+                        <span className="text-muted-foreground ml-1">
+                          {company.industry_type === 'Builder' ? 'homes' : 'calls'}/yr
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </ProtectedField>
                 </TableCell>
               )}
 
               {columnVisibility.revenue && (
                 <TableCell>
-                  {company.industry_type === 'Builder' && company.average_home_price ? (
-                    <div className="text-sm">
-                      <span className="font-semibold">
-                        ${(company.average_home_price / 1000).toFixed(0)}K
-                      </span>
-                      <span className="text-muted-foreground ml-1">avg</span>
-                    </div>
-                  ) : company.industry_type === 'Contractor' && company.annual_revenue_range ? (
-                    <span className="text-sm">{company.annual_revenue_range}</span>
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
+                  <ProtectedField
+                    tableName="companies"
+                    fieldName={company.industry_type === 'Builder' ? 'average_home_price' : 'annual_revenue_range'}
+                    value={
+                      company.industry_type === 'Builder' && company.average_home_price 
+                        ? `$${(company.average_home_price / 1000).toFixed(0)}K avg`
+                        : company.industry_type === 'Contractor' && company.annual_revenue_range
+                        ? company.annual_revenue_range
+                        : '-'
+                    }
+                  >
+                    {company.industry_type === 'Builder' && company.average_home_price ? (
+                      <div className="text-sm">
+                        <span className="font-semibold">
+                          ${(company.average_home_price / 1000).toFixed(0)}K
+                        </span>
+                        <span className="text-muted-foreground ml-1">avg</span>
+                      </div>
+                    ) : company.industry_type === 'Contractor' && company.annual_revenue_range ? (
+                      <span className="text-sm">{company.annual_revenue_range}</span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </ProtectedField>
                 </TableCell>
               )}
 
               {columnVisibility.phone && (
-                <TableCell className="text-sm">{company.primary_phone || "-"}</TableCell>
+                <TableCell className="text-sm">
+                  <ProtectedField
+                    tableName="companies"
+                    fieldName="primary_phone"
+                    value={company.primary_phone}
+                  />
+                </TableCell>
               )}
 
               {columnVisibility.website && (
                 <TableCell onClick={(e) => e.stopPropagation()}>
-                  {company.website_url ? (
-                    <a 
-                      href={company.website_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-sm text-primary hover:underline"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      Visit
-                    </a>
-                  ) : <span className="text-muted-foreground">—</span>}
+                  <ProtectedField
+                    tableName="companies"
+                    fieldName="website_url"
+                    value={company.website_url}
+                  >
+                    {company.website_url ? (
+                      <a 
+                        href={company.website_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Visit
+                      </a>
+                    ) : <span className="text-muted-foreground">—</span>}
+                  </ProtectedField>
                 </TableCell>
               )}
 

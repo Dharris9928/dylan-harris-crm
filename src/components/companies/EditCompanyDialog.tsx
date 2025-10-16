@@ -34,6 +34,8 @@ import { SalesRepSelect } from './SalesRepSelect';
 import { CompanyOpportunitiesTab } from '../opportunities/CompanyOpportunitiesTab';
 import { SimilarCompaniesTab } from './SimilarCompaniesTab';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useFieldPermissions } from '@/hooks/useFieldPermissions';
+import { RequestAccessButton } from '@/components/common/RequestAccessButton';
 import {
   BUILDER_SEGMENTS, 
   CONTRACTOR_SEGMENTS,
@@ -61,11 +63,13 @@ interface EditCompanyDialogProps {
 
 export function EditCompanyDialog({ open, onClose, onOpenChange, onSuccess, companyId }: EditCompanyDialogProps) {
   const { toast } = useToast();
+  const { canAccessField } = useFieldPermissions();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showCloseWarning, setShowCloseWarning] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [companyNameForAccess, setCompanyNameForAccess] = useState('');
   
   const handleClose = () => {
     if (hasUnsavedChanges && !showCloseWarning) {
@@ -202,6 +206,7 @@ export function EditCompanyDialog({ open, onClose, onOpenChange, onSuccess, comp
 
       // Populate all form fields with existing data
       setCompanyName(company.company_name || '');
+      setCompanyNameForAccess(company.company_name || '');
       setIndustryType(company.industry_type as 'Builder' | 'Contractor' || 'Builder');
       
       // Get segment (unified field)
@@ -398,6 +403,33 @@ export function EditCompanyDialog({ open, onClose, onOpenChange, onSuccess, comp
         <DialogContent>
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Check if user has full access to this record
+  const hasFullAccess = canAccessField('companies', 'primary_email');
+  
+  if (!hasFullAccess) {
+    return (
+      <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{companyNameForAccess}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-muted-foreground">
+              You have limited access to this company record. Request full access to view and edit all details.
+            </p>
+            <RequestAccessButton
+              tableName="companies"
+              recordId={companyId}
+              recordName={companyNameForAccess}
+              variant="default"
+              size="default"
+            />
           </div>
         </DialogContent>
       </Dialog>

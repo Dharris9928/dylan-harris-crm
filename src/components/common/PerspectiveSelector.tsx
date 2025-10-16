@@ -39,10 +39,12 @@ export function PerspectiveSelector({ value, onChange, className }: PerspectiveS
     },
     {
       value: 'all_records' as Perspective,
-      label: 'All Records',
+      label: hasElevatedAccess ? 'All Records' : 'All Records (Limited)',
       icon: Globe,
-      description: 'All records in the system',
-      available: hasElevatedAccess,
+      description: hasElevatedAccess 
+        ? 'All records in the system' 
+        : 'View all companies (limited details)',
+      available: true, // Now available to everyone
     },
   ];
 
@@ -110,7 +112,8 @@ export function getPerspectiveFilterClause(
       // For now, return null and handle in the query logic
       return null;
     case 'all_records':
-      return hasElevatedAccess ? null : { field: 'created_by', value: userId };
+      // All users can see all records now; field-level permissions control visibility
+      return null;
     default:
       return { field: 'created_by', value: userId };
   }

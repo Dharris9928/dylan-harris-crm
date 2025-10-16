@@ -26,11 +26,16 @@ import { GalleryView } from "@/components/views/GalleryView";
 import { ListView } from "@/components/views/ListView";
 import { FormView } from "@/components/views/FormView";
 import { useToast } from "@/hooks/use-toast";
+import { PerspectiveSelector } from "@/components/common/PerspectiveSelector";
+import { usePerspective } from "@/hooks/usePerspective";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const Companies = () => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
+  const { perspective, setPerspective } = usePerspective('my_records');
+  const { data: userRoleData } = useUserRole();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
@@ -125,11 +130,14 @@ const Companies = () => {
   useEffect(() => {
     setCurrentPage(1);
     setSelectedRows([]);
-  }, [debouncedSearch, statusFilter, priorityFilter, segmentFilter, industryTypeFilter, stateFilter, cityFilter, enrichmentStatusFilter, assignedToFilter]);
+  }, [debouncedSearch, statusFilter, priorityFilter, segmentFilter, industryTypeFilter, stateFilter, cityFilter, enrichmentStatusFilter, assignedToFilter, perspective]);
 
   const { data: companies, isLoading, refetch } = useQuery({
-    queryKey: ["companies", debouncedSearch, statusFilter, priorityFilter, segmentFilter, industryTypeFilter, stateFilter, cityFilter, enrichmentStatusFilter, assignedToFilter],
+    queryKey: ["companies", debouncedSearch, statusFilter, priorityFilter, segmentFilter, industryTypeFilter, stateFilter, cityFilter, enrichmentStatusFilter, assignedToFilter, perspective],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
       let query = supabase
         .from("companies")
         .select(`
@@ -137,6 +145,31 @@ const Companies = () => {
           parent_company:companies!parent_company_id(id, company_name)
         `)
         .order("created_at", { ascending: false });
+
+      // Apply perspective filter
+      const hasElevatedAccess = userRoleData?.hasElevatedAccess || false;
+      switch (perspective) {
+        case 'my_records':
+          query = query.eq('created_by', user.id);
+          break;
+        case 'assigned_to_me':
+          query = query.eq('assigned_to', user.id);
+          break;
+        case 'my_team':
+          // For team view, get records from users with same role
+          if (userRoleData?.role === 'sales_manager') {
+            // This would require a join or subquery to get team members
+            // For now, show all records accessible to the manager
+            // You could enhance this with a team_members table
+          }
+          break;
+        case 'all_records':
+          // No additional filter for elevated users
+          if (!hasElevatedAccess) {
+            query = query.eq('created_by', user.id);
+          }
+          break;
+      }
 
       // Apply server-side search to ensure consistency with pickers
       if (debouncedSearch && debouncedSearch.length >= 2) {
@@ -405,6 +438,12 @@ const Companies = () => {
       {/* Top Bar */}
       <div className="border-b border-border bg-card px-6 py-4 space-y-4">
         <div className="flex items-center justify-between gap-4">
+          {/* Perspective Selector */}
+          <PerspectiveSelector 
+            value={perspective}
+            onChange={setPerspective}
+          />
+
           {/* Search */}
           <div className="relative w-[400px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />

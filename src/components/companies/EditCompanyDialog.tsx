@@ -35,6 +35,7 @@ import { CompanyOpportunitiesTab } from '../opportunities/CompanyOpportunitiesTa
 import { SimilarCompaniesTab } from './SimilarCompaniesTab';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFieldPermissions } from '@/hooks/useFieldPermissions';
+import { useUserRole } from '@/hooks/useUserRole';
 import { RequestAccessButton } from '@/components/common/RequestAccessButton';
 import {
   BUILDER_SEGMENTS, 
@@ -64,6 +65,7 @@ interface EditCompanyDialogProps {
 export function EditCompanyDialog({ open, onClose, onOpenChange, onSuccess, companyId }: EditCompanyDialogProps) {
   const { toast } = useToast();
   const { canAccessField } = useFieldPermissions();
+  const { data: userRoleData } = useUserRole();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -409,8 +411,9 @@ export function EditCompanyDialog({ open, onClose, onOpenChange, onSuccess, comp
     );
   }
 
-  // Check if user has full access to this record
-  const hasFullAccess = canAccessField('companies', 'primary_email');
+  // Admins and sales managers have full access, others need field permission check
+  const hasElevatedAccess = userRoleData?.hasElevatedAccess ?? false;
+  const hasFullAccess = hasElevatedAccess || canAccessField('companies', 'primary_email');
   
   if (!hasFullAccess) {
     return (

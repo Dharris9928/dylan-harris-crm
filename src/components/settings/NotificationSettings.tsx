@@ -17,14 +17,12 @@ import { useToast } from "@/hooks/use-toast";
 
 interface NotificationPreferences {
   id: string;
-  task_assignments: boolean;
-  approval_requests: boolean;
-  communication_view_requests: boolean;
-  user_signup_requests: boolean;
-  access_invitations: boolean;
-  system_alerts: boolean;
-  access_decisions: boolean;
-  access_expiring_soon: boolean;
+  access_requests: boolean;
+  access_status: boolean;
+  access_expiring: boolean;
+  access_revoked: boolean;
+  communication_requests: boolean;
+  appeal_submitted: boolean;
   delivery_method: string;
 }
 
@@ -151,99 +149,29 @@ export function NotificationSettings() {
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="task-assignments">Task Assignments</Label>
+                <Label htmlFor="access-requests">Access Requests</Label>
                 <p className="text-sm text-muted-foreground">
-                  Get notified when tasks are assigned to you
+                  Get notified when someone requests access to protected data
                 </p>
               </div>
               <Switch
-                id="task-assignments"
-                checked={preferences.task_assignments}
-                onCheckedChange={(value) => handleToggle('task_assignments', value)}
+                id="access-requests"
+                checked={preferences.access_requests}
+                onCheckedChange={(value) => handleToggle('access_requests', value)}
               />
             </div>
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="approval-requests">Approval Requests</Label>
-                <p className="text-sm text-muted-foreground">
-                  Get notified about pending approval requests (Admin/Manager only)
-                </p>
-              </div>
-              <Switch
-                id="approval-requests"
-                checked={preferences.approval_requests}
-                onCheckedChange={(value) => handleToggle('approval_requests', value)}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="comm-view-requests">Communication View Requests</Label>
-                <p className="text-sm text-muted-foreground">
-                  Get notified about requests to view communications (Admin/Manager only)
-                </p>
-              </div>
-              <Switch
-                id="comm-view-requests"
-                checked={preferences.communication_view_requests}
-                onCheckedChange={(value) => handleToggle('communication_view_requests', value)}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="user-signup">User Signup Requests</Label>
-                <p className="text-sm text-muted-foreground">
-                  Get notified about new user signups requiring approval (Admin only)
-                </p>
-              </div>
-              <Switch
-                id="user-signup"
-                checked={preferences.user_signup_requests}
-                onCheckedChange={(value) => handleToggle('user_signup_requests', value)}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="access-invitations">Access Invitations</Label>
-                <p className="text-sm text-muted-foreground">
-                  Get notified when you're granted access to records
-                </p>
-              </div>
-              <Switch
-                id="access-invitations"
-                checked={preferences.access_invitations}
-                onCheckedChange={(value) => handleToggle('access_invitations', value)}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="system-alerts">System Alerts</Label>
-                <p className="text-sm text-muted-foreground">
-                  Get notified about important system announcements
-                </p>
-              </div>
-              <Switch
-                id="system-alerts"
-                checked={preferences.system_alerts}
-                onCheckedChange={(value) => handleToggle('system_alerts', value)}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="access-decisions">Access Decisions</Label>
+                <Label htmlFor="access-status">Access Status Changes</Label>
                 <p className="text-sm text-muted-foreground">
                   Get notified about decisions on your access requests
                 </p>
               </div>
               <Switch
-                id="access-decisions"
-                checked={preferences.access_decisions}
-                onCheckedChange={(value) => handleToggle('access_decisions', value)}
+                id="access-status"
+                checked={preferences.access_status}
+                onCheckedChange={(value) => handleToggle('access_status', value)}
               />
             </div>
 
@@ -256,8 +184,50 @@ export function NotificationSettings() {
               </div>
               <Switch
                 id="access-expiring"
-                checked={preferences.access_expiring_soon}
-                onCheckedChange={(value) => handleToggle('access_expiring_soon', value)}
+                checked={preferences.access_expiring}
+                onCheckedChange={(value) => handleToggle('access_expiring', value)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="access-revoked">Access Revoked</Label>
+                <p className="text-sm text-muted-foreground">
+                  Get notified when your access to records has been revoked
+                </p>
+              </div>
+              <Switch
+                id="access-revoked"
+                checked={preferences.access_revoked}
+                onCheckedChange={(value) => handleToggle('access_revoked', value)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="communication-requests">Communication View Requests</Label>
+                <p className="text-sm text-muted-foreground">
+                  Get notified about requests to view communications (Admin/Manager only)
+                </p>
+              </div>
+              <Switch
+                id="communication-requests"
+                checked={preferences.communication_requests}
+                onCheckedChange={(value) => handleToggle('communication_requests', value)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="appeal-submitted">Appeal Submissions</Label>
+                <p className="text-sm text-muted-foreground">
+                  Get notified when someone submits an appeal for denied access
+                </p>
+              </div>
+              <Switch
+                id="appeal-submitted"
+                checked={preferences.appeal_submitted}
+                onCheckedChange={(value) => handleToggle('appeal_submitted', value)}
               />
             </div>
           </div>

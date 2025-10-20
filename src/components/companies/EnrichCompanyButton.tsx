@@ -83,10 +83,15 @@ export function EnrichCompanyButton({ companyId, onComplete }: EnrichCompanyButt
       }
     } catch (error) {
       console.error('Enrichment error:', error);
+      
+      // Extract user-friendly message if available
+      const errorMessage = error?.message || 'Failed to enrich company data';
+      
       toast({
         title: 'Enrichment Failed',
-        description: error.message || 'Failed to enrich company data',
-        variant: 'destructive'
+        description: errorMessage,
+        variant: 'destructive',
+        duration: 8000 // Longer duration for detailed errors
       });
       setEnriching(false);
     }
@@ -133,10 +138,15 @@ export function EnrichCompanyButton({ companyId, onComplete }: EnrichCompanyButt
       if (onComplete) onComplete();
     } catch (error) {
       console.error('Enrichment error:', error);
+      
+      // Extract user-friendly message if available
+      const errorMessage = error?.message || 'Failed to enrich company data';
+      
       toast({
         title: 'Enrichment Failed',
-        description: error.message || 'Failed to enrich company data',
-        variant: 'destructive'
+        description: errorMessage,
+        variant: 'destructive',
+        duration: 8000 // Longer duration for detailed errors
       });
     } finally {
       setEnriching(false);

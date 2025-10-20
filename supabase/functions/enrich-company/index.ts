@@ -199,21 +199,125 @@ serve(async (req) => {
       }
     }
 
+    // Helper to create user-friendly error explanations
+    const explainError = (provider: string, errorMsg: string): string => {
+      const msg = errorMsg.toLowerCase();
+      
+      // Apollo-specific errors
+      if (provider === 'apollo') {
+        if (msg.includes('404') || msg.includes('not found')) {
+          return '❌ Apollo: Company not found in their database (this is normal - not all companies are in Apollo)';
+        }
+        if (msg.includes('401') || msg.includes('unauthorized') || msg.includes('invalid') || msg.includes('api key')) {
+          return '⚠️ Apollo: API key is missing or invalid. Go to Settings to add or update your APOLLO_API_KEY.';
+        }
+        if (msg.includes('429') || msg.includes('rate limit') || msg.includes('too many requests')) {
+          return '⏸️ Apollo: Rate limit exceeded. Please wait a few minutes before trying again.';
+        }
+        if (msg.includes('500') || msg.includes('503') || msg.includes('504')) {
+          return '🔧 Apollo: Their service is having issues. Try again in a few minutes.';
+        }
+        return `❌ Apollo: ${errorMsg}`;
+      }
+      
+      // Gemini/Lovable AI errors
+      if (provider === 'gemini' || provider === 'lovable_ai') {
+        if (msg.includes('401') || msg.includes('unauthorized')) {
+          return '⚠️ Gemini (Lovable AI): Authentication failed. Your Lovable AI credits may be exhausted. Add credits at Settings → Workspace → Usage, or contact support@lovable.dev.';
+        }
+        if (msg.includes('429') || msg.includes('rate limit')) {
+          return '⏸️ Gemini (Lovable AI): Rate limit exceeded. Please wait a few minutes before trying again.';
+        }
+        if (msg.includes('402') || msg.includes('payment required') || msg.includes('insufficient credits')) {
+          return '💳 Gemini (Lovable AI): Insufficient credits. Add credits at Settings → Workspace → Usage.';
+        }
+        if (msg.includes('500') || msg.includes('503') || msg.includes('504')) {
+          return '🔧 Gemini (Lovable AI): Service temporarily unavailable. Try again in a few minutes.';
+        }
+        return `❌ Gemini (Lovable AI): ${errorMsg}`;
+      }
+      
+      // Claude/Anthropic errors
+      if (provider === 'claude') {
+        if (msg.includes('401') || msg.includes('authentication_error') || msg.includes('invalid x-api-key') || msg.includes('invalid api key')) {
+          return '⚠️ Claude: API key is missing, invalid, or expired. Update your ANTHROPIC_API_KEY at Settings. Get a new key at console.anthropic.com.';
+        }
+        if (msg.includes('429') || msg.includes('rate_limit_error')) {
+          return '⏸️ Claude: Rate limit exceeded. Wait before trying again, or upgrade your Anthropic plan at console.anthropic.com.';
+        }
+        if (msg.includes('400') || msg.includes('insufficient_credits') || msg.includes('credit_balance')) {
+          return '💳 Claude: Insufficient credits in your Anthropic account. Add credits at console.anthropic.com.';
+        }
+        if (msg.includes('529') || msg.includes('overloaded')) {
+          return '🔧 Claude: Service is overloaded. Try again in a few moments.';
+        }
+        return `❌ Claude: ${errorMsg}`;
+      }
+      
+      // DeepSeek errors
+      if (provider === 'deepseek') {
+        if (msg.includes('401') || msg.includes('unauthorized') || msg.includes('invalid') || msg.includes('api key')) {
+          return '⚠️ DeepSeek: API key is missing or invalid. Add or update your DEEPSEEK_API_KEY at Settings.';
+        }
+        if (msg.includes('429') || msg.includes('rate limit')) {
+          return '⏸️ DeepSeek: Rate limit exceeded. Please wait before trying again.';
+        }
+        if (msg.includes('500') || msg.includes('503')) {
+          return '🔧 DeepSeek: Service temporarily unavailable. Try again shortly.';
+        }
+        return `❌ DeepSeek: ${errorMsg}`;
+      }
+      
+      // Perplexity errors
+      if (provider === 'perplexity') {
+        if (msg.includes('401') || msg.includes('unauthorized') || msg.includes('invalid') || msg.includes('api key')) {
+          return '⚠️ Perplexity: API key is missing or invalid. Add or update your PERPLEXITY_API_KEY at Settings.';
+        }
+        if (msg.includes('429') || msg.includes('rate limit')) {
+          return '⏸️ Perplexity: Rate limit exceeded. Wait before trying again.';
+        }
+        return `❌ Perplexity: ${errorMsg}`;
+      }
+      
+      return `❌ ${provider}: ${errorMsg}`;
+    };
+
     if (!enrichmentResult) {
-      // Build detailed error message
-      const errorDetails = Object.entries(providerErrors)
+      // Build user-friendly error message with explanations
+      const friendlyErrors: string[] = [];
+      for (const [provider, error] of Object.entries(providerErrors)) {
+        friendlyErrors.push(explainError(provider, error));
+      }
+      
+      const userMessage = [
+        '⚠️ **All enrichment providers failed**\n',
+        '**What happened:**',
+        ...friendlyErrors,
+        '\n**Next steps:**',
+        '1. Check your API keys in Settings (look for ⚠️ warnings above)',
+        '2. Verify you have sufficient credits/quota for each service',
+        '3. Wait a few minutes and try again if you hit rate limits (⏸️)',
+        '4. Contact support@lovable.dev if issues persist'
+      ].join('\n');
+      
+      const technicalDetails = Object.entries(providerErrors)
         .map(([provider, error]) => `${provider}: ${error}`)
         .join('; ');
       
-      const errorMessage = `All enrichment providers failed. Details: ${errorDetails}`;
-      console.error('ENRICHMENT FAILED:', errorMessage);
+      console.error('========================================');
+      console.error('ENRICHMENT FAILED - USER-FRIENDLY VIEW:');
+      console.error(userMessage);
+      console.error('========================================');
+      console.error('ENRICHMENT FAILED - TECHNICAL DETAILS:');
+      console.error(technicalDetails);
+      console.error('========================================');
       
       const { error: logError } = await supabase.from('enrichment_logs').insert({
         company_id: companyId,
         provider: provider || 'none',
         enrichment_type: deepEnrich ? 'deep' : 'standard',
         status: 'failed',
-        error_message: errorMessage,
+        error_message: technicalDetails,
         fields_enriched: {},
         created_by: user.id
       });
@@ -225,8 +329,8 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           error: 'All enrichment providers failed',
-          details: providerErrors,
-          message: 'Check the error details for each provider. Common issues: missing API keys, invalid API keys, or rate limits.'
+          message: userMessage,
+          technicalDetails: providerErrors
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );

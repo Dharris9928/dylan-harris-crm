@@ -161,10 +161,15 @@ export function BulkActionBar({
       }
     } catch (error) {
       console.error('Error preparing bulk enrichment:', error);
+      
+      // Extract user-friendly message if available
+      const errorMessage = error?.message || 'Failed to prepare bulk enrichment';
+      
       toast({
         title: 'Error',
-        description: 'Failed to prepare bulk enrichment',
-        variant: 'destructive'
+        description: errorMessage,
+        variant: 'destructive',
+        duration: 8000 // Longer duration for detailed errors
       });
       setIsEnriching(false);
     }
@@ -192,8 +197,13 @@ export function BulkActionBar({
         }
         
         if (data?.error) {
-          console.error(`Enrichment failed for ${companyId}:`, data.details || data.error);
-          throw new Error(data.error);
+          console.error(`Enrichment failed for ${companyId}:`, data);
+          const errorMessage = data.message || data.error;
+          console.error('User-friendly error:', errorMessage);
+          if (data.technicalDetails) {
+            console.error('Technical details:', data.technicalDetails);
+          }
+          throw new Error(errorMessage);
         }
         
         successCount++;

@@ -97,10 +97,15 @@ export function SmartEnrichmentRecommendations({ onEnrichCompany }: SmartEnrichm
       }
     } catch (error) {
       console.error('Enrichment error:', error);
+      
+      // Extract user-friendly message if available
+      const errorMessage = error?.message || 'Failed to enrich company';
+      
       toast({
         title: 'Enrichment Failed',
-        description: error.message || 'Failed to enrich company',
-        variant: 'destructive'
+        description: errorMessage,
+        variant: 'destructive',
+        duration: 8000 // Longer duration for detailed errors
       });
       setEnriching(null);
     }
@@ -144,10 +149,15 @@ export function SmartEnrichmentRecommendations({ onEnrichCompany }: SmartEnrichm
 
     } catch (error) {
       console.error('Enrichment error:', error);
+      
+      // Extract user-friendly message if available
+      const errorMessage = error?.message || 'Failed to enrich company';
+      
       toast({
         title: 'Enrichment Failed',
-        description: error.message || 'Failed to enrich company',
-        variant: 'destructive'
+        description: errorMessage,
+        variant: 'destructive',
+        duration: 8000 // Longer duration for detailed errors
       });
     } finally {
       setEnriching(null);

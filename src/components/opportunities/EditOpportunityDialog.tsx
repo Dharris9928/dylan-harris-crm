@@ -42,7 +42,7 @@ export function EditOpportunityDialog({ open, onOpenChange, opportunity }: EditO
         stage: opportunity.stage || "Open",
         amount: opportunity.amount ? String(opportunity.amount) : "",
         expected_close_date: opportunity.expected_close_date || "",
-        assigned_to: opportunity.assigned_to || "",
+        assigned_to: opportunity.assigned_to || "unassigned",
         contractor_id: opportunity.contractor_id || "",
         notes: opportunity.notes || "",
       });
@@ -59,7 +59,7 @@ export function EditOpportunityDialog({ open, onOpenChange, opportunity }: EditO
           stage: formData.stage,
           amount: formData.amount ? parseFloat(formData.amount) : null,
           expected_close_date: formData.expected_close_date || null,
-          assigned_to: formData.assigned_to || null,
+          assigned_to: formData.assigned_to === "unassigned" ? null : (formData.assigned_to || null),
           contractor_id: formData.contractor_id || null,
           notes: formData.notes || null,
         })

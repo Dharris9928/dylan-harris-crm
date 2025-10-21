@@ -97,6 +97,7 @@ export function AddOpportunityDialog({ open, onOpenChange, prefilledCompanyId }:
         .insert({
           ...values,
           amount: values.amount ? parseFloat(values.amount) : null,
+          assigned_to: values.assigned_to === "unassigned" ? null : (values.assigned_to || null),
           contractor_id: values.contractor_id || null,
           created_by: currentUser.id,
         })

@@ -56,6 +56,7 @@ import { SecurityPolicyDocument } from "@/components/settings/SecurityPolicyDocu
 import { AccessPatternMonitor } from "@/components/settings/AccessPatternMonitor";
 import { AccessExpirationManager } from "@/components/settings/AccessExpirationManager";
 import { DatabaseManagementImproved } from "@/components/settings/DatabaseManagementImproved";
+import { AIErrorHelper } from "@/components/settings/AIErrorHelper";
 
 const Settings = () => {
   const { data: userData } = useUserRole();
@@ -248,6 +249,9 @@ const Settings = () => {
             <NotificationSettings />
           </CardContent>
         </Card>
+
+        {/* AI Error Helper */}
+        <AIErrorHelper />
         </TabsContent>
 
         {/* Security Settings */}

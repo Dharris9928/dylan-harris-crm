@@ -1,5 +1,8 @@
 project_id = "fjajupvwitxipzatmmss"
 
+[functions.ai-error-helper]
+verify_jwt = true
+
 [functions.verify-email-domain]
 verify_jwt = true
 

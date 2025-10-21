@@ -42,7 +42,7 @@ const opportunitySchema = z.object({
   contractor_id: z.string().optional(),
   opportunity_name: z.string().min(1, "Opportunity name is required"),
   status: z.enum(["Open", "Proposal", "Committed", "Purchased", "Declined"]),
-  estimated_value: z.string().optional(),
+  amount: z.string().optional(),
   expected_close_date: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -96,7 +96,7 @@ export function AddOpportunityDialog({ open, onOpenChange, prefilledCompanyId }:
         .from('opportunities' as any)
         .insert({
           ...values,
-          estimated_value: values.estimated_value ? parseFloat(values.estimated_value) : null,
+          amount: values.amount ? parseFloat(values.amount) : null,
           contractor_id: values.contractor_id || null,
           created_by: currentUser.id,
         })
@@ -249,7 +249,7 @@ export function AddOpportunityDialog({ open, onOpenChange, prefilledCompanyId }:
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="estimated_value"
+                name="amount"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Estimated Value ($) <span className="text-muted-foreground font-normal">(Optional)</span></FormLabel>

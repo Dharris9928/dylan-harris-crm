@@ -26,7 +26,7 @@ export function EditOpportunityDialog({ open, onOpenChange, opportunity }: EditO
     company_id: "",
     opportunity_name: "",
     status: "Open",
-    estimated_value: "",
+    amount: "",
     expected_close_date: "",
     assigned_to: "",
     contractor_id: "",
@@ -40,7 +40,7 @@ export function EditOpportunityDialog({ open, onOpenChange, opportunity }: EditO
         company_id: opportunity.company_id || "",
         opportunity_name: opportunity.opportunity_name || "",
         status: opportunity.stage || "Open",
-        estimated_value: opportunity.amount ? String(opportunity.amount) : "",
+        amount: opportunity.amount ? String(opportunity.amount) : "",
         expected_close_date: opportunity.expected_close_date || "",
         assigned_to: opportunity.assigned_to || "",
         contractor_id: opportunity.contractor_id || "",
@@ -57,7 +57,7 @@ export function EditOpportunityDialog({ open, onOpenChange, opportunity }: EditO
           company_id: formData.company_id,
           opportunity_name: formData.opportunity_name,
           stage: formData.status,
-          amount: formData.estimated_value ? parseFloat(formData.estimated_value) : null,
+          amount: formData.amount ? parseFloat(formData.amount) : null,
           expected_close_date: formData.expected_close_date || null,
           assigned_to: formData.assigned_to || null,
           contractor_id: formData.contractor_id || null,
@@ -151,16 +151,16 @@ export function EditOpportunityDialog({ open, onOpenChange, opportunity }: EditO
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="estimated_value">
+              <Label htmlFor="amount">
                 Estimated Value ($) <span className="text-muted-foreground font-normal">(Optional)</span>
               </Label>
               <Input
-                id="estimated_value"
+                id="amount"
                 type="number"
                 step="0.01"
                 placeholder="15000"
-                value={formData.estimated_value}
-                onChange={(e) => setFormData({ ...formData, estimated_value: e.target.value })}
+                value={formData.amount}
+                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
               />
             </div>
 

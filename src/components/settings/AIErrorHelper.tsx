@@ -100,6 +100,26 @@ export function AIErrorHelper() {
     }
   };
 
+  const handlePaste = async (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        e.preventDefault();
+        const file = items[i].getAsFile();
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const base64 = event.target?.result as string;
+            setImages((prev) => [...prev, base64]);
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+    }
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -212,10 +232,11 @@ export function AIErrorHelper() {
         <div className="flex gap-2">
           <div className="flex-1 space-y-2">
             <Textarea
-              placeholder="Paste an error message or describe your issue..."
+              placeholder="Paste an error message, screenshot, or describe your issue..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
+              onPaste={handlePaste}
               disabled={isLoading}
               className="min-h-[80px]"
             />
@@ -253,7 +274,7 @@ export function AIErrorHelper() {
         </div>
 
         <div className="text-xs text-muted-foreground">
-          <p>💡 Tip: You can paste error messages, upload screenshots, or describe issues in plain language</p>
+          <p>💡 Tip: Paste screenshots directly (Ctrl+V), upload images, or describe issues in plain language</p>
         </div>
       </CardContent>
     </Card>

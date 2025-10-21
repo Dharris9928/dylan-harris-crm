@@ -26,6 +26,7 @@ interface Opportunity {
 interface OpportunitiesTableProps {
   opportunities: Opportunity[];
   isLoading: boolean;
+  onSelectOpportunity?: (opportunity: Opportunity) => void;
 }
 
 const statusColors: Record<string, string> = {
@@ -37,7 +38,7 @@ const statusColors: Record<string, string> = {
   closed_lost: "bg-red-500",
 };
 
-export function OpportunitiesTable({ opportunities, isLoading }: OpportunitiesTableProps) {
+export function OpportunitiesTable({ opportunities, isLoading, onSelectOpportunity }: OpportunitiesTableProps) {
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -76,7 +77,11 @@ export function OpportunitiesTable({ opportunities, isLoading }: OpportunitiesTa
         </TableHeader>
         <TableBody>
           {opportunities.map((opportunity) => (
-            <TableRow key={opportunity.id}>
+            <TableRow 
+              key={opportunity.id}
+              className="cursor-pointer hover:bg-muted/50"
+              onClick={() => onSelectOpportunity?.(opportunity)}
+            >
               <TableCell className="font-medium">
                 {opportunity.opportunity_name}
               </TableCell>

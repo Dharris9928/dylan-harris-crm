@@ -171,7 +171,7 @@ export default function Opportunities() {
         />;
       case 'grid':
       default:
-        return <OpportunitiesTable opportunities={data} isLoading={false} />;
+        return <OpportunitiesTable opportunities={data} isLoading={false} onSelectOpportunity={handleSelectOpportunity} />;
     }
   };
 

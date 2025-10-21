@@ -2,18 +2,36 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { TrendingUp, TrendingDown, Building2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { usePerspective } from "@/hooks/usePerspective";
+import { useUserRole } from "@/hooks/useUserRole";
 
 export function SegmentPerformanceGrid() {
   const navigate = useNavigate();
+  const { perspective } = usePerspective('all_records');
+  const { data: userRoleData } = useUserRole();
 
-  const { data: segmentData, isLoading } = useQuery({
-    queryKey: ["segment-performance"],
+  const { data: segmentData, isLoading, error } = useQuery({
+    queryKey: ["segment-performance", perspective],
     queryFn: async () => {
-      const { data: companies, error } = await supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      let query = supabase
         .from("companies")
-        .select("segment, lead_score, status, industry_type");
+        .select("segment, lead_score, status, industry_type, created_by, assigned_to_sales_rep_id");
+
+      // Apply perspective filtering
+      if (perspective === 'my_records') {
+        query = query.eq('created_by', user.id);
+      } else if (perspective === 'assigned_to_me') {
+        query = query.eq('assigned_to_sales_rep_id', user.id);
+      }
+      // 'all_records' - no additional filter (but respects RLS)
+
+      const { data: companies, error } = await query;
 
       if (error) throw error;
       if (!companies) return {};
@@ -73,6 +91,21 @@ export function SegmentPerformanceGrid() {
     );
   }
 
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Segment Performance</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-destructive text-center py-6">
+            Error loading segment data. Please try again.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!segmentData || Object.keys(segmentData).length === 0) {
     return (
       <Card>
@@ -80,9 +113,28 @@ export function SegmentPerformanceGrid() {
           <CardTitle>Segment Performance</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground text-center py-6">
-            No segment data available yet
-          </p>
+          <div className="text-center py-8 space-y-4">
+            <Building2 className="h-12 w-12 mx-auto text-muted-foreground/50" />
+            <div className="space-y-2">
+              <p className="text-muted-foreground font-medium">
+                No companies with segments in your current view
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {perspective === 'my_records' 
+                  ? "Companies you've created don't have segments assigned yet."
+                  : perspective === 'assigned_to_me'
+                  ? "Companies assigned to you don't have segments assigned yet."
+                  : "No companies have segments assigned yet."}
+              </p>
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/companies')}
+              className="mt-4"
+            >
+              Go to Companies to Assign Segments
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );

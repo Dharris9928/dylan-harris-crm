@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AddCompanyDialog } from "@/components/companies/AddCompanyDialog";
 import { AddActivityDialog } from "@/components/activities/AddActivityDialog";
+import { AddOpportunityDialog } from "@/components/opportunities/AddOpportunityDialog";
 import { SegmentPerformanceGrid } from "@/components/dashboard/SegmentPerformanceGrid";
 import { PriorityDistributionCard } from "@/components/dashboard/PriorityDistributionCard";
 import { EnrichmentAnalyticsCard } from "@/components/dashboard/EnrichmentAnalyticsCard";
@@ -28,6 +29,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [isAddCompanyOpen, setIsAddCompanyOpen] = useState(false);
   const [isAddActivityOpen, setIsAddActivityOpen] = useState(false);
+  const [isAddOpportunityOpen, setIsAddOpportunityOpen] = useState(false);
 
   // Real-time subscription for dashboard updates
   useEffect(() => {
@@ -235,6 +237,10 @@ const Dashboard = () => {
             <DropdownMenuItem onClick={() => setIsAddCompanyOpen(true)}>
               <Building2 className="h-4 w-4 mr-2" />
               Add Company
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setIsAddOpportunityOpen(true)}>
+              <Target className="h-4 w-4 mr-2" />
+              Add Opportunity
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setIsAddActivityOpen(true)}>
               <Activity className="h-4 w-4 mr-2" />
@@ -494,6 +500,11 @@ const Dashboard = () => {
           queryClient.invalidateQueries({ queryKey: ["monthly-activities"] });
           setIsAddActivityOpen(false);
         }}
+      />
+
+      <AddOpportunityDialog
+        open={isAddOpportunityOpen}
+        onOpenChange={setIsAddOpportunityOpen}
       />
     </div>
   );

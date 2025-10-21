@@ -25,7 +25,7 @@ export function EditOpportunityDialog({ open, onOpenChange, opportunity }: EditO
   const [formData, setFormData] = useState({
     company_id: "",
     opportunity_name: "",
-    status: "Open",
+    stage: "Open",
     amount: "",
     expected_close_date: "",
     assigned_to: "",
@@ -39,7 +39,7 @@ export function EditOpportunityDialog({ open, onOpenChange, opportunity }: EditO
       setFormData({
         company_id: opportunity.company_id || "",
         opportunity_name: opportunity.opportunity_name || "",
-        status: opportunity.stage || "Open",
+        stage: opportunity.stage || "Open",
         amount: opportunity.amount ? String(opportunity.amount) : "",
         expected_close_date: opportunity.expected_close_date || "",
         assigned_to: opportunity.assigned_to || "",
@@ -56,7 +56,7 @@ export function EditOpportunityDialog({ open, onOpenChange, opportunity }: EditO
         .update({
           company_id: formData.company_id,
           opportunity_name: formData.opportunity_name,
-          stage: formData.status,
+          stage: formData.stage,
           amount: formData.amount ? parseFloat(formData.amount) : null,
           expected_close_date: formData.expected_close_date || null,
           assigned_to: formData.assigned_to || null,
@@ -117,8 +117,8 @@ export function EditOpportunityDialog({ open, onOpenChange, opportunity }: EditO
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="status">Status *</Label>
-              <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+              <Label htmlFor="stage">Status *</Label>
+              <Select value={formData.stage} onValueChange={(value) => setFormData({ ...formData, stage: value })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

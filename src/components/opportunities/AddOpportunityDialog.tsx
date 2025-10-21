@@ -41,7 +41,7 @@ const opportunitySchema = z.object({
   assigned_to: z.string().optional(),
   contractor_id: z.string().optional(),
   opportunity_name: z.string().min(1, "Opportunity name is required"),
-  status: z.enum(["Open", "Proposal", "Committed", "Purchased", "Declined"]),
+  stage: z.enum(["Open", "Proposal", "Committed", "Purchased", "Declined"]),
   amount: z.string().optional(),
   expected_close_date: z.string().optional(),
   notes: z.string().optional(),
@@ -67,7 +67,7 @@ export function AddOpportunityDialog({ open, onOpenChange, prefilledCompanyId }:
   const form = useForm<z.infer<typeof opportunitySchema>>({
     resolver: zodResolver(opportunitySchema),
     defaultValues: {
-      status: "Open",
+      stage: "Open",
       company_id: prefilledCompanyId || "",
     },
   });
@@ -187,7 +187,7 @@ export function AddOpportunityDialog({ open, onOpenChange, prefilledCompanyId }:
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="status"
+                name="stage"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Status</FormLabel>

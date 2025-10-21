@@ -252,7 +252,7 @@ export function AddOpportunityDialog({ open, onOpenChange, prefilledCompanyId }:
                 name="estimated_value"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Estimated Value ($)</FormLabel>
+                    <FormLabel>Estimated Value ($) <span className="text-muted-foreground font-normal">(Optional)</span></FormLabel>
                     <FormControl>
                       <Input type="number" step="0.01" placeholder="15000" {...field} />
                     </FormControl>

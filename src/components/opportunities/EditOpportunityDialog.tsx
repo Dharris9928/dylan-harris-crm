@@ -1,7 +1,16 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
-import { Building2, Calendar, DollarSign, User, Package } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
+import { CompanySearchSelect } from "./CompanySearchSelect";
+import { SalesRepSelect } from "../companies/SalesRepSelect";
+import { ContractorSearchSelect } from "./ContractorSearchSelect";
 
 interface EditOpportunityDialogProps {
   open: boolean;
@@ -9,114 +18,183 @@ interface EditOpportunityDialogProps {
   opportunity: any;
 }
 
-const statusColors: Record<string, string> = {
-  prospecting: 'bg-blue-500',
-  qualification: 'bg-purple-500',
-  proposal: 'bg-yellow-500',
-  negotiation: 'bg-orange-500',
-  closed_won: 'bg-green-500',
-  closed_lost: 'bg-red-500',
-};
-
 export function EditOpportunityDialog({ open, onOpenChange, opportunity }: EditOpportunityDialogProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  const [formData, setFormData] = useState({
+    company_id: "",
+    opportunity_name: "",
+    status: "Open",
+    estimated_value: "",
+    expected_close_date: "",
+    assigned_to: "",
+    contractor_id: "",
+    notes: "",
+  });
+
+  // Initialize form data when opportunity changes
+  useEffect(() => {
+    if (opportunity && open) {
+      setFormData({
+        company_id: opportunity.company_id || "",
+        opportunity_name: opportunity.opportunity_name || "",
+        status: opportunity.stage || "Open",
+        estimated_value: opportunity.amount ? String(opportunity.amount) : "",
+        expected_close_date: opportunity.expected_close_date || "",
+        assigned_to: opportunity.assigned_to || "",
+        contractor_id: opportunity.contractor_id || "",
+        notes: opportunity.notes || "",
+      });
+    }
+  }, [opportunity, open]);
+
+  const updateOpportunity = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('opportunities' as any)
+        .update({
+          company_id: formData.company_id,
+          opportunity_name: formData.opportunity_name,
+          stage: formData.status,
+          amount: formData.estimated_value ? parseFloat(formData.estimated_value) : null,
+          expected_close_date: formData.expected_close_date || null,
+          assigned_to: formData.assigned_to || null,
+          contractor_id: formData.contractor_id || null,
+          notes: formData.notes || null,
+        })
+        .eq('id', opportunity.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['opportunities'] });
+      toast({
+        title: "Success",
+        description: "Opportunity updated successfully",
+      });
+      onOpenChange(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to update opportunity: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateOpportunity.mutate();
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{opportunity.opportunity_name}</DialogTitle>
+          <DialogTitle>Edit Opportunity</DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-sm font-medium">Stage</label>
-            <div className="mt-1">
-              <Badge className={statusColors[opportunity.stage]}>
-                {opportunity.stage?.replace('_', ' ').toUpperCase()}
-              </Badge>
-            </div>
+            <Label htmlFor="company_id">Company *</Label>
+            <CompanySearchSelect
+              value={formData.company_id}
+              onValueChange={(value) => setFormData({ ...formData, company_id: value })}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="opportunity_name">Opportunity Name *</Label>
+            <Input
+              id="opportunity_name"
+              value={formData.opportunity_name}
+              onChange={(e) => setFormData({ ...formData, opportunity_name: e.target.value })}
+              required
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium flex items-center gap-2">
-                <Building2 className="h-4 w-4" />
-                Company
-              </label>
-              <p className="text-sm text-muted-foreground mt-1">
-                {opportunity.companies?.company_name || 'No Company'}
-              </p>
+              <Label htmlFor="status">Status *</Label>
+              <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Open">Open</SelectItem>
+                  <SelectItem value="Proposal">Proposal</SelectItem>
+                  <SelectItem value="Committed">Committed</SelectItem>
+                  <SelectItem value="Purchased">Purchased</SelectItem>
+                  <SelectItem value="Declined">Declined</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            {opportunity.amount && (
-              <div>
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <DollarSign className="h-4 w-4" />
-                  Value
-                </label>
-                <p className="text-sm text-muted-foreground mt-1">
-                  ${opportunity.amount.toLocaleString()}
-                </p>
-              </div>
-            )}
-
-            {opportunity.expected_close_date && (
-              <div>
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  Expected Close
-                </label>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {format(new Date(opportunity.expected_close_date), 'MMM d, yyyy')}
-                </p>
-              </div>
-            )}
-
-            {opportunity.profiles && (
-              <div>
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Assigned To
-                </label>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {opportunity.profiles.first_name} {opportunity.profiles.last_name}
-                </p>
-              </div>
-            )}
+            <div>
+              <Label htmlFor="assigned_to">Assigned To</Label>
+              <SalesRepSelect
+                value={formData.assigned_to}
+                onValueChange={(value) => setFormData({ ...formData, assigned_to: value })}
+              />
+            </div>
           </div>
 
-          {opportunity.opportunity_products?.length > 0 && (
-            <div>
-              <label className="text-sm font-medium flex items-center gap-2 mb-2">
-                <Package className="h-4 w-4" />
-                Products
-              </label>
-              <div className="border rounded-lg p-3 space-y-2">
-                {opportunity.opportunity_products.map((product: any, index: number) => (
-                  <div key={index} className="flex justify-between items-center text-sm">
-                    <span>
-                      {product.quantity}x {product.product_type}
-                      {product.model && ` (${product.model})`}
-                    </span>
-                    {product.unit_price && (
-                      <span className="font-medium">
-                        ${(product.quantity * product.unit_price).toLocaleString()}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <div>
+            <Label htmlFor="contractor_id">Contractor (Optional)</Label>
+            <ContractorSearchSelect
+              value={formData.contractor_id}
+              onValueChange={(value) => setFormData({ ...formData, contractor_id: value })}
+            />
+          </div>
 
-          {opportunity.notes && (
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium">Notes</label>
-              <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
-                {opportunity.notes}
-              </p>
+              <Label htmlFor="estimated_value">
+                Estimated Value ($) <span className="text-muted-foreground font-normal">(Optional)</span>
+              </Label>
+              <Input
+                id="estimated_value"
+                type="number"
+                step="0.01"
+                placeholder="15000"
+                value={formData.estimated_value}
+                onChange={(e) => setFormData({ ...formData, estimated_value: e.target.value })}
+              />
             </div>
-          )}
-        </div>
+
+            <div>
+              <Label htmlFor="expected_close_date">Expected Close Date</Label>
+              <Input
+                id="expected_close_date"
+                type="date"
+                value={formData.expected_close_date}
+                onChange={(e) => setFormData({ ...formData, expected_close_date: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              placeholder="Additional information about this opportunity..."
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              rows={4}
+            />
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={updateOpportunity.isPending}>
+              {updateOpportunity.isPending ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

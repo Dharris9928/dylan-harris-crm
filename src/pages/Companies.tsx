@@ -160,8 +160,18 @@ const Companies = () => {
   const { data: companies, isLoading, refetch } = useQuery({
     queryKey: ["companies", debouncedSearch, statusFilter, priorityFilter, segmentFilter, industryTypeFilter, stateFilter, cityFilter, enrichmentStatusFilter, assignedToFilter, perspective],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      // Check for impersonation
+      const impersonationData = sessionStorage.getItem('admin-impersonation');
+      const impersonation = impersonationData ? JSON.parse(impersonationData) : null;
+      
+      let userId: string;
+      if (impersonation?.userId) {
+        userId = impersonation.userId;
+      } else {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return [];
+        userId = user.id;
+      }
 
       let query = supabase
         .from("companies")
@@ -175,10 +185,10 @@ const Companies = () => {
       const hasElevatedAccess = userRoleData?.hasElevatedAccess || false;
       switch (perspective) {
         case 'my_records':
-          query = query.eq('created_by', user.id);
+          query = query.eq('created_by', userId);
           break;
         case 'assigned_to_me':
-          query = query.eq('assigned_to', user.id);
+          query = query.eq('assigned_to', userId);
           break;
         case 'my_team':
           if (userRoleData?.role === 'sales_manager') {
@@ -186,7 +196,7 @@ const Companies = () => {
             const { data: teamMembers } = await supabase
               .from('team_memberships')
               .select('team_member_id')
-              .eq('manager_id', user.id)
+              .eq('manager_id', userId)
               .eq('is_active', true);
             
             const teamIds = teamMembers?.map(m => m.team_member_id) || [];

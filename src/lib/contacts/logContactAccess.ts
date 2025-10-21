@@ -10,8 +10,20 @@ export async function logContactAccess(
   metadata?: { exportFormat?: string; contactCount?: number }
 ) {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    // Check for impersonation
+    const impersonationData = sessionStorage.getItem('admin-impersonation');
+    const impersonation = impersonationData ? JSON.parse(impersonationData) : null;
+    
+    // Use impersonated user ID if active, otherwise use actual user
+    let userId: string | null = null;
+    
+    if (impersonation?.userId) {
+      userId = impersonation.userId;
+    } else {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      userId = user.id;
+    }
 
     // Get contact details for logging
     const { data: contacts } = await supabase
@@ -23,7 +35,7 @@ export async function logContactAccess(
 
     // Log each contact access
     const logs = contacts.map(contact => ({
-      user_id: user.id,
+      user_id: userId,
       contact_id: contact.id,
       company_id: contact.company_id,
       action,
@@ -34,7 +46,7 @@ export async function logContactAccess(
 
     // Log to console in development only
     if (import.meta.env.DEV) {
-      console.log(`[Audit] User ${user.email} performed ${action} on ${contacts.length} contact(s)`, metadata);
+      console.log(`[Audit] User ${userId} performed ${action} on ${contacts.length} contact(s)`, metadata);
     }
   } catch (error) {
     // Log error but don't throw - audit logging should never break the UI

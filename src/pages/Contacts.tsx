@@ -27,8 +27,18 @@ const Contacts = () => {
   const { data: contacts, isLoading, refetch } = useQuery({
     queryKey: ["contacts", perspective],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      // Check for impersonation
+      const impersonationData = sessionStorage.getItem('admin-impersonation');
+      const impersonation = impersonationData ? JSON.parse(impersonationData) : null;
+      
+      let userId: string;
+      if (impersonation?.userId) {
+        userId = impersonation.userId;
+      } else {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+        userId = user.id;
+      }
 
       let query = supabase
         .from("contacts")
@@ -36,15 +46,15 @@ const Contacts = () => {
 
       // Apply perspective filter
       if (perspective === 'my_records') {
-        query = query.eq('companies.created_by', user.id);
+        query = query.eq('companies.created_by', userId);
       } else if (perspective === 'assigned_to_me') {
-        query = query.eq('companies.assigned_to', user.id);
+        query = query.eq('companies.assigned_to', userId);
       } else if (perspective === 'my_team') {
         if (userRoleData?.role === 'sales_manager') {
           const { data: teamMembers } = await supabase
             .from('team_memberships')
             .select('team_member_id')
-            .eq('manager_id', user.id)
+            .eq('manager_id', userId)
             .eq('is_active', true);
           
           const teamIds = teamMembers?.map(m => m.team_member_id) || [];
@@ -55,7 +65,7 @@ const Contacts = () => {
           }
         }
       } else if (perspective === 'all_records' && !userRoleData?.hasElevatedAccess) {
-        query = query.eq('companies.created_by', user.id);
+        query = query.eq('companies.created_by', userId);
       }
 
       const { data, error } = await query.order("created_at", { ascending: false });

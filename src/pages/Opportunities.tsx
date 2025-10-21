@@ -29,8 +29,18 @@ export default function Opportunities() {
   const { data: opportunities, isLoading, refetch } = useQuery({
     queryKey: ['opportunities', perspective, userRoleData?.hasElevatedAccess ?? 'unknown'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      // Check for impersonation
+      const impersonationData = sessionStorage.getItem('admin-impersonation');
+      const impersonation = impersonationData ? JSON.parse(impersonationData) : null;
+      
+      let userId: string;
+      if (impersonation?.userId) {
+        userId = impersonation.userId;
+      } else {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+        userId = user.id;
+      }
 
       let query = supabase
         .from('opportunities' as any)
@@ -38,15 +48,15 @@ export default function Opportunities() {
 
       // Apply perspective filter
       if (perspective === 'my_records') {
-        query = query.eq('created_by', user.id);
+        query = query.eq('created_by', userId);
       } else if (perspective === 'assigned_to_me') {
-        query = query.eq('assigned_to', user.id);
+        query = query.eq('assigned_to', userId);
       } else if (perspective === 'my_team') {
         if (userRoleData?.role === 'sales_manager') {
           const { data: teamMembers } = await supabase
             .from('team_memberships')
             .select('team_member_id')
-            .eq('manager_id', user.id)
+            .eq('manager_id', userId)
             .eq('is_active', true);
           
           const teamIds = teamMembers?.map(m => m.team_member_id) || [];
@@ -57,7 +67,7 @@ export default function Opportunities() {
           }
         }
       } else if (perspective === 'all_records' && userRoleData?.hasElevatedAccess === false) {
-        query = query.eq('created_by', user.id);
+        query = query.eq('created_by', userId);
       }
 
       const { data, error } = await query.order('created_at', { ascending: false });

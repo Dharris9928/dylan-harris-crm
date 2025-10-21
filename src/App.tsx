@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "./components/layout/AppLayout";
+import { ImpersonationBanner } from "./components/common/ImpersonationBanner";
 import Dashboard from "./pages/Dashboard";
 import Companies from "./pages/Companies";
 import Contacts from "./pages/Contacts";
@@ -27,6 +28,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <ImpersonationBanner />
         <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route

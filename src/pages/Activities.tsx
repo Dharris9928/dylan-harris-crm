@@ -17,6 +17,7 @@ const Activities = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState<any>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [followUpActivity, setFollowUpActivity] = useState<any>(null);
   const { perspective, setPerspective } = usePerspective('my_records');
   const { data: userRoleData } = useUserRole();
   const [dateRange, setDateRange] = useState<{
@@ -30,6 +31,37 @@ const Activities = () => {
       to: new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
     };
   });
+
+  const handleFollowUp = (activity: any) => {
+    setFollowUpActivity(activity);
+    setIsAddDialogOpen(true);
+  };
+
+  const buildFollowUpContext = () => {
+    if (!followUpActivity) return undefined;
+    
+    const contextParts = [
+      `Follow-up to previous ${followUpActivity.activity_type}`,
+    ];
+    
+    if (followUpActivity.subject_line) {
+      contextParts.push(`Subject: ${followUpActivity.subject_line}`);
+    }
+    
+    if (followUpActivity.message_content) {
+      contextParts.push(`Previous Message:\n${followUpActivity.message_content}`);
+    }
+    
+    if (followUpActivity.outcome) {
+      contextParts.push(`Outcome: ${followUpActivity.outcome}`);
+    }
+    
+    if (followUpActivity.notes) {
+      contextParts.push(`Notes: ${followUpActivity.notes}`);
+    }
+    
+    return contextParts.join('\n\n');
+  };
 
   const { data: activities, isLoading, refetch } = useQuery({
     queryKey: ["activities", dateRange, perspective],
@@ -202,17 +234,25 @@ const Activities = () => {
 
       <AddActivityDialog
         open={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
+        onOpenChange={(open) => {
+          setIsAddDialogOpen(open);
+          if (!open) setFollowUpActivity(null);
+        }}
         onSuccess={() => {
           refetch();
           setIsAddDialogOpen(false);
+          setFollowUpActivity(null);
         }}
+        companyId={followUpActivity?.company_id}
+        companyName={followUpActivity?.companies?.company_name}
+        followUpContext={buildFollowUpContext()}
       />
 
       <ActivityDetailsDialog
         activity={selectedActivity}
         open={isDetailsDialogOpen}
         onOpenChange={setIsDetailsDialogOpen}
+        onFollowUp={handleFollowUp}
       />
     </div>
   );

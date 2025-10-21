@@ -1,7 +1,8 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { Mail, Phone, Linkedin, Calendar, User, Building2, FileText, MessageSquare } from "lucide-react";
+import { Mail, Phone, Linkedin, Calendar, User, Building2, FileText, MessageSquare, Reply } from "lucide-react";
 
 interface Activity {
   id: string;
@@ -31,10 +32,16 @@ interface ActivityDetailsDialogProps {
   activity: Activity | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onFollowUp?: (activity: Activity) => void;
 }
 
-export function ActivityDetailsDialog({ activity, open, onOpenChange }: ActivityDetailsDialogProps) {
+export function ActivityDetailsDialog({ activity, open, onOpenChange, onFollowUp }: ActivityDetailsDialogProps) {
   if (!activity) return null;
+
+  const handleFollowUp = () => {
+    onFollowUp?.(activity);
+    onOpenChange(false);
+  };
 
   const getActivityIcon = (type: string) => {
     switch (type.toLowerCase()) {
@@ -202,6 +209,15 @@ export function ActivityDetailsDialog({ activity, open, onOpenChange }: Activity
             </p>
           </div>
         </div>
+
+        {onFollowUp && (
+          <DialogFooter>
+            <Button onClick={handleFollowUp} className="w-full sm:w-auto">
+              <Reply className="h-4 w-4 mr-2" />
+              Follow Up
+            </Button>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );

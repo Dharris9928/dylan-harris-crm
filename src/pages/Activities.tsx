@@ -38,7 +38,9 @@ const Activities = () => {
   });
 
   const handleFollowUp = (activity: any) => {
-    setFollowUpActivity(activity);
+    // Extract all contact IDs from the activity
+    const contactIds = activity.activity_contacts?.map((ac: any) => ac.contact_id) || [];
+    setFollowUpActivity({ ...activity, contactIds });
     setIsAddDialogOpen(true);
   };
 
@@ -81,7 +83,12 @@ const Activities = () => {
 
       let query = supabase
         .from("outreach_activities")
-        .select("*, companies(company_name, created_by, assigned_to), contacts(first_name, last_name)");
+        .select(`
+          *, 
+          companies(company_name, created_by, assigned_to), 
+          contacts(first_name, last_name),
+          activity_contacts(contact_id)
+        `);
 
       // Apply perspective filter
       if (perspective === 'my_records') {
@@ -275,7 +282,7 @@ const Activities = () => {
         }}
         companyId={followUpActivity?.company_id}
         companyName={followUpActivity?.companies?.company_name}
-        contactId={followUpActivity?.contact_id}
+        contactIds={followUpActivity?.contactIds}
         followUpContext={buildFollowUpContext()}
       />
 

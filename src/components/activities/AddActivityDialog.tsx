@@ -43,7 +43,7 @@ interface AddActivityDialogProps {
   onSuccess: () => void;
   companyId?: string;
   companyName?: string;
-  contactId?: string;
+  contactIds?: string[];
   followUpContext?: string;
 }
 
@@ -53,7 +53,7 @@ export function AddActivityDialog({
   onSuccess,
   companyId,
   companyName,
-  contactId,
+  contactIds,
   followUpContext,
 }: AddActivityDialogProps) {
   const { toast } = useToast();
@@ -82,7 +82,7 @@ export function AddActivityDialog({
           company_id: companyId,
           notes: followUpContext || ""
         }));
-        setSelectedContactIds(contactId ? [contactId] : []);
+        setSelectedContactIds(contactIds || []);
         setCompanySearch(companyName);
       } else {
         setFormData({
@@ -98,7 +98,7 @@ export function AddActivityDialog({
         setCompanySearch("");
       }
     }
-  }, [open, companyId, companyName, contactId, followUpContext]);
+  }, [open, companyId, companyName, contactIds, followUpContext]);
 
   useEffect(() => {
     if (debouncedSearch || open) {

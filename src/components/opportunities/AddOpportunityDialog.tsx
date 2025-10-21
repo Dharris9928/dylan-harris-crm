@@ -23,6 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -35,6 +36,7 @@ import { SalesRepSelect } from "@/components/companies/SalesRepSelect";
 import { CompanySearchSelect } from "@/components/opportunities/CompanySearchSelect";
 import { ContractorSearchSelect } from "@/components/opportunities/ContractorSearchSelect";
 import { OpportunityProductsForm } from "@/components/opportunities/OpportunityProductsForm";
+import { ContactMultiSelect } from "@/components/common/ContactMultiSelect";
 
 const opportunitySchema = z.object({
   company_id: z.string().min(1, "Company is required"),
@@ -63,6 +65,7 @@ export function AddOpportunityDialog({ open, onOpenChange, prefilledCompanyId }:
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [products, setProducts] = useState<OpportunityProduct[]>([]);
+  const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
 
   const form = useForm<z.infer<typeof opportunitySchema>>({
     resolver: zodResolver(opportunitySchema),
@@ -78,6 +81,23 @@ export function AddOpportunityDialog({ open, onOpenChange, prefilledCompanyId }:
       const { data: { user } } = await supabase.auth.getUser();
       return user;
     },
+  });
+
+  // Fetch contacts for the selected company
+  const companyId = form.watch('company_id');
+  const { data: contacts = [] } = useQuery({
+    queryKey: ['contacts-for-opportunity', companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data, error } = await supabase
+        .from('contacts')
+        .select('id, first_name, last_name, title')
+        .eq('company_id', companyId)
+        .order('first_name');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!companyId,
   });
 
   // Update form when prefilledCompanyId changes
@@ -120,6 +140,20 @@ export function AddOpportunityDialog({ open, onOpenChange, prefilledCompanyId }:
         if (productsError) throw productsError;
       }
 
+      // Create contact associations
+      if (selectedContactIds.length > 0) {
+        const { error: contactsError } = await supabase
+          .from('opportunity_contacts')
+          .insert(
+            selectedContactIds.map(contactId => ({
+              opportunity_id: (opportunity as any).id,
+              contact_id: contactId,
+            }))
+          );
+
+        if (contactsError) throw contactsError;
+      }
+
       return opportunity as any;
     },
     onSuccess: () => {
@@ -130,6 +164,7 @@ export function AddOpportunityDialog({ open, onOpenChange, prefilledCompanyId }:
       });
       form.reset();
       setProducts([]);
+      setSelectedContactIds([]);
       onOpenChange(false);
     },
     onError: (error) => {
@@ -246,6 +281,22 @@ export function AddOpportunityDialog({ open, onOpenChange, prefilledCompanyId }:
                 </FormItem>
               )}
             />
+
+            {/* Contacts */}
+            {companyId && (
+              <div className="space-y-2">
+                <Label>Contacts (Optional)</Label>
+                <ContactMultiSelect
+                  contacts={contacts}
+                  selectedContactIds={selectedContactIds}
+                  onSelectedContactsChange={setSelectedContactIds}
+                  placeholder="Select contacts..."
+                />
+                <p className="text-xs text-muted-foreground">
+                  Link contacts to this opportunity for tracking
+                </p>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <FormField

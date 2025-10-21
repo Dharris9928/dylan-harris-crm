@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Mail, Phone, Linkedin, Loader2, Plus, Calendar, Video, GraduationCap, MessageSquare } from 'lucide-react';
 import { CompanySearchSelect } from '../opportunities/CompanySearchSelect';
+import { ContactMultiSelect } from '@/components/common/ContactMultiSelect';
 
 interface Company {
   id: string;
@@ -57,7 +58,7 @@ export function NewCommunicationDialog({
   const setOpen = onOpenChange || setInternalOpen;
 
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
-  const [selectedContactId, setSelectedContactId] = useState<string>('');
+  const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<string>('none');
   const [communicationType, setCommunicationType] = useState<CommunicationType>('email');
   const [businessContext, setBusinessContext] = useState('');
@@ -70,7 +71,7 @@ export function NewCommunicationDialog({
       loadCompanies();
       // Set prefilled values when dialog opens
       if (prefilledCompanyId) setSelectedCompanyId(prefilledCompanyId);
-      if (prefilledContactId) setSelectedContactId(prefilledContactId);
+      if (prefilledContactId) setSelectedContactIds([prefilledContactId]);
       if (prefilledPreviousContext) setPreviousContext(prefilledPreviousContext);
       if (prefilledCommunicationType) setCommunicationType(prefilledCommunicationType);
     }
@@ -82,7 +83,7 @@ export function NewCommunicationDialog({
       loadOpportunities(selectedCompanyId);
     } else {
       setContacts([]);
-      setSelectedContactId('');
+      setSelectedContactIds([]);
       setOpportunities([]);
       setSelectedOpportunityId('none');
     }
@@ -172,7 +173,7 @@ export function NewCommunicationDialog({
       const { data, error } = await supabase.functions.invoke('generate-communication', {
         body: {
           companyId: selectedCompanyId,
-          contactId: selectedContactId || null,
+          contactIds: selectedContactIds.length > 0 ? selectedContactIds : null,
           opportunityId: selectedOpportunityId && selectedOpportunityId !== 'none' ? selectedOpportunityId : null,
           communicationType,
           businessContext: businessContext || null,
@@ -206,7 +207,7 @@ export function NewCommunicationDialog({
 
   const resetForm = () => {
     setSelectedCompanyId('');
-    setSelectedContactId('');
+    setSelectedContactIds([]);
     setSelectedOpportunityId('none');
     setCommunicationType('email');
     setBusinessContext('');
@@ -269,32 +270,22 @@ export function NewCommunicationDialog({
 
           {/* Contact Selection */}
           <div className="space-y-2">
-            <Label htmlFor="contact">Target Contact (Optional)</Label>
-            <Select 
-              value={selectedContactId} 
-              onValueChange={setSelectedContactId} 
+            <Label htmlFor="contact">Target Contacts (Optional)</Label>
+            <ContactMultiSelect
+              contacts={contacts}
+              selectedContactIds={selectedContactIds}
+              onSelectedContactsChange={setSelectedContactIds}
               disabled={!selectedCompanyId || loadingContacts}
-            >
-              <SelectTrigger id="contact">
-                <SelectValue placeholder={
-                  !selectedCompanyId 
-                    ? "Select a company first" 
-                    : loadingContacts 
-                    ? "Loading contacts..." 
-                    : "No specific contact (general communication)"
-                } />
-              </SelectTrigger>
-              <SelectContent>
-                {contacts.map((contact) => (
-                  <SelectItem key={contact.id} value={contact.id}>
-                    {contact.first_name} {contact.last_name}
-                    {contact.title && ` - ${contact.title}`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder={
+                !selectedCompanyId 
+                  ? "Select a company first" 
+                  : loadingContacts 
+                  ? "Loading contacts..." 
+                  : "Select contacts..."
+              }
+            />
             <p className="text-xs text-muted-foreground">
-              Select a specific contact to personalize the communication, or leave empty for general messaging
+              Select specific contacts to personalize the communication, or leave empty for general messaging
             </p>
           </div>
 

@@ -21,6 +21,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { ContactMultiSelect } from "@/components/common/ContactMultiSelect";
 
 interface EditActivityDialogProps {
   activity: any;
@@ -37,6 +38,7 @@ export function EditActivityDialog({
 }: EditActivityDialogProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     activity_type: "Email" as const,
     subject_line: "",
@@ -45,7 +47,6 @@ export function EditActivityDialog({
     completed_date: new Date().toISOString().split("T")[0],
     notes: "",
     opportunity_id: "none" as string,
-    contact_id: "none" as string,
   });
 
   // Fetch opportunities for the company
@@ -80,6 +81,21 @@ export function EditActivityDialog({
     enabled: !!activity?.company_id && open,
   });
 
+  // Fetch existing contact associations
+  const { data: existingContacts = [] } = useQuery({
+    queryKey: ['activity-contacts', activity?.id],
+    queryFn: async () => {
+      if (!activity?.id) return [];
+      const { data, error } = await supabase
+        .from('activity_contacts')
+        .select('contact_id')
+        .eq('activity_id', activity.id);
+      if (error) throw error;
+      return data.map(ac => ac.contact_id);
+    },
+    enabled: !!activity?.id && open,
+  });
+
   useEffect(() => {
     if (activity && open) {
       setFormData({
@@ -90,10 +106,10 @@ export function EditActivityDialog({
         completed_date: activity.completed_date || new Date().toISOString().split("T")[0],
         notes: activity.notes || "",
         opportunity_id: activity.opportunity_id || "none",
-        contact_id: activity.contact_id || "none",
       });
+      setSelectedContactIds(existingContacts);
     }
-  }, [activity, open]);
+  }, [activity, open, existingContacts]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,6 +118,7 @@ export function EditActivityDialog({
     setIsSubmitting(true);
 
     try {
+      // Update activity
       const { error } = await supabase
         .from("outreach_activities")
         .update({
@@ -112,11 +129,32 @@ export function EditActivityDialog({
           completed_date: formData.completed_date,
           notes: formData.notes,
           opportunity_id: formData.opportunity_id === "none" ? null : formData.opportunity_id,
-          contact_id: formData.contact_id === "none" ? null : formData.contact_id,
         })
         .eq("id", activity.id);
 
       if (error) throw error;
+
+      // Delete existing contact associations
+      const { error: deleteError } = await supabase
+        .from("activity_contacts")
+        .delete()
+        .eq("activity_id", activity.id);
+
+      if (deleteError) throw deleteError;
+
+      // Create new contact associations
+      if (selectedContactIds.length > 0) {
+        const { error: insertError } = await supabase
+          .from("activity_contacts")
+          .insert(
+            selectedContactIds.map(contactId => ({
+              activity_id: activity.id,
+              contact_id: contactId,
+            }))
+          );
+
+        if (insertError) throw insertError;
+      }
 
       toast({
         title: "Success",
@@ -168,27 +206,15 @@ export function EditActivityDialog({
             </Select>
           </div>
 
-          {/* Contact */}
+          {/* Contacts */}
           <div>
-            <Label htmlFor="contact">Contact (Optional)</Label>
-            <Select
-              value={formData.contact_id}
-              onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, contact_id: value }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select contact (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">None</SelectItem>
-                {contacts.map((contact: any) => (
-                  <SelectItem key={contact.id} value={contact.id}>
-                    {contact.first_name} {contact.last_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="contacts">Contacts (Optional)</Label>
+            <ContactMultiSelect
+              contacts={contacts}
+              selectedContactIds={selectedContactIds}
+              onSelectedContactsChange={setSelectedContactIds}
+              placeholder="Select contacts..."
+            />
           </div>
 
           {/* Opportunity */}

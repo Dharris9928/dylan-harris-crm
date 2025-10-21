@@ -35,6 +35,7 @@ import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/useDebounce";
+import { ContactMultiSelect } from "@/components/common/ContactMultiSelect";
 
 interface AddActivityDialogProps {
   open: boolean;
@@ -61,9 +62,9 @@ export function AddActivityDialog({
   const [companySearch, setCompanySearch] = useState("");
   const [openCombobox, setOpenCombobox] = useState(false);
   const debouncedSearch = useDebounce(companySearch, 300);
+  const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     company_id: "",
-    contact_id: "",
     activity_type: "Email" as const,
     subject_line: "",
     message_content: "",
@@ -79,14 +80,13 @@ export function AddActivityDialog({
         setFormData(prev => ({ 
           ...prev, 
           company_id: companyId,
-          contact_id: contactId || "",
           notes: followUpContext || ""
         }));
+        setSelectedContactIds(contactId ? [contactId] : []);
         setCompanySearch(companyName);
       } else {
         setFormData({
           company_id: "",
-          contact_id: "",
           activity_type: "Email",
           subject_line: "",
           message_content: "",
@@ -94,6 +94,7 @@ export function AddActivityDialog({
           completed_date: new Date().toISOString().split("T")[0],
           notes: followUpContext || "",
         });
+        setSelectedContactIds([]);
         setCompanySearch("");
       }
     }
@@ -142,19 +143,37 @@ export function AddActivityDialog({
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Not authenticated");
 
-      const { error } = await supabase.from("outreach_activities").insert({
-        company_id: formData.company_id,
-        contact_id: formData.contact_id || null,
-        activity_type: formData.activity_type,
-        subject_line: formData.subject_line,
-        message_content: formData.message_content,
-        outcome: formData.outcome,
-        completed_date: formData.completed_date,
-        notes: formData.notes,
-        created_by: userData.user.id,
-      });
+      // Create activity
+      const { data: activity, error: activityError } = await supabase
+        .from("outreach_activities")
+        .insert({
+          company_id: formData.company_id,
+          activity_type: formData.activity_type,
+          subject_line: formData.subject_line,
+          message_content: formData.message_content,
+          outcome: formData.outcome,
+          completed_date: formData.completed_date,
+          notes: formData.notes,
+          created_by: userData.user.id,
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (activityError) throw activityError;
+
+      // Create contact associations
+      if (selectedContactIds.length > 0) {
+        const { error: contactsError } = await supabase
+          .from("activity_contacts")
+          .insert(
+            selectedContactIds.map(contactId => ({
+              activity_id: activity.id,
+              contact_id: contactId,
+            }))
+          );
+
+        if (contactsError) throw contactsError;
+      }
 
       toast({
         title: "Success",
@@ -163,7 +182,6 @@ export function AddActivityDialog({
 
       setFormData({
         company_id: "",
-        contact_id: "",
         activity_type: "Email",
         subject_line: "",
         message_content: "",
@@ -171,6 +189,7 @@ export function AddActivityDialog({
         completed_date: new Date().toISOString().split("T")[0],
         notes: "",
       });
+      setSelectedContactIds([]);
 
       onSuccess();
     } catch (error: any) {
@@ -250,24 +269,13 @@ export function AddActivityDialog({
 
           {formData.company_id && (
             <div>
-              <Label htmlFor="contact">Contact (Optional)</Label>
-              <Select
-                value={formData.contact_id}
-                onValueChange={(value) =>
-                  setFormData((prev) => ({ ...prev, contact_id: value }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select contact" />
-                </SelectTrigger>
-                <SelectContent>
-                  {contacts?.map((contact) => (
-                    <SelectItem key={contact.id} value={contact.id}>
-                      {contact.first_name} {contact.last_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="contact">Contacts (Optional)</Label>
+              <ContactMultiSelect
+                contacts={contacts || []}
+                selectedContactIds={selectedContactIds}
+                onSelectedContactsChange={setSelectedContactIds}
+                placeholder="Select contacts..."
+              />
             </div>
           )}
 

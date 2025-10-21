@@ -11,6 +11,7 @@ import { useState, useEffect } from "react";
 import { CompanySearchSelect } from "./CompanySearchSelect";
 import { SalesRepSelect } from "../companies/SalesRepSelect";
 import { ContractorSearchSelect } from "./ContractorSearchSelect";
+import { ContactMultiSelect } from "@/components/common/ContactMultiSelect";
 
 interface EditOpportunityDialogProps {
   open: boolean;
@@ -21,6 +22,7 @@ interface EditOpportunityDialogProps {
 export function EditOpportunityDialog({ open, onOpenChange, opportunity }: EditOpportunityDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
   
   const [formData, setFormData] = useState({
     company_id: "",
@@ -31,6 +33,37 @@ export function EditOpportunityDialog({ open, onOpenChange, opportunity }: EditO
     assigned_to: "",
     contractor_id: "",
     notes: "",
+  });
+
+  // Fetch contacts for the selected company
+  const { data: contacts = [] } = useQuery({
+    queryKey: ['contacts-for-opportunity-edit', formData.company_id],
+    queryFn: async () => {
+      if (!formData.company_id) return [];
+      const { data, error } = await supabase
+        .from('contacts')
+        .select('id, first_name, last_name, title')
+        .eq('company_id', formData.company_id)
+        .order('first_name');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!formData.company_id,
+  });
+
+  // Fetch existing contact associations
+  const { data: existingContacts = [] } = useQuery({
+    queryKey: ['opportunity-contacts', opportunity?.id],
+    queryFn: async () => {
+      if (!opportunity?.id) return [];
+      const { data, error } = await supabase
+        .from('opportunity_contacts')
+        .select('contact_id')
+        .eq('opportunity_id', opportunity.id);
+      if (error) throw error;
+      return data.map(oc => oc.contact_id);
+    },
+    enabled: !!opportunity?.id && open,
   });
 
   // Initialize form data when opportunity changes
@@ -46,11 +79,13 @@ export function EditOpportunityDialog({ open, onOpenChange, opportunity }: EditO
         contractor_id: opportunity.contractor_id || "",
         notes: opportunity.notes || "",
       });
+      setSelectedContactIds(existingContacts);
     }
-  }, [opportunity, open]);
+  }, [opportunity, open, existingContacts]);
 
   const updateOpportunity = useMutation({
     mutationFn: async () => {
+      // Update opportunity
       const { error } = await supabase
         .from('opportunities' as any)
         .update({
@@ -66,6 +101,28 @@ export function EditOpportunityDialog({ open, onOpenChange, opportunity }: EditO
         .eq('id', opportunity.id);
 
       if (error) throw error;
+
+      // Delete existing contact associations
+      const { error: deleteError } = await supabase
+        .from('opportunity_contacts')
+        .delete()
+        .eq('opportunity_id', opportunity.id);
+
+      if (deleteError) throw deleteError;
+
+      // Create new contact associations
+      if (selectedContactIds.length > 0) {
+        const { error: insertError } = await supabase
+          .from('opportunity_contacts')
+          .insert(
+            selectedContactIds.map(contactId => ({
+              opportunity_id: opportunity.id,
+              contact_id: contactId,
+            }))
+          );
+
+        if (insertError) throw insertError;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['opportunities'] });
@@ -148,6 +205,22 @@ export function EditOpportunityDialog({ open, onOpenChange, opportunity }: EditO
               onValueChange={(value) => setFormData({ ...formData, contractor_id: value })}
             />
           </div>
+
+          {/* Contacts */}
+          {formData.company_id && (
+            <div className="space-y-2">
+              <Label>Contacts (Optional)</Label>
+              <ContactMultiSelect
+                contacts={contacts}
+                selectedContactIds={selectedContactIds}
+                onSelectedContactsChange={setSelectedContactIds}
+                placeholder="Select contacts..."
+              />
+              <p className="text-xs text-muted-foreground">
+                Link contacts to this opportunity for tracking
+              </p>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>

@@ -54,7 +54,13 @@ export const companySchema = z.object({
   
   state: z.string()
     .trim()
-    .max(2, "State must be 2 characters")
+    .toUpperCase()
+    .refine((val) => val === '' || val.length === 2, {
+      message: "State must be exactly 2 characters (e.g., CA, TX, NY)"
+    })
+    .refine((val) => val === '' || /^[A-Z]{2}$/.test(val), {
+      message: "State must be a valid 2-letter code (e.g., CA, TX, NY)"
+    })
     .optional()
     .or(z.literal('')),
   

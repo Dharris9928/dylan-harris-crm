@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { calculateLeadScore } from '@/lib/scoring/leadScoring';
 import { validateCompanyData } from '@/lib/validation/companyValidation';
+import { formatDatabaseError } from '@/lib/errors/databaseErrorHandler';
 import type { Database } from '@/integrations/supabase/types';
 
 type Company = Database['public']['Tables']['companies']['Update'];
@@ -13,7 +14,7 @@ export async function updateCompany(
     // Validate company data
     const validation = validateCompanyData(updates);
     if (!validation.valid) {
-      throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+      throw new Error(`Validation failed:\n${validation.errors.join('\n')}`);
     }
     // 1. Update company
     const { data: company, error } = await supabase
@@ -47,6 +48,7 @@ export async function updateCompany(
     return company;
   } catch (error) {
     console.error('Error updating company:', error);
-    throw error;
+    const formattedError = formatDatabaseError(error);
+    throw new Error(formattedError);
   }
 }

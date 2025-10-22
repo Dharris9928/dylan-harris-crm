@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { calculateLeadScore } from '@/lib/scoring/leadScoring';
 import { validateCompanyData } from '@/lib/validation/companyValidation';
-import { formatDatabaseError } from '@/lib/errors/databaseErrorHandler';
+import { formatError } from '@/lib/errors/databaseErrorHandler';
 import type { Database } from '@/integrations/supabase/types';
 
 type Company = Database['public']['Tables']['companies']['Insert'];
@@ -46,7 +46,7 @@ export async function createCompany(companyData: Partial<Company>) {
     };
   } catch (error) {
     console.error('Error creating company:', error);
-    const formattedError = formatDatabaseError(error);
+    const formattedError = formatError(error);
     throw new Error(formattedError);
   }
 }

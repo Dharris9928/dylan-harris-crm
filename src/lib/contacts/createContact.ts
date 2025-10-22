@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { calculateLeadScore } from '@/lib/scoring/leadScoring';
+import { formatError } from '@/lib/errors/databaseErrorHandler';
 import type { Database } from '@/integrations/supabase/types';
 
 type Contact = Database['public']['Tables']['contacts']['Insert'];
@@ -44,6 +45,7 @@ export async function createContact(contactData: Partial<Contact>) {
     return contact;
   } catch (error) {
     console.error('Error creating contact:', error);
-    throw error;
+    const formattedError = formatError(error);
+    throw new Error(formattedError);
   }
 }

@@ -227,7 +227,7 @@ export function CompanyTable({
               </TableHead>
               <TableHead className="w-12"></TableHead>
               {columnVisibility.companyName && <SortableHeader field="company_name">Company Name</SortableHeader>}
-              <SortableHeader field="ai_status">AI Status</SortableHeader>
+              <TableHead>AI Status</TableHead>
               {columnVisibility.type && <SortableHeader field="industry_type">Type</SortableHeader>}
               {columnVisibility.segment && <SortableHeader field="segment">Segment</SortableHeader>}
               {columnVisibility.structure && <SortableHeader field="company_type">Structure</SortableHeader>}

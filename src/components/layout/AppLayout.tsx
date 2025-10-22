@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
@@ -130,8 +130,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         <div className="min-h-screen flex w-full bg-background">
           <AppSidebar />
           <div className="flex-1 flex flex-col">
-            <header className="h-14 border-b border-border flex items-center justify-between px-4 bg-card">
-              <SidebarTrigger />
+            <header className="h-14 border-b border-border flex items-center justify-end px-4 bg-card">
               <div className="flex items-center gap-2">
                 <NotificationBell />
               </div>

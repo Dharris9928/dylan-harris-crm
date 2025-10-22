@@ -46,19 +46,17 @@ export function AppSidebar() {
   const isCollapsed = state === "collapsed";
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="none">
       <SidebarContent>
         <div className="p-4 border-b border-sidebar-border">
           <div className="flex items-center gap-2">
             <div className="p-2 bg-sidebar-primary rounded-lg">
               <Building2 className="h-5 w-5 text-sidebar-primary-foreground" />
             </div>
-            {!isCollapsed && (
-              <div>
-                <h2 className="text-sm font-semibold text-sidebar-foreground">Nest Pro</h2>
-                <p className="text-xs text-sidebar-foreground/70">Nest Connector System</p>
-              </div>
-            )}
+            <div>
+              <h2 className="text-sm font-semibold text-sidebar-foreground">Nest Pro</h2>
+              <p className="text-xs text-sidebar-foreground/70">Nest Connector System</p>
+            </div>
           </div>
         </div>
 
@@ -79,7 +77,7 @@ export function AppSidebar() {
                       }
                     >
                       <item.icon className="h-4 w-4" />
-                      {!isCollapsed && <span>{item.title}</span>}
+                      <span>{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -91,7 +89,7 @@ export function AppSidebar() {
         <div className="mt-auto p-4 border-t border-sidebar-border">
           <SidebarMenuButton onClick={handleLogout} className="w-full hover:bg-sidebar-accent/50">
             <LogOut className="h-4 w-4" />
-            {!isCollapsed && <span>Logout</span>}
+            <span>Logout</span>
           </SidebarMenuButton>
         </div>
       </SidebarContent>

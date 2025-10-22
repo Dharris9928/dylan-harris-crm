@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { SegmentCard } from '@/components/prospecting/SegmentCard';
 import { ApolloCSVImportDialog } from '@/components/prospecting/ApolloCSVImportDialog';
 import { ProspectingAIChatBubble } from '@/components/prospecting/ProspectingAIChatBubble';
@@ -110,8 +109,8 @@ export default function ProspectingDashboard() {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   return (
-    <AppLayout>
-      <div className="space-y-6">
+    <>
+      <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Prospecting Dashboard</h1>
@@ -184,8 +183,7 @@ export default function ProspectingDashboard() {
         }}
       />
 
-      {/* AI Chat Bubble */}
       <ProspectingAIChatBubble />
-    </AppLayout>
+    </>
   );
 }

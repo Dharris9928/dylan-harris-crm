@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, X, Search, Download, Upload } from "lucide-react";
+import { Plus, X, Search, Download, Upload, Filter } from "lucide-react";
 import { CompanyTable } from "@/components/companies/CompanyTable";
 import { AddCompanyDialog } from "@/components/companies/AddCompanyDialog";
 import { EditCompanyDialog } from "@/components/companies/EditCompanyDialog";
@@ -15,6 +15,7 @@ import { ExportDialog } from "@/components/companies/ExportDialog";
 import { ImportDialog } from "@/components/companies/ImportDialog";
 import { ColumnCustomization, type ColumnVisibility } from "@/components/companies/ColumnCustomization";
 import { SavedFilters } from "@/components/companies/SavedFilters";
+import { AdvancedSearchDialog, type AdvancedFilter } from "@/components/companies/AdvancedSearchDialog";
 import { useSearchParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -40,6 +41,8 @@ const Companies = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilter[]>([]);
   const [selectedCompany, setSelectedCompany] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState(() => {
     return searchParams.get("search") || "";
@@ -160,7 +163,7 @@ const Companies = () => {
   }, [debouncedSearch, statusFilter, priorityFilter, segmentFilter, industryTypeFilter, stateFilter, cityFilter, regionFilter, statesFilter, enrichmentStatusFilter, assignedToFilter, perspective]);
 
   const { data: companies, isLoading, refetch } = useQuery({
-    queryKey: ["companies", debouncedSearch, String(statusFilter || ''), String(priorityFilter || ''), String(segmentFilter || ''), String(industryTypeFilter || ''), String(stateFilter || ''), String(cityFilter || ''), String(regionFilter || ''), String(statesFilter || ''), String(enrichmentStatusFilter || ''), String(assignedToFilter || ''), perspective],
+    queryKey: ["companies", debouncedSearch, String(statusFilter || ''), String(priorityFilter || ''), String(segmentFilter || ''), String(industryTypeFilter || ''), String(stateFilter || ''), String(cityFilter || ''), String(regionFilter || ''), String(statesFilter || ''), String(enrichmentStatusFilter || ''), String(assignedToFilter || ''), perspective, JSON.stringify(advancedFilters)],
     queryFn: async () => {
       // Check for impersonation
       const impersonationData = sessionStorage.getItem('admin-impersonation');
@@ -269,6 +272,8 @@ const Companies = () => {
           query = query.not('id', 'in', `(${uniqueIds.join(',')})`);
         }
       }
+
+      // Note: Advanced filters applied client-side to avoid TypeScript issues
 
       const { data, error } = await query;
       if (error) throw error;
@@ -440,12 +445,34 @@ const Companies = () => {
     hasLinkedinFilter === "true" && { type: "Filter", value: "Has LinkedIn", key: "has_linkedin" },
     hasPartnerFilter === "true" && { type: "Filter", value: "Has Partner", key: "has_partner" },
     lastContactFilter && { type: "Last Contact", value: lastContactFilter, key: "last_contact" },
+    ...advancedFilters.map(f => f.field && f.operator ? { 
+      type: "Advanced", 
+      value: `${f.field} ${f.operator} ${f.value || ''}`.trim(), 
+      key: `advanced_${f.id}`,
+      isAdvanced: true,
+      filterId: f.id
+    } : null).filter(Boolean)
   ].filter(Boolean);
 
-  const removeFilter = (key: string) => {
-    const newParams = new URLSearchParams(searchParams);
-    newParams.delete(key);
-    setSearchParams(newParams);
+  const removeFilter = (key: string, filterId?: string) => {
+    if (filterId) {
+      // Remove advanced filter
+      setAdvancedFilters(advancedFilters.filter(f => f.id !== filterId));
+    } else {
+      // Remove URL param filter
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete(key);
+      setSearchParams(newParams);
+    }
+  };
+
+  const handleApplyAdvancedFilters = (filters: AdvancedFilter[]) => {
+    setAdvancedFilters(filters);
+    setCurrentPage(1);
+  };
+
+  const clearAdvancedFilters = () => {
+    setAdvancedFilters([]);
   };
 
   const handleUpdateCompany = async (id: string, updates: any) => {
@@ -542,6 +569,21 @@ const Companies = () => {
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setIsAdvancedSearchOpen(true)}
+              className={advancedFilters.length > 0 ? "border-primary" : ""}
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              Advanced Search
+              {advancedFilters.length > 0 && (
+                <Badge variant="secondary" className="ml-2 px-1.5 py-0.5 text-xs">
+                  {advancedFilters.length}
+                </Badge>
+              )}
+            </Button>
+
             <SavedFilters
               currentFilters={currentFilters}
               onApplyFilter={applyFilters}

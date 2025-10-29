@@ -90,18 +90,6 @@ const Auth = () => {
       });
 
       if (error) {
-        // Check if MFA is required
-        if (error.message.includes('MFA') || error.message.includes('factor')) {
-          // List MFA factors
-          const { data: factors } = await supabase.auth.mfa.listFactors();
-          if (factors?.totp && factors.totp.length > 0) {
-            setPendingMFAFactorId(factors.totp[0].id);
-            setShowMFAVerification(true);
-            setLoading(false);
-            return;
-          }
-        }
-
         // Log failed login attempt
         try {
           await supabase.rpc('log_auth_event', {
@@ -151,7 +139,22 @@ const Auth = () => {
         }
       }
 
-      // Log successful login
+      // CRITICAL: Check if user has MFA enrolled - if so, require verification
+      const { data: factors } = await supabase.auth.mfa.listFactors();
+      if (factors?.totp && factors.totp.length > 0) {
+        const totpFactor = factors.totp.find(f => f.status === 'verified');
+        if (totpFactor) {
+          // User has MFA enrolled - sign them out and require MFA verification
+          await supabase.auth.signOut();
+          setPendingMFAFactorId(totpFactor.id);
+          setShowMFAVerification(true);
+          toast.info('Please verify your identity with two-factor authentication');
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Log successful login (only if no MFA required)
       if (data.user) {
         try {
           await supabase.rpc('log_auth_event', {
@@ -173,9 +176,34 @@ const Auth = () => {
     }
   };
 
-  const handleMFASuccess = () => {
+  const handleMFASuccess = async () => {
     setShowMFAVerification(false);
     setPendingMFAFactorId(null);
+    
+    // After successful MFA verification, log in with stored credentials
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      toast.error('Failed to complete login after MFA verification');
+      return;
+    }
+
+    // Log successful login after MFA
+    if (data.user) {
+      try {
+        await supabase.rpc('log_auth_event', {
+          _user_id: data.user.id,
+          _event_type: 'LOGIN_SUCCESS',
+          _email_attempted: email
+        });
+      } catch (logError) {
+        console.error('Failed to log auth event:', logError);
+      }
+    }
+
     toast.success("Successfully logged in!");
     navigate("/");
   };

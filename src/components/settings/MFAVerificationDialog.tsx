@@ -11,9 +11,10 @@ interface MFAVerificationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  factorId?: string | null;
 }
 
-export function MFAVerificationDialog({ open, onOpenChange, onSuccess }: MFAVerificationDialogProps) {
+export function MFAVerificationDialog({ open, onOpenChange, onSuccess, factorId }: MFAVerificationDialogProps) {
   const [verifyCode, setVerifyCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -26,24 +27,35 @@ export function MFAVerificationDialog({ open, onOpenChange, onSuccess }: MFAVeri
     try {
       setIsLoading(true);
 
-      // List factors to get the factor ID
-      const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
-      
-      if (factorsError) throw factorsError;
+      // If factorId is provided from parent (login flow), use it
+      let mfaFactorId = factorId;
 
-      const totpFactor = factors?.totp?.[0];
+      // If no factorId provided, list factors (settings flow)
+      if (!mfaFactorId) {
+        const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
+        
+        if (factorsError) throw factorsError;
 
-      if (!totpFactor || totpFactor.status !== 'verified') {
-        toast.error('MFA not properly set up', {
-          description: 'Please complete MFA enrollment in Settings first',
-        });
-        onOpenChange(false);
-        return;
+        const totpFactor = factors?.totp?.[0];
+
+        if (!totpFactor || totpFactor.status !== 'verified') {
+          toast.error('MFA not properly set up', {
+            description: 'Please complete MFA enrollment in Settings first',
+          });
+          onOpenChange(false);
+          return;
+        }
+
+        mfaFactorId = totpFactor.id;
+      }
+
+      if (!mfaFactorId) {
+        throw new Error('No MFA factor available');
       }
 
       // Create challenge
       const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({
-        factorId: totpFactor.id,
+        factorId: mfaFactorId,
       });
 
       if (challengeError) {
@@ -57,7 +69,7 @@ export function MFAVerificationDialog({ open, onOpenChange, onSuccess }: MFAVeri
 
       // Verify code
       const { error: verifyError } = await supabase.auth.mfa.verify({
-        factorId: totpFactor.id,
+        factorId: mfaFactorId,
         challengeId: challenge.id,
         code: verifyCode,
       });

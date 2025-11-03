@@ -144,8 +144,7 @@ const Auth = () => {
       if (factors?.totp && factors.totp.length > 0) {
         const totpFactor = factors.totp.find(f => f.status === 'verified');
         if (totpFactor) {
-          // User has MFA enrolled - sign them out and require MFA verification
-          await supabase.auth.signOut();
+          // User has MFA enrolled - keep session and require MFA verification
           setPendingMFAFactorId(totpFactor.id);
           setShowMFAVerification(true);
           toast.info('Please verify your identity with two-factor authentication');
@@ -180,22 +179,14 @@ const Auth = () => {
     setShowMFAVerification(false);
     setPendingMFAFactorId(null);
     
-    // After successful MFA verification, log in with stored credentials
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      toast.error('Failed to complete login after MFA verification');
-      return;
-    }
+    // Session is already established and upgraded to aal2 after MFA verification
+    const { data: { user } } = await supabase.auth.getUser();
 
     // Log successful login after MFA
-    if (data.user) {
+    if (user) {
       try {
         await supabase.rpc('log_auth_event', {
-          _user_id: data.user.id,
+          _user_id: user.id,
           _event_type: 'LOGIN_SUCCESS',
           _email_attempted: email
         });
@@ -633,11 +624,12 @@ const Auth = () => {
         </CardContent>
       </Card>
 
-      <MFAVerificationDialog
-        open={showMFAVerification}
-        onOpenChange={setShowMFAVerification}
-        onSuccess={handleMFASuccess}
-      />
+        <MFAVerificationDialog
+          open={showMFAVerification}
+          onOpenChange={setShowMFAVerification}
+          onSuccess={handleMFASuccess}
+          factorId={pendingMFAFactorId}
+        />
     </div>
   );
 };

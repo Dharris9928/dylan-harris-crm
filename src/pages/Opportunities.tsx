@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, MapPin, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { AddOpportunityDialog } from "@/components/opportunities/AddOpportunityDialog";
 import { OpportunitiesTable } from "@/components/opportunities/OpportunitiesTable";
 import { ViewSelector, ViewType } from "@/components/views/ViewSelector";
@@ -16,18 +17,21 @@ import { EditOpportunityDialog } from "@/components/opportunities/EditOpportunit
 import { PerspectiveSelector } from "@/components/common/PerspectiveSelector";
 import { usePerspective } from "@/hooks/usePerspective";
 import { useUserRole } from "@/hooks/useUserRole";
+import { RegionalFilterDialog, RegionalFilters } from "@/components/common/RegionalFilterDialog";
 
 export default function Opportunities() {
   const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isRegionalDialogOpen, setIsRegionalDialogOpen] = useState(false);
   const [selectedOpportunity, setSelectedOpportunity] = useState<any>(null);
   const [currentView, setCurrentView] = useState<ViewType>('grid');
+  const [regionalFilters, setRegionalFilters] = useState<RegionalFilters | null>(null);
   const { perspective, setPerspective } = usePerspective('my_records');
   const { data: userRoleData } = useUserRole();
 
   const { data: opportunities, isLoading, refetch } = useQuery({
-    queryKey: ['opportunities', perspective, userRoleData?.hasElevatedAccess ?? 'unknown'],
+    queryKey: ['opportunities', perspective, regionalFilters, userRoleData?.hasElevatedAccess ?? 'unknown'],
     queryFn: async () => {
       // Check for impersonation
       const impersonationData = sessionStorage.getItem('admin-impersonation');
@@ -44,7 +48,7 @@ export default function Opportunities() {
 
       let query = supabase
         .from('opportunities' as any)
-        .select('*');
+        .select('*, companies(company_name, state, city)');
 
       // Apply perspective filter
       if (perspective === 'my_records') {
@@ -68,6 +72,16 @@ export default function Opportunities() {
         }
       } else if (perspective === 'all_records' && userRoleData?.hasElevatedAccess === false) {
         query = query.eq('created_by', userId);
+      }
+
+      // Apply regional filters
+      if (regionalFilters) {
+        if (regionalFilters.states && regionalFilters.states.length > 0) {
+          query = query.in('companies.state', regionalFilters.states);
+        }
+        if (regionalFilters.metros && regionalFilters.metros.length > 0) {
+          query = query.in('companies.city', regionalFilters.metros);
+        }
       }
 
       const { data, error } = await query.order('created_at', { ascending: false });
@@ -196,6 +210,13 @@ export default function Opportunities() {
         </div>
         <div className="flex items-center gap-2">
           <PerspectiveSelector value={perspective} onChange={setPerspective} />
+          <Button 
+            variant="outline"
+            onClick={() => setIsRegionalDialogOpen(true)}
+          >
+            <MapPin className="h-4 w-4 mr-2" />
+            Regional Filter
+          </Button>
           <ViewSelector 
             currentView={currentView} 
             onViewChange={setCurrentView}
@@ -206,6 +227,44 @@ export default function Opportunities() {
           </Button>
         </div>
       </div>
+
+      {/* Active Regional Filters */}
+      {regionalFilters && (regionalFilters.states?.length || regionalFilters.metros?.length) ? (
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-sm text-muted-foreground">Active Filters:</span>
+          {regionalFilters.states?.map(state => (
+            <Badge key={state} variant="secondary" className="gap-1">
+              {state}
+              <X 
+                className="h-3 w-3 cursor-pointer" 
+                onClick={() => setRegionalFilters(prev => ({
+                  ...prev!,
+                  states: prev!.states?.filter(s => s !== state)
+                }))}
+              />
+            </Badge>
+          ))}
+          {regionalFilters.metros?.map(metro => (
+            <Badge key={metro} variant="secondary" className="gap-1">
+              {metro}
+              <X 
+                className="h-3 w-3 cursor-pointer" 
+                onClick={() => setRegionalFilters(prev => ({
+                  ...prev!,
+                  metros: prev!.metros?.filter(m => m !== metro)
+                }))}
+              />
+            </Badge>
+          ))}
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => setRegionalFilters(null)}
+          >
+            Clear All
+          </Button>
+        </div>
+      ) : null}
 
       {renderView()}
 
@@ -221,6 +280,13 @@ export default function Opportunities() {
           opportunity={selectedOpportunity}
         />
       )}
+
+      <RegionalFilterDialog
+        open={isRegionalDialogOpen}
+        onOpenChange={setIsRegionalDialogOpen}
+        onApplyFilters={setRegionalFilters}
+        initialFilters={regionalFilters || undefined}
+      />
     </div>
   );
 }

@@ -2,8 +2,9 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, Calendar, Plus } from "lucide-react";
+import { Activity, Calendar, Plus, MapPin, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -14,15 +15,18 @@ import { EditActivityDialog } from "@/components/activities/EditActivityDialog";
 import { PerspectiveSelector } from "@/components/common/PerspectiveSelector";
 import { usePerspective } from "@/hooks/usePerspective";
 import { useUserRole } from "@/hooks/useUserRole";
+import { RegionalFilterDialog, RegionalFilters } from "@/components/common/RegionalFilterDialog";
 
 const Activities = () => {
   const navigate = useNavigate();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isRegionalDialogOpen, setIsRegionalDialogOpen] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState<any>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [followUpActivity, setFollowUpActivity] = useState<any>(null);
   const [editActivity, setEditActivity] = useState<any>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [regionalFilters, setRegionalFilters] = useState<RegionalFilters | null>(null);
   const { perspective, setPerspective } = usePerspective('my_records');
   const { data: userRoleData } = useUserRole();
   const [dateRange, setDateRange] = useState<{
@@ -76,7 +80,7 @@ const Activities = () => {
   };
 
   const { data: activities, isLoading, refetch } = useQuery({
-    queryKey: ["activities", dateRange, perspective],
+    queryKey: ["activities", dateRange, perspective, regionalFilters],
     queryFn: async () => {
       // Check for impersonation
       const impersonationData = sessionStorage.getItem('admin-impersonation');
@@ -95,7 +99,7 @@ const Activities = () => {
         .from("outreach_activities")
         .select(`
           *, 
-          companies(company_name, created_by, assigned_to), 
+          companies(company_name, created_by, assigned_to, state, city), 
           contacts(first_name, last_name),
           activity_contacts(contact_id)
         `);
@@ -122,6 +126,16 @@ const Activities = () => {
         }
       } else if (perspective === 'all_records' && !userRoleData?.hasElevatedAccess) {
         query = query.eq('companies.created_by', userId);
+      }
+
+      // Apply regional filters
+      if (regionalFilters) {
+        if (regionalFilters.states && regionalFilters.states.length > 0) {
+          query = query.in('companies.state', regionalFilters.states);
+        }
+        if (regionalFilters.metros && regionalFilters.metros.length > 0) {
+          query = query.in('companies.city', regionalFilters.metros);
+        }
       }
 
       const { data, error } = await query
@@ -160,6 +174,13 @@ const Activities = () => {
         </div>
         <div className="flex gap-2">
           <PerspectiveSelector value={perspective} onChange={setPerspective} />
+          <Button 
+            variant="outline"
+            onClick={() => setIsRegionalDialogOpen(true)}
+          >
+            <MapPin className="h-4 w-4 mr-2" />
+            Regional Filter
+          </Button>
           <Button onClick={() => setIsAddDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             New Activity
@@ -202,6 +223,44 @@ const Activities = () => {
           </Popover>
         </div>
       </div>
+
+      {/* Active Regional Filters */}
+      {regionalFilters && (regionalFilters.states?.length || regionalFilters.metros?.length) ? (
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-sm text-muted-foreground">Active Filters:</span>
+          {regionalFilters.states?.map(state => (
+            <Badge key={state} variant="secondary" className="gap-1">
+              {state}
+              <X 
+                className="h-3 w-3 cursor-pointer" 
+                onClick={() => setRegionalFilters(prev => ({
+                  ...prev!,
+                  states: prev!.states?.filter(s => s !== state)
+                }))}
+              />
+            </Badge>
+          ))}
+          {regionalFilters.metros?.map(metro => (
+            <Badge key={metro} variant="secondary" className="gap-1">
+              {metro}
+              <X 
+                className="h-3 w-3 cursor-pointer" 
+                onClick={() => setRegionalFilters(prev => ({
+                  ...prev!,
+                  metros: prev!.metros?.filter(m => m !== metro)
+                }))}
+              />
+            </Badge>
+          ))}
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => setRegionalFilters(null)}
+          >
+            Clear All
+          </Button>
+        </div>
+      ) : null}
 
       {isLoading ? (
         <p className="text-muted-foreground">Loading activities...</p>
@@ -313,6 +372,13 @@ const Activities = () => {
           setIsEditDialogOpen(false);
           setEditActivity(null);
         }}
+      />
+
+      <RegionalFilterDialog
+        open={isRegionalDialogOpen}
+        onOpenChange={setIsRegionalDialogOpen}
+        onApplyFilters={setRegionalFilters}
+        initialFilters={regionalFilters || undefined}
       />
     </div>
   );

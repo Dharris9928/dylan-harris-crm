@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, MapPin } from "lucide-react";
 import { ContactTable } from "@/components/contacts/ContactTable";
 import { AddContactDialog } from "@/components/contacts/AddContactDialog";
 import { EditContactDialog } from "@/components/contacts/EditContactDialog";
@@ -15,19 +15,24 @@ import { logBulkContactView } from "@/lib/contacts/logContactAccess";
 import { PerspectiveSelector } from "@/components/common/PerspectiveSelector";
 import { usePerspective } from "@/hooks/usePerspective";
 import { useUserRole } from "@/hooks/useUserRole";
+import { RegionalFilterDialog, RegionalFilters } from "@/components/common/RegionalFilterDialog";
+import { Badge } from "@/components/ui/badge";
+import { X } from "lucide-react";
 
 const Contacts = () => {
   const location = useLocation();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAIImportDialogOpen, setIsAIImportDialogOpen] = useState(false);
+  const [isRegionalDialogOpen, setIsRegionalDialogOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [regionalFilters, setRegionalFilters] = useState<RegionalFilters | null>(null);
   const { perspective, setPerspective } = usePerspective('my_records');
   const { data: userRoleData } = useUserRole();
 
   const { data: contacts, isLoading, refetch } = useQuery({
-    queryKey: ["contacts", perspective],
+    queryKey: ["contacts", perspective, regionalFilters],
     queryFn: async () => {
       // Check for impersonation
       const impersonationData = sessionStorage.getItem('admin-impersonation');
@@ -44,7 +49,7 @@ const Contacts = () => {
 
       let query = supabase
         .from("contacts")
-        .select("*, companies(company_name, created_by, assigned_to)");
+        .select("*, companies(company_name, created_by, assigned_to, state, city)");
 
       // Apply perspective filter
       if (perspective === 'my_records') {
@@ -68,6 +73,16 @@ const Contacts = () => {
         }
       } else if (perspective === 'all_records' && !userRoleData?.hasElevatedAccess) {
         query = query.eq('companies.created_by', userId);
+      }
+
+      // Apply regional filters
+      if (regionalFilters) {
+        if (regionalFilters.states && regionalFilters.states.length > 0) {
+          query = query.in('companies.state', regionalFilters.states);
+        }
+        if (regionalFilters.metros && regionalFilters.metros.length > 0) {
+          query = query.in('companies.city', regionalFilters.metros);
+        }
       }
 
       const { data, error } = await query.order("created_at", { ascending: false });
@@ -133,6 +148,13 @@ const Contacts = () => {
           <PerspectiveSelector value={perspective} onChange={setPerspective} />
           <Button 
             variant="outline"
+            onClick={() => setIsRegionalDialogOpen(true)}
+          >
+            <MapPin className="h-4 w-4 mr-2" />
+            Regional Filter
+          </Button>
+          <Button 
+            variant="outline"
             onClick={() => setIsAIImportDialogOpen(true)}
             className="border-primary/50 hover:bg-primary/5"
           >
@@ -147,6 +169,44 @@ const Contacts = () => {
           </Button>
         </div>
       </div>
+
+      {/* Active Regional Filters */}
+      {regionalFilters && (regionalFilters.states?.length || regionalFilters.metros?.length) ? (
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-sm text-muted-foreground">Active Filters:</span>
+          {regionalFilters.states?.map(state => (
+            <Badge key={state} variant="secondary" className="gap-1">
+              {state}
+              <X 
+                className="h-3 w-3 cursor-pointer" 
+                onClick={() => setRegionalFilters(prev => ({
+                  ...prev!,
+                  states: prev!.states?.filter(s => s !== state)
+                }))}
+              />
+            </Badge>
+          ))}
+          {regionalFilters.metros?.map(metro => (
+            <Badge key={metro} variant="secondary" className="gap-1">
+              {metro}
+              <X 
+                className="h-3 w-3 cursor-pointer" 
+                onClick={() => setRegionalFilters(prev => ({
+                  ...prev!,
+                  metros: prev!.metros?.filter(m => m !== metro)
+                }))}
+              />
+            </Badge>
+          ))}
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => setRegionalFilters(null)}
+          >
+            Clear All
+          </Button>
+        </div>
+      ) : null}
 
       {/* Search Bar */}
       <div className="relative max-w-md">
@@ -201,6 +261,13 @@ const Contacts = () => {
           setIsAIImportDialogOpen(false);
         }}
         targetTable="contacts"
+      />
+
+      <RegionalFilterDialog
+        open={isRegionalDialogOpen}
+        onOpenChange={setIsRegionalDialogOpen}
+        onApplyFilters={setRegionalFilters}
+        initialFilters={regionalFilters || undefined}
       />
     </div>
   );

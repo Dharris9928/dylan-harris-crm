@@ -40,7 +40,7 @@ SLIDE TYPES:
 - title: Main title + subtitle (Google Blue #4285F4 background)
 - section: Section divider with large text (Google Green #34A853)
 - content: Title + 3-5 bullet points (white background, colored accents)
-- two-column: Title + left/right content blocks
+- two-column: Title + left/right content blocks (leftContent and rightContent as STRINGS, not arrays)
 - cta: Call-to-action with button text (Google Red #EA4335)
 - segment-grid: Two-column grid with segment data
 
@@ -58,11 +58,20 @@ REQUIRED COLORS:
 - content slides: accent must be "#4285F4", "#EA4335", "#34A853", or "#FBBC04"
 - section slides: accent must be specified
 
-Return ONLY valid JSON in this exact format:
+TWO-COLUMN FORMAT:
+- leftContent and rightContent MUST be strings, NOT arrays
+- Join multiple points with newlines if needed
+
+CRITICAL OUTPUT FORMAT:
+Return ONLY raw JSON. DO NOT wrap in markdown code blocks. DO NOT use \`\`\`json. 
+Return the JSON object directly.
+
+Format:
 {
   "slides": [
     { "id": 1, "type": "title", "title": "Main Title", "subtitle": "Subtitle Text", "background": "#4285F4" },
-    { "id": 2, "type": "content", "title": "Slide Title", "bullets": ["Point 1", "Point 2", "Point 3"], "accent": "#34A853" }
+    { "id": 2, "type": "content", "title": "Slide Title", "bullets": ["Point 1", "Point 2", "Point 3"], "accent": "#34A853" },
+    { "id": 3, "type": "two-column", "title": "Title", "leftContent": "Left text here", "rightContent": "Right text here", "accent": "#4285F4" }
   ]
 }`;
 
@@ -102,17 +111,50 @@ Return ONLY valid JSON in this exact format:
     const aiResponse = await response.json();
     const aiContent = aiResponse.choices[0].message.content;
 
-    // Parse JSON from AI response
+    // Parse JSON from AI response - handle markdown code blocks
     let slides;
     try {
-      const jsonMatch = aiContent.match(/\{[\s\S]*\}/);
-      const jsonStr = jsonMatch ? jsonMatch[0] : aiContent;
+      let jsonStr = aiContent;
+      
+      // Remove markdown code blocks if present
+      if (jsonStr.includes('```')) {
+        const codeBlockMatch = jsonStr.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+        if (codeBlockMatch) {
+          jsonStr = codeBlockMatch[1];
+        } else {
+          // Try to extract JSON without code blocks
+          const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+          jsonStr = jsonMatch ? jsonMatch[0] : jsonStr;
+        }
+      }
+      
       const parsed = JSON.parse(jsonStr);
       slides = parsed.slides || [];
+      
+      // Normalize slide data
+      slides = slides.map((slide: any) => {
+        // Fix two-column format: convert arrays to strings
+        if (slide.type === 'two-column') {
+          if (Array.isArray(slide.left_content)) {
+            slide.leftContent = slide.left_content.join('\n');
+            delete slide.left_content;
+          }
+          if (Array.isArray(slide.right_content)) {
+            slide.rightContent = slide.right_content.join('\n');
+            delete slide.right_content;
+          }
+          // Remove titles if they exist
+          delete slide.left_title;
+          delete slide.right_title;
+        }
+        return slide;
+      });
+      
     } catch (parseError) {
       console.error('Failed to parse AI response:', aiContent);
+      const errorMessage = parseError instanceof Error ? parseError.message : 'Unknown parse error';
       return new Response(
-        JSON.stringify({ error: 'Failed to parse AI response', details: aiContent }),
+        JSON.stringify({ error: 'Failed to parse AI response', details: errorMessage }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

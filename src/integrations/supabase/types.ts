@@ -3016,6 +3016,7 @@ export type Database = {
           assigned_to: string | null
           closed_date: string | null
           company_id: string
+          confidence: number | null
           contractor_id: string | null
           created_at: string | null
           created_by: string
@@ -3025,6 +3026,7 @@ export type Database = {
           opportunity_name: string
           probability: number | null
           stage: string
+          unit_needed_date: string | null
           updated_at: string | null
         }
         Insert: {
@@ -3032,6 +3034,7 @@ export type Database = {
           assigned_to?: string | null
           closed_date?: string | null
           company_id: string
+          confidence?: number | null
           contractor_id?: string | null
           created_at?: string | null
           created_by: string
@@ -3041,6 +3044,7 @@ export type Database = {
           opportunity_name: string
           probability?: number | null
           stage?: string
+          unit_needed_date?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -3048,6 +3052,7 @@ export type Database = {
           assigned_to?: string | null
           closed_date?: string | null
           company_id?: string
+          confidence?: number | null
           contractor_id?: string | null
           created_at?: string | null
           created_by?: string
@@ -3057,6 +3062,7 @@ export type Database = {
           opportunity_name?: string
           probability?: number | null
           stage?: string
+          unit_needed_date?: string | null
           updated_at?: string | null
         }
         Relationships: [

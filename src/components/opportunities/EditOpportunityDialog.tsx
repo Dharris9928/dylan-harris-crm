@@ -30,6 +30,8 @@ export function EditOpportunityDialog({ open, onOpenChange, opportunity }: EditO
     stage: "Open",
     amount: "",
     expected_close_date: "",
+    confidence: "",
+    unit_needed_date: "",
     assigned_to: "",
     contractor_id: "",
     notes: "",
@@ -75,6 +77,8 @@ export function EditOpportunityDialog({ open, onOpenChange, opportunity }: EditO
         stage: opportunity.stage || "Open",
         amount: opportunity.amount ? String(opportunity.amount) : "",
         expected_close_date: opportunity.expected_close_date || "",
+        confidence: opportunity.confidence ? String(opportunity.confidence) : "",
+        unit_needed_date: opportunity.unit_needed_date || "",
         assigned_to: opportunity.assigned_to || "unassigned",
         contractor_id: opportunity.contractor_id || "",
         notes: opportunity.notes || "",
@@ -94,6 +98,8 @@ export function EditOpportunityDialog({ open, onOpenChange, opportunity }: EditO
           stage: formData.stage,
           amount: formData.amount ? parseFloat(formData.amount) : null,
           expected_close_date: formData.expected_close_date || null,
+          confidence: formData.confidence ? parseInt(formData.confidence) : null,
+          unit_needed_date: formData.unit_needed_date || null,
           assigned_to: formData.assigned_to === "unassigned" ? null : (formData.assigned_to || null),
           contractor_id: formData.contractor_id || null,
           notes: formData.notes || null,
@@ -238,12 +244,43 @@ export function EditOpportunityDialog({ open, onOpenChange, opportunity }: EditO
             </div>
 
             <div>
+              <Label htmlFor="confidence">Confidence</Label>
+              <Select 
+                value={formData.confidence} 
+                onValueChange={(value) => setFormData({ ...formData, confidence: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select confidence..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 21 }, (_, i) => i * 5).map((value) => (
+                    <SelectItem key={value} value={String(value)}>
+                      {value}%
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
               <Label htmlFor="expected_close_date">Expected Close Date</Label>
               <Input
                 id="expected_close_date"
                 type="date"
                 value={formData.expected_close_date}
                 onChange={(e) => setFormData({ ...formData, expected_close_date: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="unit_needed_date">Unit Needed Date</Label>
+              <Input
+                id="unit_needed_date"
+                type="date"
+                value={formData.unit_needed_date}
+                onChange={(e) => setFormData({ ...formData, unit_needed_date: e.target.value })}
               />
             </div>
           </div>

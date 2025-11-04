@@ -46,6 +46,8 @@ const opportunitySchema = z.object({
   stage: z.enum(["Open", "Proposal", "Committed", "Purchased", "Declined"]),
   amount: z.string().optional(),
   expected_close_date: z.string().optional(),
+  confidence: z.string().optional(),
+  unit_needed_date: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -117,6 +119,7 @@ export function AddOpportunityDialog({ open, onOpenChange, prefilledCompanyId }:
         .insert({
           ...values,
           amount: values.amount ? parseFloat(values.amount) : null,
+          confidence: values.confidence ? parseInt(values.confidence) : null,
           assigned_to: values.assigned_to === "unassigned" ? null : (values.assigned_to || null),
           contractor_id: values.contractor_id || null,
           created_by: currentUser.id,
@@ -315,10 +318,51 @@ export function AddOpportunityDialog({ open, onOpenChange, prefilledCompanyId }:
 
               <FormField
                 control={form.control}
+                name="confidence"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confidence</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select confidence..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Array.from({ length: 21 }, (_, i) => i * 5).map((value) => (
+                          <SelectItem key={value} value={String(value)}>
+                            {value}%
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
                 name="expected_close_date"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Expected Close Date</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="unit_needed_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Unit Needed Date</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} />
                     </FormControl>

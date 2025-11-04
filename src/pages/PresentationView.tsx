@@ -1,16 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, X } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { GoogleSlideRenderer } from '@/components/presentations/GoogleSlideRenderer';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from '@/components/ui/carousel';
+import { PresentationWebView } from '@/components/presentations/PresentationWebView';
+import { Card } from '@/components/ui/card';
 
 export default function PresentationView() {
   const { token } = useParams<{ token: string }>();
@@ -19,7 +13,6 @@ export default function PresentationView() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [presentation, setPresentation] = useState<any>(null);
-  const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
     if (!token) {
@@ -74,76 +67,32 @@ export default function PresentationView() {
 
   if (isLoading) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin" />
       </div>
     );
   }
 
-  if (error) {
+  if (error || !presentation) {
     return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-background p-8">
-        <div className="text-center space-y-4 max-w-md">
-          <div className="text-6xl">🔒</div>
-          <h1 className="text-2xl font-bold font-google">Access Denied</h1>
-          <p className="text-muted-foreground">{error}</p>
-          <Button onClick={() => navigate('/')} variant="outline" className="font-google">
-            Go Home
-          </Button>
-        </div>
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="max-w-md w-full p-6 text-center">
+          <h1 className="text-2xl font-bold mb-4">Presentation Not Found</h1>
+          <p className="text-muted-foreground mb-6">{error || 'This presentation link is invalid or has expired.'}</p>
+          <Button onClick={() => navigate('/')}>Go Home</Button>
+        </Card>
       </div>
     );
   }
 
-  const slides = presentation?.slides || [];
+  const sections = presentation.slides || [];
 
   return (
-    <div className="h-screen w-screen bg-background flex flex-col">
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-50 p-4 flex justify-between items-center bg-gradient-to-b from-background/80 to-transparent">
-        <div className="text-sm text-muted-foreground font-google">
-          {presentation?.title}
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate('/')}
-          className="font-google"
-        >
-          <X className="h-4 w-4 mr-2" />
-          Exit
-        </Button>
-      </div>
-
-      {/* Slide Viewer */}
-      <div className="flex-1 flex items-center justify-center p-8 pt-20 pb-20">
-        <Carousel
-          className="w-full max-w-6xl"
-          opts={{ align: 'center' }}
-        >
-          <CarouselContent>
-            {slides.map((slide: any, index: number) => (
-              <CarouselItem key={slide.id || index}>
-                <GoogleSlideRenderer slide={slide} />
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          <CarouselPrevious className="left-4" />
-          <CarouselNext className="right-4" />
-        </Carousel>
-      </div>
-
-      {/* Footer - Progress Indicator */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background/80 to-transparent">
-        <div className="text-center">
-          <div className="text-sm text-muted-foreground font-google">
-            {slides.length} slides
-          </div>
-          <div className="mt-2 h-1 w-full max-w-md mx-auto bg-muted rounded-full">
-            <div className="h-full bg-primary" style={{ width: '100%' }} />
-          </div>
-        </div>
-      </div>
-    </div>
+    <PresentationWebView
+      sections={sections}
+      title={presentation.title}
+      onExit={() => navigate('/')}
+      showNavigation={true}
+    />
   );
 }

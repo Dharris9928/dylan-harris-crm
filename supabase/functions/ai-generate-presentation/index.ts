@@ -34,44 +34,164 @@ Deno.serve(async (req) => {
       );
     }
 
-    const systemPrompt = `You are a presentation designer. Convert outlines into Google-branded slide decks.
+    const systemPrompt = `You are generating a professional, scrollable webpage presentation with Google branding for leadership teams.
 
-SLIDE TYPES:
-- title: Main title + subtitle (Google Blue #4285F4 background)
-- section: Section divider with large text (Google Green #34A853)
-- content: Title + 3-5 bullet points (white background, colored accents)
-- two-column: Title + left/right content blocks (leftContent and rightContent as STRINGS, not arrays)
-- cta: Call-to-action with button text (Google Red #EA4335)
-- segment-grid: Two-column grid with segment data
+INPUT: Detailed outline with sections, subsections, data points, and formatting cues.
 
-CRITICAL RULES FOR ALL SLIDES:
-- ALWAYS include at least 2-3 bullet points for content slides - NEVER create slides without bullets
-- ALWAYS specify colors for background/accent - NEVER leave slides without proper colors
-- Use Google colors: Blue #4285F4, Red #EA4335, Yellow #FBBC04, Green #34A853
-- Keep text concise and actionable
-- Font: Google Sans
-- Always start with a title slide
-- End with a CTA slide if appropriate
+OUTPUT: JSON array of sections that create a cohesive, scrollable webpage presentation.
 
-REQUIRED COLORS:
-- title slides: background must be "#4285F4", "#EA4335", or "#34A853"
-- content slides: accent must be "#4285F4", "#EA4335", "#34A853", or "#FBBC04"
-- section slides: accent must be specified
+SECTION TYPES:
+1. hero: Opening title section with subtitle
+   - Use for main title and presentation purpose
+   - Fields: title (string), subtitle (string), background (hex color)
 
-TWO-COLUMN FORMAT:
-- leftContent and rightContent MUST be strings, NOT arrays
-- Join multiple points with newlines if needed
+2. content: Standard text and bullet content
+   - Use for explanations, lists, key points
+   - Fields: title (string), content (string, optional), bullets (string[], optional), accent (hex color)
+
+3. data-highlight: Large metrics with context
+   - Use for KPIs, statistics, key numbers
+   - Fields: title (string), metrics (array of {value: string, label: string, change?: string}), accent (hex color)
+
+4. comparison: Before/After or side-by-side layouts
+   - Use for showing improvements, contrasts
+   - Fields: title (string), leftContent (string with \n for bullets), rightContent (string with \n for bullets), accent (hex color)
+
+5. process-flow: Multi-stage workflow diagrams
+   - Use for operational flows, procedures
+   - Fields: title (string), items (array of {title: string, description: string})
+
+6. timeline: Roadmap visualization
+   - Use for quarterly goals, project timelines
+   - Fields: title (string), timeline (array of {date: string, title: string, description: string})
+
+7. multi-column: 2-4 column layouts for dense data
+   - Use for categorized lists, segment breakdowns
+   - Fields: title (string), columns (array of {title: string, items: string[]})
+
+8. question-board: Discussion prompts
+   - Use for meeting discussion topics, strategic questions
+   - Fields: title (string), questions (string[]), accent (hex color)
+
+9. divider: Section separators with title
+   - Use between major presentation sections
+   - Fields: title (string), accent (hex color), background (hex color)
+
+CRITICAL RULES:
+- DO NOT truncate content - this is a scrollable webpage, not slides with space constraints
+- DO preserve all detail from the outline - include everything meaningful
+- DO break very long sections into multiple sections for readability (max 7-8 bullets per content section)
+- DO identify data that should be visualized (numbers → data-highlight, comparisons → comparison, workflows → process-flow)
+- DO use appropriate section types for different content
+- DO maintain visual hierarchy and logical flow
+- DO use Google brand colors: Blue #4285F4, Red #EA4335, Yellow #FBBC04, Green #34A853
+- DO start with a hero section
+- DO use divider sections between major presentation parts
+
+EXAMPLES:
+
+Hero section:
+{
+  "id": 1,
+  "type": "hero",
+  "title": "Google Nest Pro Channel Development",
+  "subtitle": "Leadership Team Presentation - Q1 2025",
+  "background": "#4285F4"
+}
+
+Data highlight section:
+{
+  "id": 5,
+  "type": "data-highlight",
+  "title": "Market Opportunity",
+  "metrics": [
+    {"value": "17,000+", "label": "Residential Builders"},
+    {"value": "60,000+", "label": "Professional Contractors"},
+    {"value": "77,000+", "label": "Total Addressable Market"}
+  ],
+  "accent": "#34A853"
+}
+
+Comparison section:
+{
+  "id": 8,
+  "type": "comparison",
+  "title": "Efficiency Gains",
+  "leftContent": "Manual research: 30-45 minutes per lead\nManual capacity: 20-30 leads per week\nAd-hoc follow-up tracking\nScattered notes for handoffs",
+  "rightContent": "AI enrichment: 2 minutes per lead\nAutomated capacity: 200+ leads per week\nSystematic 100% follow-up\nComplete handoff context",
+  "accent": "#34A853"
+}
+
+Process flow section:
+{
+  "id": 12,
+  "type": "process-flow",
+  "title": "6-Stage Operational Flow",
+  "items": [
+    {"title": "Lead Identification", "description": "AI enrichment from LinkedIn, permits, trade associations"},
+    {"title": "Automated Scoring", "description": "0-100 point scoring across firmographic, digital, contact quality"},
+    {"title": "Targeted Outreach", "description": "Multi-touch sequences via Apollo.ai with segment-specific messaging"},
+    {"title": "Internal Handoff", "description": "Complete profile to ASM/RSM/SPM with engagement history"},
+    {"title": "Partner Coordination", "description": "Nest Pro partner matching and pilot program setup"},
+    {"title": "Success Tracking", "description": "Pipeline metrics and continuous optimization"}
+  ]
+}
+
+Timeline section:
+{
+  "id": 20,
+  "type": "timeline",
+  "title": "Roadmap",
+  "timeline": [
+    {"date": "Q1 2025", "title": "Scale to 100 Campaigns", "description": "Expand across all 15 segments, build messaging library"},
+    {"date": "Q2 2025", "title": "500 Active Campaigns", "description": "Phase 1 automation, pilot program standardization"},
+    {"date": "Q3-Q4 2025", "title": "Full Market Coverage", "description": "77,000 companies enriched, predictive analytics"}
+  ]
+}
+
+Multi-column section:
+{
+  "id": 15,
+  "type": "multi-column",
+  "title": "7 Builder Segments",
+  "columns": [
+    {
+      "title": "Production/Tract (40%)",
+      "items": ["100-1,000+ homes/year", "Standardized communities", "Value: Differentiate with smart home"]
+    },
+    {
+      "title": "Regional Mid-Volume (25%)",
+      "items": ["25-100 homes/year", "Semi-custom, design centers", "Value: Smart home customization"]
+    },
+    {
+      "title": "Luxury Custom (8%)",
+      "items": ["5-25 homes/year", "$1M+ fully custom", "Value: Premium smart integration"]
+    }
+  ]
+}
+
+Question board section:
+{
+  "id": 25,
+  "type": "question-board",
+  "title": "Discussion & Questions",
+  "questions": [
+    "What am I missing?",
+    "What concerns do you have about adoption?",
+    "What segment-specific insights should inform Q1 direction?",
+    "Who has the best success stories for case studies?",
+    "What other cross-functional opportunities should we explore?"
+  ],
+  "accent": "#4285F4"
+}
 
 CRITICAL OUTPUT FORMAT:
-Return ONLY raw JSON. DO NOT wrap in markdown code blocks. DO NOT use \`\`\`json. 
-Return the JSON object directly.
+Return ONLY raw JSON. DO NOT wrap in markdown code blocks. DO NOT use \`\`\`json.
+Return the JSON object directly:
 
-Format:
 {
-  "slides": [
-    { "id": 1, "type": "title", "title": "Main Title", "subtitle": "Subtitle Text", "background": "#4285F4" },
-    { "id": 2, "type": "content", "title": "Slide Title", "bullets": ["Point 1", "Point 2", "Point 3"], "accent": "#34A853" },
-    { "id": 3, "type": "two-column", "title": "Title", "leftContent": "Left text here", "rightContent": "Right text here", "accent": "#4285F4" }
+  "sections": [
+    { section objects here }
   ]
 }`;
 
@@ -112,7 +232,7 @@ Format:
     const aiContent = aiResponse.choices[0].message.content;
 
     // Parse JSON from AI response - handle markdown code blocks
-    let slides;
+    let sections;
     try {
       let jsonStr = aiContent;
       
@@ -129,26 +249,7 @@ Format:
       }
       
       const parsed = JSON.parse(jsonStr);
-      slides = parsed.slides || [];
-      
-      // Normalize slide data
-      slides = slides.map((slide: any) => {
-        // Fix two-column format: convert arrays to strings
-        if (slide.type === 'two-column') {
-          if (Array.isArray(slide.left_content)) {
-            slide.leftContent = slide.left_content.join('\n');
-            delete slide.left_content;
-          }
-          if (Array.isArray(slide.right_content)) {
-            slide.rightContent = slide.right_content.join('\n');
-            delete slide.right_content;
-          }
-          // Remove titles if they exist
-          delete slide.left_title;
-          delete slide.right_title;
-        }
-        return slide;
-      });
+      sections = parsed.sections || [];
       
     } catch (parseError) {
       console.error('Failed to parse AI response:', aiContent);
@@ -166,7 +267,7 @@ Format:
     ];
 
     return new Response(
-      JSON.stringify({ slides, conversation }),
+      JSON.stringify({ slides: sections, conversation }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

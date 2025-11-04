@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Copy, Eye, Edit, Ban } from 'lucide-react';
-import { SlidePreviewCarousel } from '@/components/presentations/SlidePreviewCarousel';
+import { PresentationWebView } from '@/components/presentations/PresentationWebView';
 import { PresentationTable } from '@/components/presentations/PresentationTable';
 import { AISlideBuilder } from '@/components/presentations/AISlideBuilder';
 import { PresentationAnalytics } from '@/components/presentations/PresentationAnalytics';
@@ -536,10 +536,16 @@ Include contact info or next steps`);
           {generatedSlides.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="font-google">Preview ({generatedSlides.length} slides)</CardTitle>
+                <CardTitle className="font-google">Preview ({generatedSlides.length} sections)</CardTitle>
               </CardHeader>
               <CardContent>
-                <SlidePreviewCarousel slides={generatedSlides} />
+                <div className="border rounded-lg overflow-hidden bg-background">
+                  <PresentationWebView 
+                    sections={generatedSlides}
+                    title="Preview"
+                    showNavigation={false}
+                  />
+                </div>
               </CardContent>
             </Card>
           )}

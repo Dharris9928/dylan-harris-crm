@@ -42,20 +42,27 @@ SLIDE TYPES:
 - content: Title + 3-5 bullet points (white background, colored accents)
 - two-column: Title + left/right content blocks
 - cta: Call-to-action with button text (Google Red #EA4335)
+- segment-grid: Two-column grid with segment data
 
-RULES:
-- Max 5 bullets per slide
+CRITICAL RULES FOR ALL SLIDES:
+- ALWAYS include at least 2-3 bullet points for content slides - NEVER create slides without bullets
+- ALWAYS specify colors for background/accent - NEVER leave slides without proper colors
 - Use Google colors: Blue #4285F4, Red #EA4335, Yellow #FBBC04, Green #34A853
 - Keep text concise and actionable
 - Font: Google Sans
 - Always start with a title slide
 - End with a CTA slide if appropriate
 
+REQUIRED COLORS:
+- title slides: background must be "#4285F4", "#EA4335", or "#34A853"
+- content slides: accent must be "#4285F4", "#EA4335", "#34A853", or "#FBBC04"
+- section slides: accent must be specified
+
 Return ONLY valid JSON in this exact format:
 {
   "slides": [
     { "id": 1, "type": "title", "title": "Main Title", "subtitle": "Subtitle Text", "background": "#4285F4" },
-    { "id": 2, "type": "content", "title": "Slide Title", "bullets": ["Point 1", "Point 2"], "accent": "#34A853" }
+    { "id": 2, "type": "content", "title": "Slide Title", "bullets": ["Point 1", "Point 2", "Point 3"], "accent": "#34A853" }
   ]
 }`;
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +12,10 @@ import { SlidePreviewCarousel } from '@/components/presentations/SlidePreviewCar
 import { PresentationTable } from '@/components/presentations/PresentationTable';
 import { AISlideBuilder } from '@/components/presentations/AISlideBuilder';
 import { PresentationAnalytics } from '@/components/presentations/PresentationAnalytics';
+import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
+
+// Use a stable CDN worker to avoid bundling issues
+GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.worker.min.js';
 
 export default function Presentation() {
   const navigate = useNavigate();

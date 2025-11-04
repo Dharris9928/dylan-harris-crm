@@ -54,7 +54,7 @@ export function GoogleSlideRenderer({ slide }: GoogleSlideRendererProps) {
         return (
           <div 
             className="h-full flex flex-col items-center justify-center text-white p-12"
-            style={{ backgroundColor: slide.background || 'var(--google-blue)' }}
+            style={{ backgroundColor: slide.background || 'hsl(var(--google-blue))' }}
           >
             <h1 className="text-6xl font-bold font-google mb-6 text-center">
               {slide.title}
@@ -73,12 +73,12 @@ export function GoogleSlideRenderer({ slide }: GoogleSlideRendererProps) {
             className="h-full flex items-center justify-center p-12"
             style={{ 
               backgroundColor: slide.background || '#fff',
-              borderLeft: `12px solid ${slide.accent || 'var(--google-green)'}` 
+              borderLeft: `12px solid ${slide.accent || 'hsl(var(--google-green))'}` 
             }}
           >
             <h2 
               className="text-5xl font-bold font-google"
-              style={{ color: slide.accent || 'var(--google-green)' }}
+              style={{ color: slide.accent || 'hsl(var(--google-green))' }}
             >
               {slide.title}
             </h2>
@@ -86,20 +86,34 @@ export function GoogleSlideRenderer({ slide }: GoogleSlideRendererProps) {
         );
 
       case 'content':
+        // Normalize bullets so we never render an empty slide
+        const normalizedBullets = (slide.bullets && slide.bullets.length > 0)
+          ? slide.bullets
+          : (() => {
+              const alt = (slide as any);
+              const arrays = (alt.points || alt.items || []) as string[];
+              if (Array.isArray(arrays) && arrays.length) return arrays.filter(Boolean);
+              const text: string = alt.text || alt.content || alt.leftContent || alt.rightContent || alt.subtitle || '';
+              if (typeof text === 'string' && text.trim()) {
+                const parts = text.split(/\r?\n|•|\u2022|^-\s|\s-\s/).map((s: string) => s.replace(/^[-•\s]+/, '').trim()).filter(Boolean);
+                if (parts.length > 0) return parts;
+              }
+              return [] as string[];
+            })();
         return (
           <div className="h-full bg-white p-12 flex flex-col">
             <h2 
               className="text-4xl font-bold font-google mb-8"
-              style={{ color: slide.accent || 'var(--google-blue)' }}
+              style={{ color: slide.accent || 'hsl(var(--google-blue))' }}
             >
               {slide.title}
             </h2>
             <ul className="space-y-4 flex-1">
-              {slide.bullets?.map((bullet, index) => (
+              {normalizedBullets.map((bullet, index) => (
                 <li key={index} className="flex items-start gap-4">
                   <div 
                     className="w-3 h-3 rounded-full mt-2 flex-shrink-0"
-                    style={{ backgroundColor: slide.accent || 'var(--google-blue)' }}
+                    style={{ backgroundColor: slide.accent || 'hsl(var(--google-blue))' }}
                   />
                   <span className="text-2xl font-google text-gray-700 leading-relaxed">
                     {bullet}
@@ -115,7 +129,7 @@ export function GoogleSlideRenderer({ slide }: GoogleSlideRendererProps) {
           <div className="h-full bg-white p-12 flex flex-col">
             <h2 
               className="text-4xl font-bold font-google mb-8"
-              style={{ color: slide.accent || 'var(--google-blue)' }}
+              style={{ color: slide.accent || 'hsl(var(--google-blue))' }}
             >
               {slide.title}
             </h2>
@@ -138,7 +152,7 @@ export function GoogleSlideRenderer({ slide }: GoogleSlideRendererProps) {
         return (
           <div 
             className="h-full flex flex-col items-center justify-center text-white p-12"
-            style={{ backgroundColor: slide.background || 'var(--google-red)' }}
+            style={{ backgroundColor: slide.background || 'hsl(var(--google-red))' }}
           >
             <h2 className="text-5xl font-bold font-google mb-8 text-center">
               {slide.title}
@@ -146,7 +160,7 @@ export function GoogleSlideRenderer({ slide }: GoogleSlideRendererProps) {
             {slide.buttonText && (
               <button
                 className="px-12 py-4 bg-white text-2xl font-bold font-google rounded-lg shadow-lg hover:shadow-xl transition-shadow"
-                style={{ color: slide.background || 'var(--google-red)' }}
+                style={{ color: slide.background || 'hsl(var(--google-red))' }}
               >
                 {slide.buttonText}
               </button>

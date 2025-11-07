@@ -28,6 +28,8 @@ export default function Presentation() {
   const [shareableLink, setShareableLink] = useState('');
   const [redesignInstruction, setRedesignInstruction] = useState('');
   const [isUploadingPDF, setIsUploadingPDF] = useState(false);
+  const [activeTab, setActiveTab] = useState('create');
+  const [presentationTitle, setPresentationTitle] = useState('');
 
   if (!roleLoading && roleData?.role !== 'admin') {
     navigate('/');
@@ -71,6 +73,48 @@ export default function Presentation() {
     }
   };
 
+  const handleLoadPresentation = async (presentationId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('presentations')
+        .select('*')
+        .eq('id', presentationId)
+        .single();
+
+      if (error) throw error;
+
+      const slides = (data.slides as any[]) || [];
+      const aiConversation = (data.ai_conversation as any[]) || [];
+      
+      setGeneratedSlides(slides);
+      setConversation(aiConversation);
+      setSavedPresentationId(data.id);
+      setPresentationTitle(data.title);
+      
+      const reconstructedOutline = slides
+        .map((s: any) => `# ${s.title}\n${s.content}`)
+        .join('\n\n');
+      setOutline(reconstructedOutline);
+
+      const link = `${window.location.origin}/present/${data.token}`;
+      setShareableLink(link);
+
+      setActiveTab('create');
+      
+      toast({
+        title: 'Presentation loaded',
+        description: 'You can now edit this presentation',
+      });
+    } catch (error: any) {
+      console.error('Load error:', error);
+      toast({
+        title: 'Failed to load presentation',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleSavePresentation = async () => {
     if (generatedSlides.length === 0) {
       toast({
@@ -82,34 +126,56 @@ export default function Presentation() {
     }
 
     try {
-      const title = 'Presentation ' + new Date().toLocaleDateString();
-      const token = crypto.randomUUID();
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 14);
+      if (savedPresentationId) {
+        // Update existing presentation
+        const { error } = await supabase
+          .from('presentations')
+          .update({
+            title: presentationTitle || 'Presentation ' + new Date().toLocaleDateString(),
+            slides: generatedSlides,
+            ai_conversation: conversation,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', savedPresentationId);
 
-      const { data, error } = await supabase
-        .from('presentations')
-        .insert({
-          title,
-          slides: generatedSlides,
-          ai_conversation: conversation,
-          token,
-          token_expires_at: expiresAt.toISOString(),
-          is_active: true,
-        })
-        .select()
-        .single();
+        if (error) throw error;
 
-      if (error) throw error;
+        toast({
+          title: 'Presentation updated!',
+          description: 'Your changes have been saved',
+        });
+      } else {
+        // Create new presentation
+        const title = presentationTitle || 'Presentation ' + new Date().toLocaleDateString();
+        const token = crypto.randomUUID();
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 14);
 
-      setSavedPresentationId(data.id);
-      const link = `${window.location.origin}/presentation/${token}`;
-      setShareableLink(link);
+        const { data, error } = await supabase
+          .from('presentations')
+          .insert({
+            title,
+            slides: generatedSlides,
+            ai_conversation: conversation,
+            token,
+            token_expires_at: expiresAt.toISOString(),
+            is_active: true,
+          })
+          .select()
+          .single();
 
-      toast({
-        title: 'Presentation saved!',
-        description: 'Shareable link generated (expires in 14 days)',
-      });
+        if (error) throw error;
+
+        setSavedPresentationId(data.id);
+        setPresentationTitle(data.title);
+        const link = `${window.location.origin}/present/${token}`;
+        setShareableLink(link);
+
+        toast({
+          title: 'Presentation saved!',
+          description: 'Shareable link generated (expires in 14 days)',
+        });
+      }
     } catch (error: any) {
       console.error('Save error:', error);
       toast({
@@ -118,6 +184,21 @@ export default function Presentation() {
         variant: 'destructive',
       });
     }
+  };
+
+  const handleStartNewPresentation = () => {
+    setOutline('');
+    setGeneratedSlides([]);
+    setConversation([]);
+    setSavedPresentationId(null);
+    setShareableLink('');
+    setPresentationTitle('');
+    setRedesignInstruction('');
+    
+    toast({
+      title: 'Ready for new presentation',
+      description: 'All fields have been cleared',
+    });
   };
 
   const handlePDFUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -219,19 +300,47 @@ export default function Presentation() {
         <p className="text-muted-foreground">Create and manage AI-powered presentations with Google branding</p>
       </div>
 
-      <Tabs defaultValue="create" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="create">Create New</TabsTrigger>
+          <TabsTrigger value="create">
+            {savedPresentationId && generatedSlides.length > 0 ? 'Edit Presentation' : 'Create New'}
+          </TabsTrigger>
           <TabsTrigger value="manage">Manage Existing</TabsTrigger>
         </TabsList>
 
         <TabsContent value="create" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="font-google">AI Presentation Generator</CardTitle>
-              <CardDescription>Enter your outline to create a scrollable webpage presentation</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="font-google">
+                    {savedPresentationId && generatedSlides.length > 0 ? 'Edit Presentation' : 'AI Presentation Generator'}
+                  </CardTitle>
+                  <CardDescription>
+                    {savedPresentationId && generatedSlides.length > 0 
+                      ? `Editing: ${presentationTitle}` 
+                      : 'Enter your outline to create a scrollable webpage presentation'}
+                  </CardDescription>
+                </div>
+                {savedPresentationId && generatedSlides.length > 0 && (
+                  <Button variant="outline" onClick={handleStartNewPresentation}>
+                    Start New Presentation
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
+              {savedPresentationId && generatedSlides.length > 0 && (
+                <div className="space-y-2">
+                  <Label htmlFor="presentation-title">Presentation Title</Label>
+                  <Input
+                    id="presentation-title"
+                    value={presentationTitle}
+                    onChange={(e) => setPresentationTitle(e.target.value)}
+                    placeholder="Enter presentation title..."
+                  />
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="pdf-upload">Upload PDF (Optional)</Label>
                 <div className="flex gap-2">
@@ -274,7 +383,7 @@ export default function Presentation() {
                     onClick={handleSavePresentation}
                     variant="secondary"
                   >
-                    Save & Get Link
+                    {savedPresentationId ? 'Update Presentation' : 'Save & Get Link'}
                   </Button>
                 )}
               </div>
@@ -349,7 +458,7 @@ export default function Presentation() {
         </TabsContent>
 
         <TabsContent value="manage" className="space-y-6">
-          <PresentationTable />
+          <PresentationTable onEditPresentation={handleLoadPresentation} />
           <PresentationAnalytics />
         </TabsContent>
       </Tabs>

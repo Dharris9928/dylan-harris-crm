@@ -12,10 +12,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Copy, Ban, Loader2 } from 'lucide-react';
+import { Copy, Ban, Loader2, Edit } from 'lucide-react';
 import { format } from 'date-fns';
 
-export function PresentationTable() {
+interface PresentationTableProps {
+  onEditPresentation: (presentationId: string) => void;
+}
+
+export function PresentationTable({ onEditPresentation }: PresentationTableProps) {
   const { toast } = useToast();
   const [presentations, setPresentations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -146,9 +150,20 @@ export function PresentationTable() {
                         <Button
                           size="sm"
                           variant="outline"
+                          onClick={() => onEditPresentation(p.id)}
+                          disabled={!p.is_active}
+                          className="font-google"
+                          title="Edit presentation"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
                           onClick={() => copyLink(p.token)}
                           disabled={!p.is_active}
                           className="font-google"
+                          title="Copy shareable link"
                         >
                           <Copy className="h-4 w-4" />
                         </Button>
@@ -158,6 +173,7 @@ export function PresentationTable() {
                           onClick={() => deactivatePresentation(p.id)}
                           disabled={!p.is_active}
                           className="font-google"
+                          title="Deactivate presentation"
                         >
                           <Ban className="h-4 w-4" />
                         </Button>

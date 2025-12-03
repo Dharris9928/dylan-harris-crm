@@ -1,8 +1,9 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import DOMPurify from 'dompurify';
 import { Button } from '@/components/ui/button';
 import { Bold, Italic, List, ListOrdered, Heading1, Heading2, Heading3, Undo, Redo } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface RichTextEditorProps {
   value: string;
@@ -13,8 +14,10 @@ interface RichTextEditorProps {
 
 export function RichTextEditor({ value, onChange, placeholder, className }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
   
-  const MAX_CONTENT_LENGTH = 50000; // 50KB limit
+  // Increase limit to 500KB for plain text (after HTML is stripped)
+  const MAX_PLAIN_TEXT_LENGTH = 500000;
 
   useEffect(() => {
     if (editorRef.current && !editorRef.current.innerHTML && value) {
@@ -64,34 +67,73 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
     }
   }, [value]);
 
-  const handleInput = () => {
+  const extractPlainText = useCallback((html: string): string => {
+    // Sanitize first
+    const sanitized = DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: ['h1', 'h2', 'h3', 'p', 'ul', 'ol', 'li', 'br', 'strong', 'em', 'b', 'i', 'div', 'span'],
+      ALLOWED_ATTR: [],
+      KEEP_CONTENT: true
+    });
+    
+    // Convert to plain text
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = sanitized;
+    return tempDiv.innerText || tempDiv.textContent || '';
+  }, []);
+
+  const handleInput = useCallback(() => {
     if (editorRef.current) {
-      // Get HTML content
       const htmlContent = editorRef.current.innerHTML;
       
-      // Check content length
-      if (htmlContent.length > MAX_CONTENT_LENGTH) {
-        console.warn('[RichTextEditor] Content exceeds maximum length');
+      // Extract plain text first
+      const plainText = extractPlainText(htmlContent);
+      
+      // Check plain text length (more reasonable limit)
+      if (plainText.length > MAX_PLAIN_TEXT_LENGTH) {
+        toast({
+          title: 'Content too long',
+          description: 'Please shorten your content (max 500KB)',
+          variant: 'destructive',
+        });
         return;
       }
       
-      // Sanitize HTML content before passing to parent
-      const sanitized = DOMPurify.sanitize(htmlContent, {
-        ALLOWED_TAGS: ['h1', 'h2', 'h3', 'p', 'ul', 'ol', 'li', 'br', 'strong', 'em', 'b', 'i'],
-        ALLOWED_ATTR: [],
-        KEEP_CONTENT: true
-      });
-      
-      // Convert back to plain text for storage
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = sanitized;
-      onChange(tempDiv.innerText);
+      onChange(plainText);
     }
-  };
+  }, [onChange, extractPlainText, toast]);
+
+  // Handle paste to strip formatting from rich text
+  const handlePaste = useCallback((e: React.ClipboardEvent) => {
+    e.preventDefault();
+    
+    // Get plain text from clipboard
+    const text = e.clipboardData.getData('text/plain');
+    
+    // Insert plain text at cursor position
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      range.deleteContents();
+      
+      // Create text node for plain text
+      const textNode = document.createTextNode(text);
+      range.insertNode(textNode);
+      
+      // Move cursor to end of inserted text
+      range.setStartAfter(textNode);
+      range.setEndAfter(textNode);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+    
+    // Trigger input handler
+    handleInput();
+  }, [handleInput]);
 
   const execCommand = (command: string, value?: string) => {
     document.execCommand(command, false, value);
     editorRef.current?.focus();
+    handleInput();
   };
 
   const toggleHeading = (level: number) => {
@@ -108,6 +150,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
       element.replaceWith(heading);
     }
     editorRef.current?.focus();
+    handleInput();
   };
 
   const formatButtons = [
@@ -146,6 +189,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
         ref={editorRef}
         contentEditable
         onInput={handleInput}
+        onPaste={handlePaste}
         className={cn(
           'min-h-[400px] max-h-[600px] overflow-y-auto p-4 outline-none',
           'prose prose-sm max-w-none',

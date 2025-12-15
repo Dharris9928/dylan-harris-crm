@@ -51,6 +51,7 @@ interface ApolloEmailActivity {
   spam_blocked?: boolean;
   failed_at?: string;
   campaign_name?: string;
+  recipients?: Array<Record<string, unknown>>;
 }
 
 interface ApolloContact {

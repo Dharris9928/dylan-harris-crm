@@ -122,15 +122,15 @@ serve(async (req) => {
       const url = new URL('https://api.apollo.io/api/v1/emailer_messages/search');
       url.searchParams.set('page', String(page));
       url.searchParams.set('per_page', String(perPage));
-      url.searchParams.set('sort_by_field', 'created_at');
+      url.searchParams.set('sort_by_field', 'sent_at');
       url.searchParams.set('sort_ascending', 'false');
 
       // Add date filters if provided
       if (dateFrom) {
-        url.searchParams.set('emailer_message_created_at_gt', dateFrom);
+        url.searchParams.set('sent_at_start', dateFrom);
       }
       if (dateTo) {
-        url.searchParams.set('emailer_message_created_at_lt', dateTo);
+        url.searchParams.set('sent_at_end', dateTo);
       }
       if (sequenceId) {
         url.searchParams.append('emailer_campaign_ids[]', sequenceId);

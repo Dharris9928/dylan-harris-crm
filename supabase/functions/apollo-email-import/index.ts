@@ -51,7 +51,8 @@ serve(async (req) => {
   }
 
   try {
-    const apolloApiKey = Deno.env.get('APOLLO_API_KEY');
+    const apolloApiKeyRaw = Deno.env.get('APOLLO_API_KEY');
+    const apolloApiKey = apolloApiKeyRaw?.trim();
     if (!apolloApiKey) {
       throw new Error('Apollo API key not configured');
     }

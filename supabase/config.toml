@@ -113,3 +113,6 @@ verify_jwt = true
 
 [functions.validate-presentation-token]
 verify_jwt = false
+
+[functions.apollo-email-import]
+verify_jwt = true

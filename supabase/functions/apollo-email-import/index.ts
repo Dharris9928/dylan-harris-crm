@@ -179,33 +179,71 @@ serve(async (req) => {
         console.log(`Page ${pageNumber}: Found ${emails.length} emails`);
         if (pagination) {
           console.log("Apollo pagination:", JSON.stringify(pagination));
+        } else {
+          console.log("Apollo pagination missing for this response");
         }
 
         return { emails, pagination };
       };
 
       const allEmails: ApolloEmailActivity[] = [];
+      const seenIds = new Set<string>();
 
       const startingPage = Math.max(1, Number(page) || 1);
       const first = await fetchPage(startingPage);
-      allEmails.push(...first.emails);
 
-      const totalEntries = toNumber(first.pagination?.total_entries) ?? allEmails.length;
+      for (const e of first.emails) {
+        if (!seenIds.has(e.id)) {
+          seenIds.add(e.id);
+          allEmails.push(e);
+        }
+      }
+
+      // Prefer API-provided totals, but do NOT rely on them (they can be missing).
+      const totalEntriesFromApi = toNumber(first.pagination?.total_entries);
       const totalPagesFromApi = toNumber(first.pagination?.total_pages);
-      const computedTotalPages = totalPagesFromApi ?? Math.ceil(totalEntries / perPage);
-      const totalPages = Math.max(1, Math.min(computedTotalPages, maxPages));
 
       let currentPage = startingPage;
-      while (currentPage < totalPages) {
-        currentPage += 1;
-        const next = await fetchPage(currentPage);
-        allEmails.push(...next.emails);
+      let pagesFetched = 1;
 
-        // If the API doesn't fill the page, we're done even if pagination is weird
+      while (pagesFetched < maxPages) {
+        // If the API tells us the last page, respect it.
+        if (totalPagesFromApi && currentPage >= totalPagesFromApi) {
+          break;
+        }
+
+        const nextPage = currentPage + 1;
+        const next = await fetchPage(nextPage);
+
+        if (!next.emails.length) {
+          break;
+        }
+
+        let newCount = 0;
+        for (const e of next.emails) {
+          if (!seenIds.has(e.id)) {
+            seenIds.add(e.id);
+            allEmails.push(e);
+            newCount += 1;
+          }
+        }
+
+        // If Apollo keeps returning the same page, stop to avoid duplicates/infinite loops.
+        if (newCount === 0) {
+          console.log(`Page ${nextPage} contained no new email IDs; stopping pagination.`);
+          break;
+        }
+
+        currentPage = nextPage;
+        pagesFetched += 1;
+
+        // If we got a partial page, we're done.
         if (next.emails.length < perPage) {
           break;
         }
       }
+
+      const totalCount = totalEntriesFromApi ?? allEmails.length;
 
       console.log(`Total emails fetched across all pages: ${allEmails.length}`);
 
@@ -248,12 +286,12 @@ serve(async (req) => {
         JSON.stringify({
           success: true,
           emails: transformedEmails,
-          totalCount: totalEntries,
+          totalCount,
           pagination: {
             page: startingPage,
             per_page: perPage,
-            total_entries: totalEntries,
-            total_pages: totalPages,
+            total_entries: totalCount,
+            total_pages: totalPagesFromApi ?? null,
           },
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }

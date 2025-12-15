@@ -82,7 +82,6 @@ serve(async (req) => {
       console.log('Fetching Apollo email sequences...');
       
       const url = new URL('https://api.apollo.io/api/v1/emailer_campaigns/search');
-      url.searchParams.set('api_key', apolloApiKey);
       url.searchParams.set('page', String(page));
       url.searchParams.set('per_page', String(perPage));
       
@@ -91,7 +90,8 @@ serve(async (req) => {
         headers: {
           'Content-Type': 'application/json',
           'Cache-Control': 'no-cache',
-          'accept': 'application/json'
+          'accept': 'application/json',
+          'X-Api-Key': apolloApiKey
         }
       });
 
@@ -119,7 +119,6 @@ serve(async (req) => {
       console.log('Fetching Apollo sent emails...');
       
       const url = new URL('https://api.apollo.io/api/v1/emailer_messages/search');
-      url.searchParams.set('api_key', apolloApiKey);
       url.searchParams.set('page', String(page));
       url.searchParams.set('per_page', String(perPage));
       url.searchParams.set('sort_by_field', 'created_at');
@@ -136,14 +135,15 @@ serve(async (req) => {
         url.searchParams.append('emailer_campaign_ids[]', sequenceId);
       }
 
-      console.log('Fetching from URL:', url.toString().replace(apolloApiKey, 'REDACTED'));
+      console.log('Fetching from URL:', url.toString());
 
       const response = await fetch(url.toString(), {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           'Cache-Control': 'no-cache',
-          'accept': 'application/json'
+          'accept': 'application/json',
+          'X-Api-Key': apolloApiKey
         }
       });
 

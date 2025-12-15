@@ -6,12 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Mail, Phone, Linkedin, Reply, Trash2, ExternalLink, Search, X, User, Calendar, Video, GraduationCap, MessageSquare, Pencil } from 'lucide-react';
+import { Mail, Phone, Linkedin, Reply, Trash2, ExternalLink, Search, X, User, Calendar, Video, GraduationCap, MessageSquare, Pencil, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { NewCommunicationDialog } from '@/components/companies/NewCommunicationDialog';
 import { EditCommunicationDialog } from '@/components/companies/EditCommunicationDialog';
+import { ApolloEmailImportDialog } from '@/components/communications/ApolloEmailImportDialog';
 import { useNavigate } from 'react-router-dom';
 
 export default function Communications() {
@@ -29,6 +30,7 @@ export default function Communications() {
   const [replyCommunicationType, setReplyCommunicationType] = useState<'email' | 'call_script' | 'linkedin_message'>('email');
   const [editCommunication, setEditCommunication] = useState<any>(null);
   const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [openApolloImport, setOpenApolloImport] = useState(false);
 
   const { data: communications, isLoading, refetch } = useQuery({
     queryKey: ['all-communications'],
@@ -246,6 +248,10 @@ export default function Communications() {
             <p className="text-muted-foreground">View and manage all generated communications</p>
           </div>
           <div className="flex items-center gap-3">
+            <Button variant="outline" onClick={() => setOpenApolloImport(true)}>
+              <Download className="h-4 w-4 mr-2" />
+              Import from Apollo
+            </Button>
             <NewCommunicationDialog 
               onSuccess={() => {
                 refetch();
@@ -510,6 +516,12 @@ export default function Communications() {
         open={openEditDialog}
         onOpenChange={setOpenEditDialog}
         onSuccess={refetch}
+      />
+
+      <ApolloEmailImportDialog
+        open={openApolloImport}
+        onOpenChange={setOpenApolloImport}
+        onImportComplete={refetch}
       />
     </div>
   );

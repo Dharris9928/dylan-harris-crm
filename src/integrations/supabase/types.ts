@@ -424,6 +424,134 @@ export type Database = {
         }
         Relationships: []
       }
+      apollo_email_activities: {
+        Row: {
+          activity_date: string
+          activity_type: string
+          apollo_activity_id: string | null
+          apollo_contact_email: string | null
+          apollo_metadata: Json | null
+          click_count: number | null
+          clicked_at: string | null
+          company_id: string | null
+          contact_id: string | null
+          content: string | null
+          created_at: string
+          created_by: string
+          id: string
+          open_count: number | null
+          opened_at: string | null
+          replied_at: string | null
+          reply_count: number | null
+          sent_at: string | null
+          sequence_name: string | null
+          sequence_step: number | null
+          status: string | null
+          subject: string | null
+          updated_at: string
+        }
+        Insert: {
+          activity_date: string
+          activity_type: string
+          apollo_activity_id?: string | null
+          apollo_contact_email?: string | null
+          apollo_metadata?: Json | null
+          click_count?: number | null
+          clicked_at?: string | null
+          company_id?: string | null
+          contact_id?: string | null
+          content?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          open_count?: number | null
+          opened_at?: string | null
+          replied_at?: string | null
+          reply_count?: number | null
+          sent_at?: string | null
+          sequence_name?: string | null
+          sequence_step?: number | null
+          status?: string | null
+          subject?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activity_date?: string
+          activity_type?: string
+          apollo_activity_id?: string | null
+          apollo_contact_email?: string | null
+          apollo_metadata?: Json | null
+          click_count?: number | null
+          clicked_at?: string | null
+          company_id?: string | null
+          contact_id?: string | null
+          content?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          open_count?: number | null
+          opened_at?: string | null
+          replied_at?: string | null
+          reply_count?: number | null
+          sent_at?: string | null
+          sequence_name?: string | null
+          sequence_step?: number | null
+          status?: string | null
+          subject?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apollo_email_activities_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apollo_email_activities_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apollo_email_activities_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies_financial_masked"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apollo_email_activities_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apollo_email_activities_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apollo_email_activities_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts_decrypted_secure"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apollo_email_activities_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts_masked"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       approval_audit_log: {
         Row: {
           approved_by: string | null

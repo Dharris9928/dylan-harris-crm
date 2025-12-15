@@ -272,8 +272,7 @@ export function ApolloEmailImportDialog({ open, onOpenChange, onImportComplete }
                   first_name: email.contact.firstName || 'Unknown',
                   last_name: email.contact.lastName || '',
                   email: email.contact.email,
-                  title: email.contact.title,
-                  created_by: user.id
+                  title: email.contact.title
                 })
                 .select('id')
                 .single();
@@ -313,7 +312,7 @@ export function ApolloEmailImportDialog({ open, onOpenChange, onImportComplete }
             company_id: companyId,
             contact_id: contactId,
             user_id: user.id,
-            communication_type: 'Email',
+            communication_type: 'email',
             subject: email.subject,
             content: email.bodyText || email.bodyHtml || '',
             sent_at: email.sentAt,

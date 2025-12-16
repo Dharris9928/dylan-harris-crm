@@ -226,7 +226,10 @@ export function OpportunitiesTable({ opportunities, isLoading, onSelectOpportuni
                 )}
               </TableCell>
               <TableCell>
-                <Badge className={statusColors[opportunity.stage] || "bg-muted"}>
+                <Badge 
+                  className={statusColors[opportunity.stage] || "bg-muted"}
+                  style={{ color: '#22c55e' }}
+                >
                   {opportunity.stage}
                 </Badge>
               </TableCell>

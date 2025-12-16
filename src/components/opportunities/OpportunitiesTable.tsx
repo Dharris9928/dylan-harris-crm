@@ -38,12 +38,12 @@ interface OpportunitiesTableProps {
 }
 
 const statusColors: Record<string, string> = {
-  prospecting: "bg-blue-600 text-white",
-  qualification: "bg-amber-500 text-white",
-  proposal: "bg-violet-600 text-white",
-  negotiation: "bg-orange-600 text-white",
-  closed_won: "bg-emerald-600 text-white",
-  closed_lost: "bg-red-600 text-white",
+  prospecting: "bg-blue-600 !text-white",
+  qualification: "bg-amber-500 !text-white",
+  proposal: "bg-violet-600 !text-white",
+  negotiation: "bg-orange-600 !text-white",
+  closed_won: "bg-emerald-600 !text-white",
+  closed_lost: "bg-red-600 !text-white",
 };
 
 export function OpportunitiesTable({ opportunities, isLoading, onSelectOpportunity }: OpportunitiesTableProps) {

@@ -72,6 +72,19 @@ export function SalesPersonnelSelect({ value, onValueChange, companyId }: SalesP
               <CommandEmpty>No contact found.</CommandEmpty>
               <CommandGroup>
                 <CommandItem
+                  onSelect={() => {
+                    setOpen(false);
+                    setShowAddContact(true);
+                  }}
+                  className="text-primary font-medium"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add New Contact
+                </CommandItem>
+              </CommandGroup>
+              <CommandSeparator />
+              <CommandGroup>
+                <CommandItem
                   value="__none__"
                   onSelect={() => {
                     onValueChange(undefined);
@@ -114,18 +127,6 @@ export function SalesPersonnelSelect({ value, onValueChange, companyId }: SalesP
                     </div>
                   </CommandItem>
                 ))}
-              </CommandGroup>
-              <CommandSeparator />
-              <CommandGroup>
-                <CommandItem
-                  onSelect={() => {
-                    setOpen(false);
-                    setShowAddContact(true);
-                  }}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add New Contact
-                </CommandItem>
               </CommandGroup>
             </CommandList>
           </Command>

@@ -147,9 +147,7 @@ export default function PipelineAnalytics() {
         </Tabs>
         
         <div className="flex flex-wrap items-center gap-3">
-          {viewTab === "analytics" && (
-            <RegionToggle value={regionFilter} onChange={setRegionFilter} />
-          )}
+          <RegionToggle value={regionFilter} onChange={setRegionFilter} />
           <PerspectiveSelector
             value={perspective}
             onChange={setPerspective}
@@ -174,11 +172,37 @@ export default function PipelineAnalytics() {
           </div>
         </>
       ) : (
-        <RegionComparisonCard
-          westMetrics={westMetrics}
-          eastMetrics={eastMetrics}
-          isLoading={isLoadingWest || isLoadingEast}
-        />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* West Column */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-2 pb-2 border-b">
+              <span className="text-lg font-semibold text-purple-600">🟣 West Coast</span>
+            </div>
+            <PipelineKPICards metrics={westMetrics} isLoading={isLoadingWest} />
+            <PipelineFunnelChart metrics={westMetrics} isLoading={isLoadingWest} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <EmailPerformanceCard metrics={westMetrics} isLoading={isLoadingWest} />
+              <MeetingAnalyticsCard metrics={westMetrics} isLoading={isLoadingWest} />
+              <LeadHandoffCard metrics={westMetrics} isLoading={isLoadingWest} />
+              <ClosedDealsCard metrics={westMetrics} isLoading={isLoadingWest} />
+            </div>
+          </div>
+          
+          {/* East Column */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-2 pb-2 border-b">
+              <span className="text-lg font-semibold text-blue-600">🔵 East Coast</span>
+            </div>
+            <PipelineKPICards metrics={eastMetrics} isLoading={isLoadingEast} />
+            <PipelineFunnelChart metrics={eastMetrics} isLoading={isLoadingEast} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <EmailPerformanceCard metrics={eastMetrics} isLoading={isLoadingEast} />
+              <MeetingAnalyticsCard metrics={eastMetrics} isLoading={isLoadingEast} />
+              <LeadHandoffCard metrics={eastMetrics} isLoading={isLoadingEast} />
+              <ClosedDealsCard metrics={eastMetrics} isLoading={isLoadingEast} />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

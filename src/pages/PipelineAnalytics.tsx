@@ -13,6 +13,7 @@ import { EmailPerformanceCard } from "@/components/pipeline/EmailPerformanceCard
 import { MeetingAnalyticsCard } from "@/components/pipeline/MeetingAnalyticsCard";
 import { LeadHandoffCard } from "@/components/pipeline/LeadHandoffCard";
 import { ClosedDealsCard } from "@/components/pipeline/ClosedDealsCard";
+import { RegionToggle, RegionFilter } from "@/components/pipeline/RegionToggle";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,7 @@ export default function PipelineAnalytics() {
   const { perspective, setPerspective } = usePerspective("my_records", "activities");
   const [datePreset, setDatePreset] = useState<DatePreset>("last_30");
   const [dateRange, setDateRange] = useState(() => getDatePreset("last_30"));
+  const [regionFilter, setRegionFilter] = useState<RegionFilter>("all");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -32,7 +34,7 @@ export default function PipelineAnalytics() {
     });
   }, []);
 
-  const { data: metrics, isLoading } = usePipelineAnalytics(dateRange, perspective, userId);
+  const { data: metrics, isLoading } = usePipelineAnalytics(dateRange, perspective, userId, regionFilter);
 
   const handlePresetChange = (preset: DatePreset) => {
     if (preset !== "custom") {
@@ -60,12 +62,18 @@ export default function PipelineAnalytics() {
     { label: "Last 90 Days", value: "last_90" },
   ];
 
+  const getRegionLabel = () => {
+    if (regionFilter === "west") return " — West Coast";
+    if (regionFilter === "east") return " — East Coast";
+    return "";
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Pipeline Analytics</h1>
+          <h1 className="text-2xl font-bold">Pipeline Analytics{getRegionLabel()}</h1>
           <p className="text-muted-foreground">
             Track your sales pipeline from outreach to lead handoff
           </p>
@@ -119,13 +127,16 @@ export default function PipelineAnalytics() {
               />
             </PopoverContent>
           </Popover>
-
-          {/* Perspective Selector */}
-          <PerspectiveSelector
-            value={perspective}
-            onChange={setPerspective}
-          />
         </div>
+      </div>
+
+      {/* Filters Row */}
+      <div className="flex flex-wrap items-center gap-3">
+        <RegionToggle value={regionFilter} onChange={setRegionFilter} />
+        <PerspectiveSelector
+          value={perspective}
+          onChange={setPerspective}
+        />
       </div>
 
       {/* KPI Cards */}

@@ -4,6 +4,7 @@ import { CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PerspectiveSelector, Perspective } from "@/components/common/PerspectiveSelector";
 import { usePerspective } from "@/hooks/usePerspective";
 import { usePipelineAnalytics, getDatePreset } from "@/hooks/usePipelineAnalytics";
@@ -14,10 +15,12 @@ import { MeetingAnalyticsCard } from "@/components/pipeline/MeetingAnalyticsCard
 import { LeadHandoffCard } from "@/components/pipeline/LeadHandoffCard";
 import { ClosedDealsCard } from "@/components/pipeline/ClosedDealsCard";
 import { RegionToggle, RegionFilter } from "@/components/pipeline/RegionToggle";
+import { RegionComparisonCard } from "@/components/pipeline/RegionComparisonCard";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 type DatePreset = "this_week" | "this_month" | "last_30" | "last_90" | "custom";
+type ViewTab = "analytics" | "comparison";
 
 export default function PipelineAnalytics() {
   const [userId, setUserId] = useState<string>();
@@ -25,6 +28,7 @@ export default function PipelineAnalytics() {
   const [datePreset, setDatePreset] = useState<DatePreset>("last_30");
   const [dateRange, setDateRange] = useState(() => getDatePreset("last_30"));
   const [regionFilter, setRegionFilter] = useState<RegionFilter>("all");
+  const [viewTab, setViewTab] = useState<ViewTab>("analytics");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -35,7 +39,10 @@ export default function PipelineAnalytics() {
   }, []);
 
   const { data: metrics, isLoading } = usePipelineAnalytics(dateRange, perspective, userId, regionFilter);
-
+  
+  // Fetch both regions for comparison tab
+  const { data: westMetrics, isLoading: isLoadingWest } = usePipelineAnalytics(dateRange, perspective, userId, "west");
+  const { data: eastMetrics, isLoading: isLoadingEast } = usePipelineAnalytics(dateRange, perspective, userId, "east");
   const handlePresetChange = (preset: DatePreset) => {
     if (preset !== "custom") {
       setDatePreset(preset);
@@ -130,28 +137,49 @@ export default function PipelineAnalytics() {
         </div>
       </div>
 
-      {/* Filters Row */}
-      <div className="flex flex-wrap items-center gap-3">
-        <RegionToggle value={regionFilter} onChange={setRegionFilter} />
-        <PerspectiveSelector
-          value={perspective}
-          onChange={setPerspective}
+      {/* Tabs and Filters Row */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Tabs value={viewTab} onValueChange={(v) => setViewTab(v as ViewTab)}>
+          <TabsList>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="comparison">East vs West</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        
+        <div className="flex flex-wrap items-center gap-3">
+          {viewTab === "analytics" && (
+            <RegionToggle value={regionFilter} onChange={setRegionFilter} />
+          )}
+          <PerspectiveSelector
+            value={perspective}
+            onChange={setPerspective}
+          />
+        </div>
+      </div>
+
+      {viewTab === "analytics" ? (
+        <>
+          {/* KPI Cards */}
+          <PipelineKPICards metrics={metrics} isLoading={isLoading} />
+
+          {/* Funnel Chart */}
+          <PipelineFunnelChart metrics={metrics} isLoading={isLoading} />
+
+          {/* Detail Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <EmailPerformanceCard metrics={metrics} isLoading={isLoading} />
+            <MeetingAnalyticsCard metrics={metrics} isLoading={isLoading} />
+            <LeadHandoffCard metrics={metrics} isLoading={isLoading} />
+            <ClosedDealsCard metrics={metrics} isLoading={isLoading} />
+          </div>
+        </>
+      ) : (
+        <RegionComparisonCard
+          westMetrics={westMetrics}
+          eastMetrics={eastMetrics}
+          isLoading={isLoadingWest || isLoadingEast}
         />
-      </div>
-
-      {/* KPI Cards */}
-      <PipelineKPICards metrics={metrics} isLoading={isLoading} />
-
-      {/* Funnel Chart */}
-      <PipelineFunnelChart metrics={metrics} isLoading={isLoading} />
-
-      {/* Detail Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <EmailPerformanceCard metrics={metrics} isLoading={isLoading} />
-        <MeetingAnalyticsCard metrics={metrics} isLoading={isLoading} />
-        <LeadHandoffCard metrics={metrics} isLoading={isLoading} />
-        <ClosedDealsCard metrics={metrics} isLoading={isLoading} />
-      </div>
+      )}
     </div>
   );
 }

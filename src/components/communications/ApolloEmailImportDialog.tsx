@@ -73,16 +73,20 @@ interface ImportResult {
 
 type Step = 'config' | 'preview' | 'importing' | 'results';
 
-type EmailStatus = 'all' | 'delivered' | 'not_opened' | 'opened' | 'clicked' | 'replied' | 'bounced' | 'spam_blocked' | 'unsubscribed';
+type EmailStatus = 'all' | 'draft' | 'scheduled' | 'sent' | 'delivered' | 'not_opened' | 'opened' | 'clicked' | 'replied' | 'bounced' | 'failed' | 'spam_blocked' | 'unsubscribed';
 
 const STATUS_OPTIONS: { value: EmailStatus; label: string }[] = [
   { value: 'all', label: 'All' },
+  { value: 'draft', label: 'Draft' },
+  { value: 'scheduled', label: 'Scheduled' },
+  { value: 'sent', label: 'Sent' },
   { value: 'delivered', label: 'Delivered' },
   { value: 'not_opened', label: 'Not Opened' },
   { value: 'opened', label: 'Opened' },
   { value: 'clicked', label: 'Clicked' },
   { value: 'replied', label: 'Replied' },
   { value: 'bounced', label: 'Bounced' },
+  { value: 'failed', label: 'Failed' },
   { value: 'unsubscribed', label: 'Unsubscribed' },
   { value: 'spam_blocked', label: 'Spam Blocked' },
 ];
@@ -91,21 +95,36 @@ const STATUS_OPTIONS: { value: EmailStatus; label: string }[] = [
 const getEmailStatus = (email: ApolloEmail): EmailStatus => {
   const status = (email.status || '').toLowerCase();
 
+  // Failure states first
   const isBounced = status === 'bounced' || !!email.bouncedAt;
   const isSpamBlocked = status === 'spam_blocked' || !!email.spamBlocked;
   const isUnsubscribed = status === 'unsubscribed';
-  const isReplied = status === 'replied' || !!email.repliedAt || (email.replyCount ?? 0) > 0;
-  const isClicked = status === 'clicked' || !!email.clickedAt || (email.clickCount ?? 0) > 0;
-  const isOpened = status === 'opened' || !!email.openedAt || (email.openCount ?? 0) > 0;
+  const isFailed = status === 'failed';
 
   if (isBounced) return 'bounced';
   if (isSpamBlocked) return 'spam_blocked';
   if (isUnsubscribed) return 'unsubscribed';
+  if (isFailed) return 'failed';
+
+  // Engagement states (most to least advanced)
+  const isReplied = status === 'replied' || !!email.repliedAt || (email.replyCount ?? 0) > 0;
+  const isClicked = status === 'clicked' || !!email.clickedAt || (email.clickCount ?? 0) > 0;
+  const isOpened = status === 'opened' || !!email.openedAt || (email.openCount ?? 0) > 0;
+
   if (isReplied) return 'replied';
   if (isClicked) return 'clicked';
   if (isOpened) return 'opened';
-  if (email.sentAt) return 'delivered';
-  return 'delivered';
+
+  // Delivery states
+  if (status === 'delivered') return 'delivered';
+  if (status === 'sent' || email.sentAt) return 'sent';
+
+  // Pre-send states
+  if (status === 'scheduled') return 'scheduled';
+  if (status === 'draft') return 'draft';
+
+  // Default to draft if no send timestamp
+  return email.sentAt ? 'sent' : 'draft';
 };
 
 export function ApolloEmailImportDialog({ open, onOpenChange, onImportComplete }: ApolloEmailImportDialogProps) {
@@ -433,12 +452,33 @@ export function ApolloEmailImportDialog({ open, onOpenChange, onImportComplete }
   };
 
   const getStatusBadge = (email: ApolloEmail) => {
-    if (email.repliedAt || (email.replyCount ?? 0) > 0) return <Badge className="bg-green-500">Replied</Badge>;
-    if (email.bouncedAt) return <Badge variant="destructive">Bounced</Badge>;
-    if (email.clickedAt || (email.clickCount ?? 0) > 0) return <Badge className="bg-blue-500">Clicked</Badge>;
-    if (email.openedAt || (email.openCount ?? 0) > 0) return <Badge className="bg-yellow-500">Opened</Badge>;
-    if (email.sentAt) return <Badge variant="secondary">Sent</Badge>;
-    return <Badge variant="outline">Draft</Badge>;
+    const status = getEmailStatus(email);
+    
+    switch (status) {
+      case 'replied':
+        return <Badge className="bg-green-500">Replied</Badge>;
+      case 'clicked':
+        return <Badge className="bg-blue-500">Clicked</Badge>;
+      case 'opened':
+        return <Badge className="bg-yellow-500 text-black">Opened</Badge>;
+      case 'delivered':
+        return <Badge className="bg-emerald-600">Delivered</Badge>;
+      case 'sent':
+        return <Badge variant="secondary">Sent</Badge>;
+      case 'scheduled':
+        return <Badge className="bg-purple-500">Scheduled</Badge>;
+      case 'bounced':
+        return <Badge variant="destructive">Bounced</Badge>;
+      case 'failed':
+        return <Badge variant="destructive">Failed</Badge>;
+      case 'spam_blocked':
+        return <Badge variant="destructive">Spam Blocked</Badge>;
+      case 'unsubscribed':
+        return <Badge variant="outline">Unsubscribed</Badge>;
+      case 'draft':
+      default:
+        return <Badge variant="outline">Draft</Badge>;
+    }
   };
 
   return (

@@ -421,16 +421,23 @@ serve(async (req) => {
         if (email.bounce || status === 'bounced' || status === 'bounce' || !!email.bounced_at) return 'bounced';
         if (email.spam_blocked || status === 'spam_blocked' || status === 'spam blocked') return 'spam_blocked';
         if (status === 'unsubscribed') return 'unsubscribed';
+        if (!!email.failed_at || status === 'failed' || status === 'error') return 'failed';
 
         // Engagement states (most to least advanced)
         if (email.replied || !!email.replied_at || (email.reply_count ?? 0) > 0 || engagement.replyCount > 0 || status === 'replied' || status === 'reply') return 'replied';
         if (!!email.clicked_at || (email.click_count ?? 0) > 0 || engagement.clickCount > 0 || status === 'clicked' || status === 'click') return 'clicked';
         if (!!email.opened_at || (email.open_count ?? 0) > 0 || engagement.openCount > 0 || status === 'opened' || status === 'open') return 'opened';
 
-        // If completed_at exists, it was sent/delivered
-        if (email.completed_at || email.sent_at) return 'delivered';
+        // Delivery states - distinguish between sent and delivered
+        if (status === 'delivered') return 'delivered';
+        if (email.completed_at || email.sent_at || status === 'sent' || status === 'active') return 'sent';
 
-        return 'pending';
+        // Pre-send states
+        if (status === 'scheduled' || status === 'queued' || status === 'paused') return 'scheduled';
+        if (status === 'draft' || status === 'pending' || status === 'not_sent') return 'draft';
+
+        // Default to draft if nothing else matches (no send timestamp)
+        return 'draft';
       };
 
       const transformedEmails = allEmails.map((email) => {

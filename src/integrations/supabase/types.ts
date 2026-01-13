@@ -3045,6 +3045,160 @@ export type Database = {
           },
         ]
       }
+      job_quote_contacts: {
+        Row: {
+          contact_id: string
+          contact_type: string
+          created_at: string
+          id: string
+          job_quote_id: string
+        }
+        Insert: {
+          contact_id: string
+          contact_type?: string
+          created_at?: string
+          id?: string
+          job_quote_id: string
+        }
+        Update: {
+          contact_id?: string
+          contact_type?: string
+          created_at?: string
+          id?: string
+          job_quote_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_quote_contacts_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_quote_contacts_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_quote_contacts_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts_decrypted_secure"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_quote_contacts_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts_masked"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_quote_contacts_job_quote_id_fkey"
+            columns: ["job_quote_id"]
+            isOneToOne: false
+            referencedRelation: "job_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_quotes: {
+        Row: {
+          created_at: string
+          created_by: string
+          date_received: string
+          date_won: string | null
+          distributor_id: string | null
+          id: string
+          notes: string | null
+          price: number | null
+          product: string | null
+          quantity: number | null
+          quote_number: string | null
+          status: string
+          updated_at: string
+          wholesaler_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          date_received?: string
+          date_won?: string | null
+          distributor_id?: string | null
+          id?: string
+          notes?: string | null
+          price?: number | null
+          product?: string | null
+          quantity?: number | null
+          quote_number?: string | null
+          status?: string
+          updated_at?: string
+          wholesaler_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          date_received?: string
+          date_won?: string | null
+          distributor_id?: string | null
+          id?: string
+          notes?: string | null
+          price?: number | null
+          product?: string | null
+          quantity?: number | null
+          quote_number?: string | null
+          status?: string
+          updated_at?: string
+          wholesaler_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_quotes_distributor_id_fkey"
+            columns: ["distributor_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_quotes_distributor_id_fkey"
+            columns: ["distributor_id"]
+            isOneToOne: false
+            referencedRelation: "companies_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_quotes_distributor_id_fkey"
+            columns: ["distributor_id"]
+            isOneToOne: false
+            referencedRelation: "companies_financial_masked"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_quotes_wholesaler_id_fkey"
+            columns: ["wholesaler_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_quotes_wholesaler_id_fkey"
+            columns: ["wholesaler_id"]
+            isOneToOne: false
+            referencedRelation: "companies_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_quotes_wholesaler_id_fkey"
+            columns: ["wholesaler_id"]
+            isOneToOne: false
+            referencedRelation: "companies_financial_masked"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       metro_areas: {
         Row: {
           created_at: string

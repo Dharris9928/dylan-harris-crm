@@ -9,6 +9,27 @@ interface DateRange {
   to: Date;
 }
 
+interface EmailedCompany {
+  id: string;
+  company_name: string;
+  sent_at: string;
+}
+
+interface ResponseDetail {
+  id: string;
+  company_name: string;
+  contact_name: string | null;
+  responded_at: string;
+}
+
+interface HandoffDetail {
+  id: string;
+  company_name: string;
+  assigned_to_name: string;
+  created_at: string;
+  amount: number | null;
+}
+
 interface PipelineMetrics {
   commsSent: number;
   emailsOpened: number;
@@ -26,6 +47,9 @@ interface PipelineMetrics {
   closeRate: number;
   avgResponseTimeDays: number;
   totalPipelineValue: number;
+  emailedCompanies: EmailedCompany[];
+  responseDetails: ResponseDetail[];
+  handoffDetails: HandoffDetail[];
   previousPeriod: {
     commsSent: number;
     emailsOpened: number;
@@ -36,6 +60,8 @@ interface PipelineMetrics {
     closedDeals: number;
   };
 }
+
+export type { PipelineMetrics, EmailedCompany, ResponseDetail, HandoffDetail };
 
 // State mappings based on user's map (Purple = West, Blue = East)
 const WEST_STATES = [
@@ -85,10 +111,14 @@ export function usePipelineAnalytics(
         return query;
       };
 
-      // Fetch communications data
+      // Fetch communications data with contact info
       let commsQuery = supabase
         .from("company_communications")
-        .select("id, sent_at, email_opened_at, email_responded_at, company_id")
+        .select(`
+          id, sent_at, email_opened_at, email_responded_at, company_id, contact_id,
+          companies!company_communications_company_id_fkey(id, company_name),
+          contacts(id, first_name, last_name)
+        `)
         .gte("sent_at", fromDate)
         .lte("sent_at", toDate);
       
@@ -188,10 +218,13 @@ export function usePipelineAnalytics(
         }
       }
 
-      // Fetch opportunities (leads assigned)
+      // Fetch opportunities (leads assigned) with company and assignee info
       let oppsQuery = supabase
         .from("opportunities")
-        .select("id, assigned_to, amount, created_at, stage, closed_date, company_id")
+        .select(`
+          id, assigned_to, amount, created_at, stage, closed_date, company_id,
+          companies!opportunities_company_id_fkey(id, company_name)
+        `)
         .not("assigned_to", "is", null)
         .gte("created_at", fromDate)
         .lte("created_at", toDate);
@@ -212,6 +245,36 @@ export function usePipelineAnalytics(
             .in("state", filterStates);
           const validCompanyIds = new Set(companies?.map(c => c.id) || []);
           oppsData = oppsData.filter(o => validCompanyIds.has(o.company_id));
+        }
+      }
+
+      // Fetch assignee names (from sales_reps or profiles)
+      const assigneeIds = [...new Set(oppsData.map(o => o.assigned_to).filter(Boolean))];
+      const assigneeMap: Record<string, string> = {};
+      
+      if (assigneeIds.length > 0) {
+        // Check sales_reps first (format: "rep_UUID")
+        const salesRepIds = assigneeIds.filter(id => id?.startsWith("rep_")).map(id => id?.replace("rep_", ""));
+        const profileIds = assigneeIds.filter(id => !id?.startsWith("rep_"));
+        
+        if (salesRepIds.length > 0) {
+          const { data: reps } = await supabase
+            .from("sales_reps")
+            .select("id, first_name, last_name")
+            .in("id", salesRepIds);
+          reps?.forEach(rep => {
+            assigneeMap[`rep_${rep.id}`] = [rep.first_name, rep.last_name].filter(Boolean).join(" ") || "Unknown Rep";
+          });
+        }
+        
+        if (profileIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("id, first_name, last_name")
+            .in("id", profileIds);
+          profiles?.forEach(profile => {
+            assigneeMap[profile.id] = [profile.first_name, profile.last_name].filter(Boolean).join(" ") || "Unknown User";
+          });
         }
       }
 
@@ -289,6 +352,45 @@ export function usePipelineAnalytics(
       // Calculate total pipeline value
       const totalPipelineValue = oppsData.reduce((sum, opp) => sum + (opp.amount || 0), 0);
 
+      // Build detailed lists
+      const emailedCompanies: EmailedCompany[] = commsData
+        .filter(c => c.sent_at)
+        .map(c => ({
+          id: c.id,
+          company_name: (c.companies as any)?.company_name || "Unknown Company",
+          sent_at: c.sent_at!,
+        }))
+        .sort((a, b) => new Date(b.sent_at).getTime() - new Date(a.sent_at).getTime())
+        .slice(0, 10); // Limit to 10 most recent
+
+      const responseDetails: ResponseDetail[] = commsData
+        .filter(c => c.email_responded_at)
+        .map(c => {
+          const contact = c.contacts as any;
+          const contactName = contact 
+            ? [contact.first_name, contact.last_name].filter(Boolean).join(" ") 
+            : null;
+          return {
+            id: c.id,
+            company_name: (c.companies as any)?.company_name || "Unknown Company",
+            contact_name: contactName || "Unknown Contact",
+            responded_at: c.email_responded_at!,
+          };
+        })
+        .sort((a, b) => new Date(b.responded_at).getTime() - new Date(a.responded_at).getTime())
+        .slice(0, 10);
+
+      const handoffDetails: HandoffDetail[] = oppsData
+        .map(o => ({
+          id: o.id,
+          company_name: (o.companies as any)?.company_name || "Unknown Company",
+          assigned_to_name: assigneeMap[o.assigned_to || ""] || "Unknown Assignee",
+          created_at: o.created_at,
+          amount: o.amount,
+        }))
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 10);
+
       return {
         commsSent,
         emailsOpened,
@@ -306,6 +408,9 @@ export function usePipelineAnalytics(
         closeRate,
         avgResponseTimeDays,
         totalPipelineValue,
+        emailedCompanies,
+        responseDetails,
+        handoffDetails,
         previousPeriod: {
           commsSent: prevCommsSent,
           emailsOpened: prevEmailsOpened,

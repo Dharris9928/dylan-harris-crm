@@ -1,7 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { UserCheck, DollarSign, ArrowRightCircle } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { UserCheck, DollarSign, ArrowRightCircle, Building2 } from "lucide-react";
+import { format } from "date-fns";
+import type { HandoffDetail } from "@/hooks/usePipelineAnalytics";
 
 interface LeadHandoffCardProps {
   metrics: {
@@ -9,6 +12,7 @@ interface LeadHandoffCardProps {
     leadsAssigned: number;
     handoffRate: number;
     totalPipelineValue: number;
+    handoffDetails: HandoffDetail[];
   } | undefined;
   isLoading: boolean;
 }
@@ -61,6 +65,40 @@ export function LeadHandoffCard({ metrics, isLoading }: LeadHandoffCardProps) {
             {metrics.leadsAssigned} assigned from {metrics.meetingsCompleted} completed meetings
           </p>
         </div>
+
+        {/* Handoff Details */}
+        {metrics.handoffDetails.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Building2 className="h-4 w-4 text-purple-500" />
+              <span>Recent Handoffs</span>
+            </div>
+            <ScrollArea className="h-[120px]">
+              <div className="space-y-1.5">
+                {metrics.handoffDetails.slice(0, 5).map((handoff) => (
+                  <div key={handoff.id} className="text-xs bg-purple-50 dark:bg-purple-950/30 rounded px-2 py-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium truncate">{handoff.company_name}</span>
+                      <span className="text-muted-foreground ml-2 shrink-0">
+                        {format(new Date(handoff.created_at), "MMM d")}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between mt-0.5">
+                      <span className="text-purple-700 dark:text-purple-300">
+                        → {handoff.assigned_to_name}
+                      </span>
+                      {handoff.amount && (
+                        <span className="text-green-600 dark:text-green-400 font-medium">
+                          {formatCurrency(handoff.amount)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+        )}
 
         {/* Total Pipeline Value */}
         <div className="pt-2 border-t">

@@ -232,11 +232,13 @@ export function usePipelineAnalytics(
       const phoneData = activitiesData.filter(a => a.activity_type === "Phone");
 
       // Calculate upcoming meetings - scheduled but NOT yet completed
+      // An activity is "upcoming" if it has a scheduled_date, no completed_date, and outcome is NOT "Completed"
       const upcomingMeetingsData = activitiesData.filter(a => {
         if (!["Meeting", "Demo"].includes(a.activity_type)) return false;
         if (!a.scheduled_date) return false;
-        // Exclude completed meetings - they go to "Meetings Conducted"
-        if (a.outcome === "Completed" || a.completed_date) return false;
+        // If there's a completed_date OR outcome is Completed, it's not upcoming
+        if (a.completed_date) return false;
+        if (a.outcome === "Completed") return false;
         return true;
       });
 

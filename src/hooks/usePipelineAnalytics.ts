@@ -219,18 +219,16 @@ export function usePipelineAnalytics(
       const demosData = activitiesData.filter(a => a.activity_type === "Demo");
       const phoneData = activitiesData.filter(a => a.activity_type === "Phone");
 
-      // Calculate upcoming meetings - created within date range with future scheduled_date
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      // Calculate upcoming meetings - created within date range with a scheduled_date
       const upcomingMeetingsData = activitiesData.filter(a => {
         if (!["Meeting", "Demo"].includes(a.activity_type)) return false;
         if (!a.scheduled_date) return false;
-        const schedDate = new Date(a.scheduled_date);
         const createdDate = a.created_at ? new Date(a.created_at) : null;
         const from = new Date(fromDate);
         const to = new Date(toDate);
-        // Count if created within date range and scheduled for today or future
-        return createdDate && createdDate >= from && createdDate <= to && schedDate >= today;
+        to.setHours(23, 59, 59, 999); // Include full day
+        // Count if created within date range and has a scheduled date
+        return createdDate && createdDate >= from && createdDate <= to;
       });
 
       // Fetch previous period activities
@@ -277,11 +275,11 @@ export function usePipelineAnalytics(
       const prevUpcomingMeetingsData = prevActivitiesData.filter(a => {
         if (!["Meeting", "Demo"].includes(a.activity_type)) return false;
         if (!a.scheduled_date) return false;
-        const schedDate = new Date(a.scheduled_date);
         const createdDate = a.created_at ? new Date(a.created_at) : null;
         const from = new Date(prevFrom);
         const to = new Date(prevTo);
-        return createdDate && createdDate >= from && createdDate <= to && schedDate >= today;
+        to.setHours(23, 59, 59, 999);
+        return createdDate && createdDate >= from && createdDate <= to;
       });
 
       // Fetch opportunities (leads assigned) with company and assignee info

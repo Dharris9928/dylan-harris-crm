@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Mail, MailOpen, MessageSquareReply, CalendarPlus, CalendarCheck, CalendarClock, UserCheck, Trophy, TrendingUp, TrendingDown, Minus, Phone, Presentation } from "lucide-react";
+import { Mail, MailOpen, MessageSquareReply, CalendarClock, CalendarCheck, UserCheck, Trophy, TrendingUp, TrendingDown, Minus, Phone, Presentation, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { KPIDetailDialog, KPICategory } from "./KPIDetailDialog";
 
@@ -91,6 +91,8 @@ interface PipelineKPICardsProps {
     meetingsScheduled: number;
     meetingsCompleted: number;
     upcomingMeetings?: number;
+    meetingsConducted?: number;
+    meetingsNeedingFollowup?: number;
     demosScheduled?: number;
     demosCompleted?: number;
     leadsAssigned: number;
@@ -105,6 +107,8 @@ interface PipelineKPICardsProps {
       meetingsScheduled: number;
       meetingsCompleted: number;
       upcomingMeetings?: number;
+      meetingsConducted?: number;
+      meetingsNeedingFollowup?: number;
       demosScheduled?: number;
       demosCompleted?: number;
       leadsAssigned: number;
@@ -182,6 +186,22 @@ export function PipelineKPICards({ metrics, isLoading }: PipelineKPICardsProps) 
       icon: <CalendarClock className="h-5 w-5 text-yellow-600" />,
       colorClass: "bg-yellow-100 dark:bg-yellow-900/30",
       category: "upcoming_meetings",
+    },
+    {
+      label: "Meetings Conducted",
+      value: metrics.meetingsConducted || 0,
+      previousValue: metrics.previousPeriod.meetingsConducted || 0,
+      icon: <CalendarCheck className="h-5 w-5 text-teal-600" />,
+      colorClass: "bg-teal-100 dark:bg-teal-900/30",
+      category: "meetings_conducted",
+    },
+    {
+      label: "Needs Follow-up",
+      value: metrics.meetingsNeedingFollowup || 0,
+      previousValue: metrics.previousPeriod.meetingsNeedingFollowup || 0,
+      icon: <AlertCircle className="h-5 w-5 text-red-600" />,
+      colorClass: "bg-red-100 dark:bg-red-900/30",
+      category: "meetings_followup",
     },
     {
       label: "Demos Completed",

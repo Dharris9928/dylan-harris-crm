@@ -17,6 +17,8 @@ export type KPICategory =
   | "replies_received"
   | "phone_calls"
   | "upcoming_meetings"
+  | "meetings_conducted"
+  | "meetings_followup"
   | "demos_completed"
   | "leads_assigned"
   | "closed_deals";
@@ -118,6 +120,46 @@ export function KPIDetailDialog({ open, onOpenChange, category, title }: KPIDeta
             contact: d.scheduled_date ? `Scheduled for: ${format(new Date(d.scheduled_date), "MMM d, yyyy")}` : null,
             date: d.created_at,
             badge: d.outcome,
+          })) || [];
+        }
+
+        case "meetings_conducted": {
+          const { data, error } = await supabase
+            .from("outreach_activities")
+            .select("id, subject_line, completed_date, scheduled_date, companies(company_name)")
+            .in("activity_type", ["Meeting", "Demo"])
+            .eq("outcome", "Completed")
+            .order("completed_date", { ascending: false })
+            .limit(100);
+          if (error) throw error;
+          return data?.map(d => ({
+            id: d.id,
+            title: d.subject_line || "Meeting",
+            subtitle: d.companies?.company_name || "Unknown company",
+            contact: d.scheduled_date ? `Was scheduled for: ${format(new Date(d.scheduled_date), "MMM d, yyyy")}` : null,
+            date: d.completed_date,
+            badge: "Completed",
+          })) || [];
+        }
+
+        case "meetings_followup": {
+          const today = new Date().toISOString().split('T')[0];
+          const { data, error } = await supabase
+            .from("outreach_activities")
+            .select("id, subject_line, scheduled_date, created_at, outcome, companies(company_name)")
+            .in("activity_type", ["Meeting", "Demo"])
+            .lt("scheduled_date", today)
+            .neq("outcome", "Completed")
+            .order("scheduled_date", { ascending: false })
+            .limit(100);
+          if (error) throw error;
+          return data?.map(d => ({
+            id: d.id,
+            title: d.subject_line || "Meeting",
+            subtitle: d.companies?.company_name || "Unknown company",
+            contact: d.scheduled_date ? `Was scheduled for: ${format(new Date(d.scheduled_date), "MMM d, yyyy")} - NEEDS FOLLOW-UP` : null,
+            date: d.created_at,
+            badge: "Overdue",
           })) || [];
         }
 

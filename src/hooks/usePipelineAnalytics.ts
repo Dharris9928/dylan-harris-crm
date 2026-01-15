@@ -38,6 +38,8 @@ interface PipelineMetrics {
   meetingsScheduled: number;
   meetingsCompleted: number;
   upcomingMeetings: number;
+  meetingsConducted: number;
+  meetingsNeedingFollowup: number;
   demosScheduled: number;
   demosCompleted: number;
   leadsAssigned: number;
@@ -62,6 +64,8 @@ interface PipelineMetrics {
     meetingsScheduled: number;
     meetingsCompleted: number;
     upcomingMeetings: number;
+    meetingsConducted: number;
+    meetingsNeedingFollowup: number;
     demosScheduled: number;
     demosCompleted: number;
     leadsAssigned: number;
@@ -195,7 +199,9 @@ export function usePipelineAnalytics(
         const compDate = a.completed_date ? new Date(a.completed_date) : null;
         const createdDate = a.created_at ? new Date(a.created_at) : null;
         const from = new Date(fromDate);
+        from.setHours(0, 0, 0, 0);
         const to = new Date(toDate);
+        to.setHours(23, 59, 59, 999); // Include full end day
         return (schedDate && schedDate >= from && schedDate <= to) || 
                (compDate && compDate >= from && compDate <= to) ||
                (createdDate && createdDate >= from && createdDate <= to);
@@ -248,7 +254,9 @@ export function usePipelineAnalytics(
         const compDate = a.completed_date ? new Date(a.completed_date) : null;
         const createdDate = a.created_at ? new Date(a.created_at) : null;
         const from = new Date(prevFrom);
+        from.setHours(0, 0, 0, 0);
         const to = new Date(prevTo);
+        to.setHours(23, 59, 59, 999); // Include full end day
         return (schedDate && schedDate >= from && schedDate <= to) || 
                (compDate && compDate >= from && compDate <= to) ||
                (createdDate && createdDate >= from && createdDate <= to);
@@ -383,8 +391,21 @@ export function usePipelineAnalytics(
       // Phone calls (count all completed phone activities)
       const phoneCalls = phoneData.filter(p => p.outcome === "Completed" || p.completed_date).length;
       
-      // Upcoming meetings count
+      // Upcoming meetings count (scheduled for future)
       const upcomingMeetings = upcomingMeetingsData.length;
+      
+      // Meetings conducted (completed meetings)
+      const meetingsConducted = meetingsData.filter(m => m.outcome === "Completed" || m.completed_date).length +
+                                demosData.filter(d => d.outcome === "Completed" || d.completed_date).length;
+      
+      // Meetings needing follow-up (scheduled date passed but not marked as completed)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const meetingsNeedingFollowup = [...meetingsData, ...demosData].filter(m => {
+        if (!m.scheduled_date) return false;
+        const schedDate = new Date(m.scheduled_date);
+        return schedDate < today && m.outcome !== "Completed" && !m.completed_date;
+      }).length;
       
       const leadsAssigned = oppsData.length;
       
@@ -403,6 +424,13 @@ export function usePipelineAnalytics(
       const prevDemosCompleted = prevDemosData.filter(d => d.outcome === "Completed").length;
       const prevPhoneCalls = prevPhoneData.filter(p => p.outcome === "Completed" || p.completed_date).length;
       const prevUpcomingMeetings = prevUpcomingMeetingsData.length;
+      const prevMeetingsConducted = prevMeetingsData.filter(m => m.outcome === "Completed" || m.completed_date).length +
+                                    prevDemosData.filter(d => d.outcome === "Completed" || d.completed_date).length;
+      const prevMeetingsNeedingFollowup = [...prevMeetingsData, ...prevDemosData].filter(m => {
+        if (!m.scheduled_date) return false;
+        const schedDate = new Date(m.scheduled_date);
+        return schedDate < today && m.outcome !== "Completed" && !m.completed_date;
+      }).length;
       const prevLeadsAssigned = prevOppsData.length;
       const prevClosedDeals = prevOppsData.filter(o => o.stage === 'closed_won').length;
 
@@ -483,6 +511,8 @@ export function usePipelineAnalytics(
         meetingsScheduled,
         meetingsCompleted,
         upcomingMeetings,
+        meetingsConducted,
+        meetingsNeedingFollowup,
         demosScheduled,
         demosCompleted,
         leadsAssigned,
@@ -507,6 +537,8 @@ export function usePipelineAnalytics(
           meetingsScheduled: prevMeetingsScheduled,
           meetingsCompleted: prevMeetingsCompleted,
           upcomingMeetings: prevUpcomingMeetings,
+          meetingsConducted: prevMeetingsConducted,
+          meetingsNeedingFollowup: prevMeetingsNeedingFollowup,
           demosScheduled: prevDemosScheduled,
           demosCompleted: prevDemosCompleted,
           leadsAssigned: prevLeadsAssigned,

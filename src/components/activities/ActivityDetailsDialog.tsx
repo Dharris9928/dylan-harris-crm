@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { Mail, Phone, Linkedin, Calendar, User, Building2, FileText, MessageSquare, Reply, Pencil, Trash2 } from "lucide-react";
+import { Mail, Phone, Linkedin, Calendar, User, Building2, FileText, MessageSquare, Reply, Pencil, Trash2, Handshake } from "lucide-react";
 
 interface Activity {
   id: string;
@@ -35,10 +35,11 @@ interface ActivityDetailsDialogProps {
   onFollowUp?: (activity: Activity) => void;
   onEdit?: (activity: Activity) => void;
   onDelete?: (activity: Activity) => void;
+  onHandoff?: (activity: Activity) => void;
   isAdmin?: boolean;
 }
 
-export function ActivityDetailsDialog({ activity, open, onOpenChange, onFollowUp, onEdit, onDelete, isAdmin }: ActivityDetailsDialogProps) {
+export function ActivityDetailsDialog({ activity, open, onOpenChange, onFollowUp, onEdit, onDelete, onHandoff, isAdmin }: ActivityDetailsDialogProps) {
   if (!activity) return null;
 
   const handleFollowUp = () => {
@@ -53,6 +54,11 @@ export function ActivityDetailsDialog({ activity, open, onOpenChange, onFollowUp
 
   const handleDelete = () => {
     onDelete?.(activity);
+    onOpenChange(false);
+  };
+
+  const handleHandoff = () => {
+    onHandoff?.(activity);
     onOpenChange(false);
   };
 
@@ -223,8 +229,8 @@ export function ActivityDetailsDialog({ activity, open, onOpenChange, onFollowUp
           </div>
         </div>
 
-        {(onFollowUp || onEdit || (isAdmin && onDelete)) && (
-          <DialogFooter className="gap-2">
+        {(onFollowUp || onEdit || onHandoff || (isAdmin && onDelete)) && (
+          <DialogFooter className="gap-2 flex-wrap">
             {isAdmin && onDelete && (
               <Button onClick={handleDelete} variant="destructive" className="w-full sm:w-auto">
                 <Trash2 className="h-4 w-4 mr-2" />
@@ -235,6 +241,12 @@ export function ActivityDetailsDialog({ activity, open, onOpenChange, onFollowUp
               <Button onClick={handleEdit} variant="outline" className="w-full sm:w-auto">
                 <Pencil className="h-4 w-4 mr-2" />
                 Edit
+              </Button>
+            )}
+            {onHandoff && (
+              <Button onClick={handleHandoff} variant="outline" className="w-full sm:w-auto bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-950/20 dark:hover:bg-purple-950/30 dark:text-purple-300 dark:border-purple-800">
+                <Handshake className="h-4 w-4 mr-2" />
+                Hand Off
               </Button>
             )}
             {onFollowUp && (

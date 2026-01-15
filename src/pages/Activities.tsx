@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import { AddActivityDialog } from "@/components/activities/AddActivityDialog";
 import { ActivityDetailsDialog } from "@/components/activities/ActivityDetailsDialog";
 import { EditActivityDialog } from "@/components/activities/EditActivityDialog";
+import { ActivityHandoffDialog } from "@/components/activities/ActivityHandoffDialog";
 import { DeleteRecordDialog } from "@/components/common/DeleteRecordDialog";
 import { PerspectiveSelector } from "@/components/common/PerspectiveSelector";
 import { usePerspective } from "@/hooks/usePerspective";
@@ -29,6 +30,8 @@ const Activities = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [deleteActivity, setDeleteActivity] = useState<any>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [handoffActivity, setHandoffActivity] = useState<any>(null);
+  const [isHandoffDialogOpen, setIsHandoffDialogOpen] = useState(false);
   const [regionalFilters, setRegionalFilters] = useState<RegionalFilters | null>(null);
   const { perspective, setPerspective } = usePerspective('my_records');
   const { data: userRoleData } = useUserRole();
@@ -60,6 +63,11 @@ const Activities = () => {
   const handleDelete = (activity: any) => {
     setDeleteActivity(activity);
     setIsDeleteDialogOpen(true);
+  };
+
+  const handleHandoff = (activity: any) => {
+    setHandoffActivity(activity);
+    setIsHandoffDialogOpen(true);
   };
 
   const buildFollowUpContext = () => {
@@ -371,6 +379,7 @@ const Activities = () => {
         onFollowUp={handleFollowUp}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onHandoff={handleHandoff}
         isAdmin={isAdmin}
       />
 
@@ -400,6 +409,17 @@ const Activities = () => {
           recordDetails={deleteActivity}
         />
       )}
+
+      <ActivityHandoffDialog
+        activity={handoffActivity}
+        open={isHandoffDialogOpen}
+        onOpenChange={setIsHandoffDialogOpen}
+        onSuccess={() => {
+          refetch();
+          setIsHandoffDialogOpen(false);
+          setHandoffActivity(null);
+        }}
+      />
 
       <RegionalFilterDialog
         open={isRegionalDialogOpen}

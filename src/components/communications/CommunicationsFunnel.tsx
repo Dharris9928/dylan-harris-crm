@@ -33,14 +33,17 @@ export function CommunicationsFunnel() {
       const emailsOpened = communications?.filter(c => c.email_opened_at).length || 0;
       const emailsReplied = communications?.filter(c => c.email_responded_at).length || 0;
       const callsMade = activities?.filter(a => a.activity_type === "Phone").length || 0;
+      // Meetings booked = scheduled but NOT yet completed (no completed_date AND outcome not Completed)
       const meetingsBooked = activities?.filter(a => 
         ["Meeting", "Demo"].includes(a.activity_type) && 
-        a.outcome === "Scheduled" && 
-        !a.completed_date
+        !a.completed_date &&
+        a.outcome !== "Completed" &&
+        a.outcome === "Scheduled"
       ).length || 0;
+      // Meetings conducted = has completed_date OR outcome is Completed
       const meetingsConducted = activities?.filter(a => 
         ["Meeting", "Demo"].includes(a.activity_type) && 
-        (a.outcome === "Completed" || a.completed_date)
+        (a.completed_date || a.outcome === "Completed")
       ).length || 0;
       const handoffs = communications?.filter(c => c.assigned_to).length || 0;
 

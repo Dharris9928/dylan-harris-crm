@@ -6,7 +6,7 @@ type QueryKeyLike = readonly unknown[];
 
 const TABLE_TO_QUERY_KEYS: Record<string, QueryKeyLike[]> = {
   // Pages whose query keys don't match the table name
-  company_communications: [["all-communications"]],
+  company_communications: [["all-communications"], ["communications-funnel"], ["pipeline-analytics"]],
   building_permits: [["building-permits"], ["permit-stats"]],
 
   // Convenience invalidations (dashboards / aggregates)
@@ -19,8 +19,8 @@ const TABLE_TO_QUERY_KEYS: Record<string, QueryKeyLike[]> = {
     ["segment-performance"],
   ],
   contacts: [["contacts"], ["contacts-count"]],
-  opportunities: [["opportunities"]],
-  outreach_activities: [["activities"], ["monthly-activities"]],
+  opportunities: [["opportunities"], ["pipeline-analytics"], ["communications-funnel"]],
+  outreach_activities: [["activities"], ["monthly-activities"], ["pipeline-analytics"], ["communications-funnel"]],
 
   // Company AI status badge
   enrichment_logs: [["enrichment-status"]],

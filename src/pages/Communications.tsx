@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Mail, Phone, Linkedin, Reply, Trash2, ExternalLink, Search, X, User, Calendar, Video, GraduationCap, MessageSquare, Pencil, Download, Eye, MessageCircle } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Mail, Phone, Linkedin, Reply, Trash2, ExternalLink, Search, X, User, Calendar, Video, GraduationCap, MessageSquare, Pencil, Download, Eye, MessageCircle, Plus, ChevronDown, Sparkles, Handshake } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Label } from '@/components/ui/label';
@@ -15,6 +16,7 @@ import { EditCommunicationDialog } from '@/components/companies/EditCommunicatio
 import { ApolloEmailImportDialog } from '@/components/communications/ApolloEmailImportDialog';
 import { AddCommunicationDialog } from '@/components/communications/AddCommunicationDialog';
 import { MarkAsRepliedDialog } from '@/components/communications/MarkAsRepliedDialog';
+import { HandoffDialog } from '@/components/communications/HandoffDialog';
 import { useNavigate } from 'react-router-dom';
 
 export default function Communications() {
@@ -36,6 +38,9 @@ export default function Communications() {
   const [openApolloImport, setOpenApolloImport] = useState(false);
   const [replyDialogComm, setReplyDialogComm] = useState<any>(null);
   const [openReplyDialog, setOpenReplyDialog] = useState(false);
+  const [openManualDialog, setOpenManualDialog] = useState(false);
+  const [handoffDialogComm, setHandoffDialogComm] = useState<any>(null);
+  const [openHandoffDialog, setOpenHandoffDialog] = useState(false);
 
   const { data: communications, isLoading, refetch } = useQuery({
     queryKey: ['all-communications'],
@@ -55,6 +60,10 @@ export default function Communications() {
             last_name,
             title,
             email
+          ),
+          assigned_to_profile:profiles!company_communications_assigned_to_fkey(
+            first_name,
+            last_name
           )
         `)
         .order('created_at', { ascending: false });
@@ -348,22 +357,27 @@ export default function Communications() {
               <Download className="h-4 w-4 mr-2" />
               Import from Apollo
             </Button>
-            <AddCommunicationDialog onSuccess={() => refetch()} />
-            <NewCommunicationDialog 
-              onSuccess={() => {
-                refetch();
-                setOpenNewCommDialog(false);
-                setReplyToCompanyId(null);
-                setReplyToContactId(null);
-                setReplyToPreviousContext('');
-              }}
-              open={openNewCommDialog}
-              onOpenChange={setOpenNewCommDialog}
-              prefilledCompanyId={replyToCompanyId || undefined}
-              prefilledContactId={replyToContactId || undefined}
-              prefilledPreviousContext={replyToPreviousContext || undefined}
-              prefilledCommunicationType={replyCommunicationType}
-            />
+            
+            {/* Combined New Communication Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Communication
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-card z-50">
+                <DropdownMenuItem onClick={() => setOpenNewCommDialog(true)}>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Generate with AI
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setOpenManualDialog(true)}>
+                  <Mail className="h-4 w-4 mr-2" />
+                  Add Manual Email
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Select value={conversationStatusFilter} onValueChange={setConversationStatusFilter}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue />
@@ -505,6 +519,12 @@ export default function Communications() {
                         <Badge variant={comm.conversation_active !== false ? "default" : "secondary"}>
                           {comm.conversation_active !== false ? "Active" : "Inactive"}
                         </Badge>
+                        {comm.assigned_to_profile && (
+                          <Badge className="bg-purple-600 text-white">
+                            <Handshake className="h-3 w-3 mr-1" />
+                            Handed off to: {comm.assigned_to_profile.first_name} {comm.assigned_to_profile.last_name}
+                          </Badge>
+                        )}
                         {comm.companies && (
                           <>
                             <Button
@@ -569,6 +589,19 @@ export default function Communications() {
                         title="Reply to this communication"
                       >
                         <Reply className="h-4 w-4" />
+                      </Button>
+                      {/* Handoff Button */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setHandoffDialogComm(comm);
+                          setOpenHandoffDialog(true);
+                        }}
+                        title="Hand off to team member"
+                        className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                      >
+                        <Handshake className="h-4 w-4" />
                       </Button>
                       {/* Quick status buttons - always visible for sent emails */}
                       {!comm.email_opened_at && (
@@ -643,12 +676,25 @@ export default function Communications() {
 
       <NewCommunicationDialog
         open={openNewCommDialog}
-        onOpenChange={setOpenNewCommDialog}
+        onOpenChange={(open) => {
+          setOpenNewCommDialog(open);
+          if (!open) {
+            setReplyToCompanyId(null);
+            setReplyToContactId(null);
+            setReplyToPreviousContext('');
+          }
+        }}
         onSuccess={refetch}
         prefilledCompanyId={replyToCompanyId || undefined}
         prefilledContactId={replyToContactId || undefined}
         prefilledPreviousContext={replyToPreviousContext || undefined}
         prefilledCommunicationType={replyCommunicationType}
+      />
+
+      <AddCommunicationDialog 
+        open={openManualDialog}
+        onOpenChange={setOpenManualDialog}
+        onSuccess={() => refetch()} 
       />
 
       <EditCommunicationDialog
@@ -669,6 +715,15 @@ export default function Communications() {
           open={openReplyDialog}
           onOpenChange={setOpenReplyDialog}
           communication={replyDialogComm}
+          onSuccess={refetch}
+        />
+      )}
+
+      {handoffDialogComm && (
+        <HandoffDialog
+          open={openHandoffDialog}
+          onOpenChange={setOpenHandoffDialog}
+          communication={handoffDialogComm}
           onSuccess={refetch}
         />
       )}

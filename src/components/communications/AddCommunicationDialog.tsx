@@ -123,12 +123,6 @@ export function AddCommunicationDialog({ onSuccess, open, onOpenChange }: AddCom
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Manual
-        </Button>
-      </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add Communication</DialogTitle>

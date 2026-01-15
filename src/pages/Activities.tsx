@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import { AddActivityDialog } from "@/components/activities/AddActivityDialog";
 import { ActivityDetailsDialog } from "@/components/activities/ActivityDetailsDialog";
 import { EditActivityDialog } from "@/components/activities/EditActivityDialog";
+import { DeleteRecordDialog } from "@/components/common/DeleteRecordDialog";
 import { PerspectiveSelector } from "@/components/common/PerspectiveSelector";
 import { usePerspective } from "@/hooks/usePerspective";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -26,9 +27,12 @@ const Activities = () => {
   const [followUpActivity, setFollowUpActivity] = useState<any>(null);
   const [editActivity, setEditActivity] = useState<any>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [deleteActivity, setDeleteActivity] = useState<any>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [regionalFilters, setRegionalFilters] = useState<RegionalFilters | null>(null);
   const { perspective, setPerspective } = usePerspective('my_records');
   const { data: userRoleData } = useUserRole();
+  const isAdmin = userRoleData?.role === 'admin';
   const [dateRange, setDateRange] = useState<{
     from: Date;
     to: Date;
@@ -51,6 +55,11 @@ const Activities = () => {
   const handleEdit = (activity: any) => {
     setEditActivity(activity);
     setIsEditDialogOpen(true);
+  };
+
+  const handleDelete = (activity: any) => {
+    setDeleteActivity(activity);
+    setIsDeleteDialogOpen(true);
   };
 
   const buildFollowUpContext = () => {
@@ -361,6 +370,8 @@ const Activities = () => {
         onOpenChange={setIsDetailsDialogOpen}
         onFollowUp={handleFollowUp}
         onEdit={handleEdit}
+        onDelete={handleDelete}
+        isAdmin={isAdmin}
       />
 
       <EditActivityDialog
@@ -373,6 +384,22 @@ const Activities = () => {
           setEditActivity(null);
         }}
       />
+
+      {deleteActivity && (
+        <DeleteRecordDialog
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+          onSuccess={() => {
+            refetch();
+            setIsDeleteDialogOpen(false);
+            setDeleteActivity(null);
+          }}
+          tableName="outreach_activities"
+          recordId={deleteActivity.id}
+          recordName={`${deleteActivity.activity_type} - ${deleteActivity.companies?.company_name || 'Activity'}`}
+          recordDetails={deleteActivity}
+        />
+      )}
 
       <RegionalFilterDialog
         open={isRegionalDialogOpen}

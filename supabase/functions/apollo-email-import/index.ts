@@ -245,6 +245,81 @@ serve(async (req) => {
         return { emails, pagination };
       };
 
+      // Fetch email activities (opens/clicks/replies) from Apollo's activities endpoint
+      type EmailEngagement = {
+        openCount: number;
+        clickCount: number;
+        replyCount: number;
+        openedAt?: string;
+        clickedAt?: string;
+        repliedAt?: string;
+      };
+      
+      const fetchEmailActivities = async (emailIds: string[]): Promise<Map<string, EmailEngagement>> => {
+        const engagementMap = new Map<string, EmailEngagement>();
+        if (emailIds.length === 0) return engagementMap;
+
+        console.log(`Fetching activities for ${emailIds.length} emails...`);
+        
+        // Try the activities endpoint for email engagement
+        try {
+          // Apollo's activity tracking endpoint
+          const batchSize = 50;
+          
+          for (let i = 0; i < emailIds.length; i += batchSize) {
+            const batch = emailIds.slice(i, i + batchSize);
+            
+            // Query activities for each email message
+            for (const emailId of batch) {
+              try {
+                const activityUrl = new URL(`https://api.apollo.io/api/v1/emailer_messages/${emailId}`);
+                
+                const response = await fetch(activityUrl.toString(), {
+                  method: "GET",
+                  headers: {
+                    "Content-Type": "application/json",
+                    "Cache-Control": "no-cache",
+                    accept: "application/json",
+                    "X-Api-Key": apolloApiKey,
+                  },
+                });
+
+                if (response.ok) {
+                  const data = await response.json();
+                  const msg = data.emailer_message;
+                  
+                  if (msg) {
+                    const engagement: EmailEngagement = {
+                      openCount: msg.open_count ?? msg.opens ?? 0,
+                      clickCount: msg.click_count ?? msg.clicks ?? 0,
+                      replyCount: msg.reply_count ?? (msg.replied ? 1 : 0),
+                      openedAt: msg.opened_at || msg.first_opened_at,
+                      clickedAt: msg.clicked_at || msg.first_clicked_at,
+                      repliedAt: msg.replied_at || (msg.replied ? msg.completed_at : undefined),
+                    };
+                    
+                    // Log first successful fetch for debugging
+                    if (engagementMap.size === 0 && (engagement.openCount > 0 || engagement.clickCount > 0)) {
+                      console.log("Sample engagement data from individual fetch:", engagement);
+                    }
+                    
+                    engagementMap.set(emailId, engagement);
+                  }
+                }
+              } catch (err) {
+                // Individual email fetch failed, continue
+              }
+            }
+          }
+          
+          console.log(`Fetched engagement for ${engagementMap.size} emails`);
+        } catch (error) {
+          console.error("Error fetching email activities:", error);
+        }
+
+        return engagementMap;
+      };
+
       // Fetch contacts by IDs in batches
       const fetchContacts = async (contactIds: string[]): Promise<Map<string, ApolloContact>> => {
         const contactMap = new Map<string, ApolloContact>();
@@ -357,6 +432,11 @@ serve(async (req) => {
       // Fetch contact details
       const contactMap = await fetchContacts(contactIds);
       console.log(`Successfully fetched ${contactMap.size} contact details`);
+
+      // Fetch engagement data for emails (opens/clicks/replies) from individual email endpoints
+      const emailIds = allEmails.map(e => e.id);
+      const engagementMap = await fetchEmailActivities(emailIds);
+      console.log(`Successfully fetched engagement for ${engagementMap.size} emails`);
 
       const totalCount = totalEntriesFromApi ?? allEmails.length;
 
@@ -494,7 +574,22 @@ serve(async (req) => {
       const transformedEmails = allEmails.map((email) => {
         const contact = email.contact_id ? contactMap.get(email.contact_id) : null;
 
-        const engagement = deriveEngagementFromStats(email);
+        // Get engagement from stats parsing
+        const statsEngagement = deriveEngagementFromStats(email);
+        
+        // Get engagement from individual email fetch (more reliable)
+        const fetchedEngagement = engagementMap.get(email.id);
+        
+        // Merge engagement data, preferring fetched data
+        const engagement = {
+          openCount: Math.max(statsEngagement.openCount, fetchedEngagement?.openCount ?? 0),
+          clickCount: Math.max(statsEngagement.clickCount, fetchedEngagement?.clickCount ?? 0),
+          replyCount: Math.max(statsEngagement.replyCount, fetchedEngagement?.replyCount ?? 0),
+          openedAt: fetchedEngagement?.openedAt || statsEngagement.openedAt,
+          clickedAt: fetchedEngagement?.clickedAt || statsEngagement.clickedAt,
+          repliedAt: fetchedEngagement?.repliedAt || statsEngagement.repliedAt,
+        };
+        
         const derivedStatus = deriveEmailStatus(email, engagement);
 
         return {

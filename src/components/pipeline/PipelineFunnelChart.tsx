@@ -154,18 +154,15 @@ export function PipelineFunnelChart({ metrics, isLoading, regionLabel }: Pipelin
                   />
                 ))}
                 <LabelList
-                  position="right"
-                  fill="#888"
-                  stroke="none"
-                  dataKey="name"
-                  className="text-xs"
-                />
-                <LabelList
                   position="center"
                   fill="#fff"
                   stroke="none"
                   dataKey="value"
                   className="text-sm font-bold"
+                  formatter={(value: number, entry: any) => {
+                    const item = funnelData.find(d => d.value === value);
+                    return item ? `${value.toLocaleString()} ${item.name}` : value.toLocaleString();
+                  }}
                 />
               </Funnel>
             </FunnelChart>

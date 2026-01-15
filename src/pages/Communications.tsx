@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Mail, Phone, Linkedin, Reply, Trash2, ExternalLink, Search, X, User, Calendar, Video, GraduationCap, MessageSquare, Pencil, Download } from 'lucide-react';
+import { Mail, Phone, Linkedin, Reply, Trash2, ExternalLink, Search, X, User, Calendar, Video, GraduationCap, MessageSquare, Pencil, Download, Eye, MessageCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Label } from '@/components/ui/label';
@@ -221,6 +221,61 @@ export default function Communications() {
       toast({
         title: 'Error',
         description: 'Failed to update conversation status',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleMarkAsOpened = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('company_communications')
+        .update({ 
+          email_opened_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Updated',
+        description: 'Email marked as opened',
+      });
+
+      await refetch();
+    } catch (error: any) {
+      console.error('Error marking as opened:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update email status',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleMarkAsResponded = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('company_communications')
+        .update({ 
+          email_responded_at: new Date().toISOString(),
+          email_opened_at: new Date().toISOString() // Also mark as opened if not already
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Updated',
+        description: 'Email marked as responded',
+      });
+
+      await refetch();
+    } catch (error: any) {
+      console.error('Error marking as responded:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update email status',
         variant: 'destructive',
       });
     }
@@ -520,6 +575,31 @@ export default function Communications() {
                       >
                         {comm.conversation_active !== false ? "Inactive" : "Active"}
                       </Button>
+                      {/* Manual status override buttons */}
+                      {comm.sent_at && !comm.email_opened_at && !comm.email_responded_at && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleMarkAsOpened(comm.id)}
+                          title="Mark as opened"
+                          className="text-cyan-600 border-cyan-600 hover:bg-cyan-50"
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          Opened
+                        </Button>
+                      )}
+                      {comm.sent_at && !comm.email_responded_at && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleMarkAsResponded(comm.id)}
+                          title="Mark as responded"
+                          className="text-green-600 border-green-600 hover:bg-green-50"
+                        >
+                          <MessageCircle className="h-4 w-4 mr-1" />
+                          Replied
+                        </Button>
+                      )}
                       {!comm.used && (
                         <Button
                           variant="ghost"

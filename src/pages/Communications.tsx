@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Mail, Phone, Linkedin, Reply, Trash2, ExternalLink, Search, X, User, Calendar, Video, GraduationCap, MessageSquare, Pencil, Download, Eye, MessageCircle, Plus, ChevronDown, Sparkles, Handshake } from 'lucide-react';
+import { Mail, Phone, Linkedin, Reply, Trash2, ExternalLink, Search, X, User, Calendar, Video, GraduationCap, MessageSquare, Pencil, Download, Eye, MessageCircle, Plus, ChevronDown, Sparkles, Handshake, PhoneCall } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Label } from '@/components/ui/label';
@@ -17,6 +17,7 @@ import { ApolloEmailImportDialog } from '@/components/communications/ApolloEmail
 import { AddCommunicationDialog } from '@/components/communications/AddCommunicationDialog';
 import { MarkAsRepliedDialog } from '@/components/communications/MarkAsRepliedDialog';
 import { HandoffDialog } from '@/components/communications/HandoffDialog';
+import { ScheduleMeetingDialog } from '@/components/communications/ScheduleMeetingDialog';
 import { useNavigate } from 'react-router-dom';
 
 export default function Communications() {
@@ -41,6 +42,8 @@ export default function Communications() {
   const [openManualDialog, setOpenManualDialog] = useState(false);
   const [handoffDialogComm, setHandoffDialogComm] = useState<any>(null);
   const [openHandoffDialog, setOpenHandoffDialog] = useState(false);
+  const [meetingDialogComm, setMeetingDialogComm] = useState<any>(null);
+  const [openMeetingDialog, setOpenMeetingDialog] = useState(false);
 
   const { data: communications, isLoading, refetch } = useQuery({
     queryKey: ['all-communications'],
@@ -289,6 +292,53 @@ export default function Communications() {
         title: 'Error',
         description: 'Failed to update email status',
         variant: 'destructive',
+      });
+    }
+  };
+
+  const handleLogCall = async (comm: any) => {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("Not authenticated");
+
+      // Create phone call activity in outreach_activities
+      const { data: activity, error: activityError } = await supabase
+        .from("outreach_activities")
+        .insert({
+          company_id: comm.company_id,
+          activity_type: "Phone",
+          subject_line: `Phone call with ${comm.companies?.company_name || 'Company'}`,
+          outcome: "Completed",
+          completed_date: new Date().toISOString().split("T")[0],
+          created_by: userData.user.id,
+        })
+        .select()
+        .single();
+
+      if (activityError) throw activityError;
+
+      // If there's a contact, link it to the activity
+      if (comm.contact_id && activity) {
+        await supabase
+          .from("activity_contacts")
+          .insert({
+            activity_id: activity.id,
+            contact_id: comm.contact_id,
+          });
+      }
+
+      toast({
+        title: "Call Logged",
+        description: "Phone call activity has been logged",
+      });
+
+      await refetch();
+    } catch (error: any) {
+      console.error("Error logging call:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to log call",
+        variant: "destructive",
       });
     }
   };
@@ -603,6 +653,29 @@ export default function Communications() {
                       >
                         <Handshake className="h-4 w-4" />
                       </Button>
+                      {/* Called Button */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleLogCall(comm)}
+                        title="Log a phone call"
+                        className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                      >
+                        <PhoneCall className="h-4 w-4" />
+                      </Button>
+                      {/* Schedule Meeting Button */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setMeetingDialogComm(comm);
+                          setOpenMeetingDialog(true);
+                        }}
+                        title="Schedule a meeting"
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      >
+                        <Calendar className="h-4 w-4" />
+                      </Button>
                       {/* Quick status buttons - always visible for sent emails */}
                       {!comm.email_opened_at && (
                         <Button
@@ -724,6 +797,15 @@ export default function Communications() {
           open={openHandoffDialog}
           onOpenChange={setOpenHandoffDialog}
           communication={handoffDialogComm}
+          onSuccess={refetch}
+        />
+      )}
+
+      {meetingDialogComm && (
+        <ScheduleMeetingDialog
+          open={openMeetingDialog}
+          onOpenChange={setOpenMeetingDialog}
+          communication={meetingDialogComm}
           onSuccess={refetch}
         />
       )}

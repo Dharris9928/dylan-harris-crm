@@ -151,15 +151,15 @@ export function AddCommunicationDialog({ onSuccess, open, onOpenChange }: AddCom
           <div className="space-y-2">
             <Label>Contact</Label>
             <Select 
-              value={formData.contact_id} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, contact_id: value }))}
+              value={formData.contact_id || "none"} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, contact_id: value === "none" ? "" : value }))}
               disabled={!formData.company_id}
             >
               <SelectTrigger>
                 <SelectValue placeholder={formData.company_id ? "Select a contact (optional)" : "Select a company first"} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No contact</SelectItem>
+                <SelectItem value="none">No contact</SelectItem>
                 {contacts?.map((contact) => (
                   <SelectItem key={contact.id} value={contact.id}>
                     {contact.first_name} {contact.last_name}

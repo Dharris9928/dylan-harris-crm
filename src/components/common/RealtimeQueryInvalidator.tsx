@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -28,8 +28,28 @@ const TABLE_TO_QUERY_KEYS: Record<string, QueryKeyLike[]> = {
 
 export function RealtimeQueryInvalidator() {
   const queryClient = useQueryClient();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Listen for auth state changes to only connect when authenticated
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    // Check initial auth state
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
+    // Only establish realtime connection when user is authenticated
+    if (!isAuthenticated) return;
+
     const channel = supabase
       .channel("global-db-changes")
       .on(
@@ -56,7 +76,7 @@ export function RealtimeQueryInvalidator() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [queryClient]);
+  }, [queryClient, isAuthenticated]);
 
   return null;
 }

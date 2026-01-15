@@ -291,6 +291,7 @@ export function EditActivityDialog({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="Completed">Completed</SelectItem>
+                <SelectItem value="Scheduled">Scheduled</SelectItem>
                 <SelectItem value="Sent">Sent</SelectItem>
                 <SelectItem value="Opened">Opened</SelectItem>
                 <SelectItem value="Clicked">Clicked</SelectItem>
@@ -298,6 +299,7 @@ export function EditActivityDialog({
                 <SelectItem value="Connected">Connected</SelectItem>
                 <SelectItem value="No Answer">No Answer</SelectItem>
                 <SelectItem value="Bounced">Bounced</SelectItem>
+                <SelectItem value="Cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
           </div>

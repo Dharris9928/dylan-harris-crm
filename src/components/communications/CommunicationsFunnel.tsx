@@ -24,7 +24,7 @@ export function CommunicationsFunnel() {
       // Get outreach activities for calls and meetings
       const { data: activities, error: actError } = await supabase
         .from("outreach_activities")
-        .select("id, activity_type, outcome");
+        .select("id, activity_type, outcome, completed_date");
 
       if (actError) throw actError;
 
@@ -34,7 +34,13 @@ export function CommunicationsFunnel() {
       const emailsReplied = communications?.filter(c => c.email_responded_at).length || 0;
       const callsMade = activities?.filter(a => a.activity_type === "Phone").length || 0;
       const meetingsBooked = activities?.filter(a => 
-        a.activity_type === "Meeting" && a.outcome === "Scheduled"
+        ["Meeting", "Demo"].includes(a.activity_type) && 
+        a.outcome === "Scheduled" && 
+        !a.completed_date
+      ).length || 0;
+      const meetingsConducted = activities?.filter(a => 
+        ["Meeting", "Demo"].includes(a.activity_type) && 
+        (a.outcome === "Completed" || a.completed_date)
       ).length || 0;
       const handoffs = communications?.filter(c => c.assigned_to).length || 0;
 
@@ -44,6 +50,7 @@ export function CommunicationsFunnel() {
         emailsReplied,
         callsMade,
         meetingsBooked,
+        meetingsConducted,
         handoffs,
       };
     },
@@ -97,7 +104,13 @@ export function CommunicationsFunnel() {
       label: "Meetings Booked",
       count: funnelData?.meetingsBooked || 0,
       percentage: baseCount > 0 ? Math.round((funnelData?.meetingsBooked || 0) / baseCount * 100) : 0,
-      color: "hsl(217, 91%, 85%)", // blue-200
+      color: "hsl(142, 76%, 45%)", // green-500
+    },
+    {
+      label: "Meetings Conducted",
+      count: funnelData?.meetingsConducted || 0,
+      percentage: baseCount > 0 ? Math.round((funnelData?.meetingsConducted || 0) / baseCount * 100) : 0,
+      color: "hsl(142, 76%, 36%)", // green-600
     },
     {
       label: "Handoffs",
@@ -152,7 +165,7 @@ export function CommunicationsFunnel() {
         </div>
 
         {/* Legend with conversion rates */}
-        <div className="mt-6 pt-4 border-t flex flex-wrap justify-center gap-6 text-sm">
+        <div className="mt-6 pt-4 border-t flex flex-wrap justify-center gap-4 text-sm">
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">Open Rate:</span>
             <span className="font-semibold">
@@ -172,15 +185,21 @@ export function CommunicationsFunnel() {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">Meeting Rate:</span>
+            <span className="text-muted-foreground">Booked Rate:</span>
             <span className="font-semibold">
               {stages[4].percentage}%
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">Handoff Rate:</span>
+            <span className="text-muted-foreground">Conducted Rate:</span>
             <span className="font-semibold">
               {stages[5].percentage}%
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Handoff Rate:</span>
+            <span className="font-semibold">
+              {stages[6].percentage}%
             </span>
           </div>
         </div>

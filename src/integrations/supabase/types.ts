@@ -1631,6 +1631,7 @@ export type Database = {
       company_communications: {
         Row: {
           ai_model: string | null
+          assigned_to: string | null
           attempted_at: string | null
           communication_type: string
           company_id: string
@@ -1652,6 +1653,7 @@ export type Database = {
         }
         Insert: {
           ai_model?: string | null
+          assigned_to?: string | null
           attempted_at?: string | null
           communication_type: string
           company_id: string
@@ -1673,6 +1675,7 @@ export type Database = {
         }
         Update: {
           ai_model?: string | null
+          assigned_to?: string | null
           attempted_at?: string | null
           communication_type?: string
           company_id?: string
@@ -1693,6 +1696,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "company_communications_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "company_communications_company_id_fkey"
             columns: ["company_id"]

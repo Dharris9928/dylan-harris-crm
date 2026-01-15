@@ -14,6 +14,7 @@ import { NewCommunicationDialog } from '@/components/companies/NewCommunicationD
 import { EditCommunicationDialog } from '@/components/companies/EditCommunicationDialog';
 import { ApolloEmailImportDialog } from '@/components/communications/ApolloEmailImportDialog';
 import { AddCommunicationDialog } from '@/components/communications/AddCommunicationDialog';
+import { MarkAsRepliedDialog } from '@/components/communications/MarkAsRepliedDialog';
 import { useNavigate } from 'react-router-dom';
 
 export default function Communications() {
@@ -33,6 +34,8 @@ export default function Communications() {
   const [editCommunication, setEditCommunication] = useState<any>(null);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openApolloImport, setOpenApolloImport] = useState(false);
+  const [replyDialogComm, setReplyDialogComm] = useState<any>(null);
+  const [openReplyDialog, setOpenReplyDialog] = useState(false);
 
   const { data: communications, isLoading, refetch } = useQuery({
     queryKey: ['all-communications'],
@@ -583,7 +586,10 @@ export default function Communications() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleMarkAsResponded(comm.id)}
+                          onClick={() => {
+                            setReplyDialogComm(comm);
+                            setOpenReplyDialog(true);
+                          }}
                           title="Mark as replied"
                           className="text-green-600 hover:text-green-700 hover:bg-green-50"
                         >
@@ -657,6 +663,15 @@ export default function Communications() {
         onOpenChange={setOpenApolloImport}
         onImportComplete={refetch}
       />
+
+      {replyDialogComm && (
+        <MarkAsRepliedDialog
+          open={openReplyDialog}
+          onOpenChange={setOpenReplyDialog}
+          communication={replyDialogComm}
+          onSuccess={refetch}
+        />
+      )}
     </div>
   );
 }

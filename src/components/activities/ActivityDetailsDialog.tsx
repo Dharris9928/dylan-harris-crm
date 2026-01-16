@@ -104,10 +104,8 @@ export function ActivityDetailsDialog({ activity, open, onOpenChange, onFollowUp
     }
   };
 
-  // Show complete button only for meetings/demos that are scheduled but not completed
-  const canComplete = ['Meeting', 'Demo'].includes(activity.activity_type) && 
-                      activity.outcome === 'Scheduled' && 
-                      !activity.completed_date;
+  // Show complete button for any activity that isn't already completed
+  const canComplete = activity.outcome !== 'Completed' && !activity.completed_date;
 
   return (
     <>

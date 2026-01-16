@@ -191,8 +191,13 @@ export default function PipelineAnalytics() {
             <ClosedDealsCard metrics={metrics} isLoading={isLoading} />
           </div>
 
-          {/* Communications Funnel */}
-          <CommunicationsFunnel />
+          {/* Communications Funnel - now with same filters */}
+          <CommunicationsFunnel 
+            dateRange={dateRange}
+            perspective={perspective}
+            userId={userId}
+            regionFilter={regionFilter}
+          />
         </>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { RegionFilter, getFilterStates } from "@/lib/regions/regionConstants";
+import { Perspective } from "@/components/common/PerspectiveSelector";
 
 interface FunnelStage {
   label: string;
@@ -10,22 +12,72 @@ interface FunnelStage {
   color: string;
 }
 
-export function CommunicationsFunnel() {
-  const { data: funnelData, isLoading } = useQuery({
-    queryKey: ["communications-funnel"],
-    queryFn: async () => {
-      // Get email communications data
-      const { data: communications, error: commError } = await supabase
-        .from("company_communications")
-        .select("id, sent_at, email_opened_at, email_responded_at, communication_type, assigned_to");
+interface CommunicationsFunnelProps {
+  dateRange?: { from: Date; to: Date };
+  perspective?: Perspective;
+  userId?: string;
+  regionFilter?: RegionFilter;
+}
 
+export function CommunicationsFunnel({ 
+  dateRange, 
+  perspective = "all_records", 
+  userId,
+  regionFilter = "all" 
+}: CommunicationsFunnelProps) {
+  const { data: funnelData, isLoading } = useQuery({
+    queryKey: ["communications-funnel", dateRange?.from?.toISOString(), dateRange?.to?.toISOString(), perspective, userId, regionFilter],
+    queryFn: async () => {
+      const filterStates = getFilterStates(regionFilter);
+      
+      // Format dates for queries
+      const fromDate = dateRange?.from?.toISOString().split('T')[0];
+      const toDate = dateRange?.to?.toISOString().split('T')[0];
+      
+      // Build communications query with filters
+      let commQuery = supabase
+        .from("company_communications")
+        .select("id, sent_at, email_opened_at, email_responded_at, communication_type, assigned_to, company_id, user_id, companies!inner(state)");
+
+      // Apply date filter
+      if (fromDate && toDate) {
+        commQuery = commQuery.gte("created_at", fromDate).lte("created_at", `${toDate}T23:59:59`);
+      }
+
+      // Apply perspective filter - use user_id for company_communications
+      if (perspective === "my_records" && userId) {
+        commQuery = commQuery.eq("user_id", userId);
+      }
+
+      // Apply region filter via state
+      if (filterStates) {
+        commQuery = commQuery.in("companies.state", filterStates);
+      }
+
+      const { data: communications, error: commError } = await commQuery;
       if (commError) throw commError;
 
-      // Get outreach activities for calls and meetings
-      const { data: activities, error: actError } = await supabase
+      // Build activities query with filters
+      let actQuery = supabase
         .from("outreach_activities")
-        .select("id, activity_type, outcome, completed_date");
+        .select("id, activity_type, outcome, completed_date, scheduled_date, created_at, company_id, created_by, companies!inner(state)");
 
+      // Apply date filter
+      if (fromDate && toDate) {
+        actQuery = actQuery.gte("created_at", fromDate).lte("created_at", `${toDate}T23:59:59`);
+      }
+
+      // Apply perspective filter
+      if (perspective === "my_records" && userId) {
+        actQuery = actQuery.eq("created_by", userId);
+      }
+
+      // Apply region filter via state
+      if (filterStates) {
+        actQuery = actQuery.in("companies.state", filterStates);
+      }
+
+      const { data: activities, error: actError } = await actQuery;
       if (actError) throw actError;
 
       // Calculate funnel metrics
@@ -78,6 +130,12 @@ export function CommunicationsFunnel() {
 
   const baseCount = funnelData?.emailsSent || 1;
 
+  // Helper to calculate percentage with 1 decimal place
+  const calcPercentage = (count: number) => {
+    if (baseCount === 0) return 0;
+    return parseFloat(((count / baseCount) * 100).toFixed(1));
+  };
+
   const stages: FunnelStage[] = [
     {
       label: "Emails Sent",
@@ -88,37 +146,37 @@ export function CommunicationsFunnel() {
     {
       label: "Emails Opened",
       count: funnelData?.emailsOpened || 0,
-      percentage: baseCount > 0 ? Math.round((funnelData?.emailsOpened || 0) / baseCount * 100) : 0,
+      percentage: calcPercentage(funnelData?.emailsOpened || 0),
       color: "hsl(217, 91%, 60%)", // blue-500
     },
     {
       label: "Emails Replied",
       count: funnelData?.emailsReplied || 0,
-      percentage: baseCount > 0 ? Math.round((funnelData?.emailsReplied || 0) / baseCount * 100) : 0,
+      percentage: calcPercentage(funnelData?.emailsReplied || 0),
       color: "hsl(217, 91%, 70%)", // blue-400
     },
     {
       label: "Calls Made",
       count: funnelData?.callsMade || 0,
-      percentage: baseCount > 0 ? Math.round((funnelData?.callsMade || 0) / baseCount * 100) : 0,
+      percentage: calcPercentage(funnelData?.callsMade || 0),
       color: "hsl(217, 91%, 80%)", // blue-300
     },
     {
       label: "Meetings Booked",
       count: funnelData?.meetingsBooked || 0,
-      percentage: baseCount > 0 ? Math.round((funnelData?.meetingsBooked || 0) / baseCount * 100) : 0,
+      percentage: calcPercentage(funnelData?.meetingsBooked || 0),
       color: "hsl(142, 76%, 45%)", // green-500
     },
     {
       label: "Meetings Conducted",
       count: funnelData?.meetingsConducted || 0,
-      percentage: baseCount > 0 ? Math.round((funnelData?.meetingsConducted || 0) / baseCount * 100) : 0,
+      percentage: calcPercentage(funnelData?.meetingsConducted || 0),
       color: "hsl(142, 76%, 36%)", // green-600
     },
     {
       label: "Handoffs",
       count: funnelData?.handoffs || 0,
-      percentage: baseCount > 0 ? Math.round((funnelData?.handoffs || 0) / baseCount * 100) : 0,
+      percentage: calcPercentage(funnelData?.handoffs || 0),
       color: "hsl(270, 70%, 70%)", // purple
     },
   ];
@@ -143,7 +201,7 @@ export function CommunicationsFunnel() {
                 {/* Percentage and Count */}
                 <div className="text-center mb-2">
                   <div className="text-sm font-semibold text-muted-foreground">
-                    {stage.percentage}%
+                    {stage.percentage.toFixed(1)}%
                   </div>
                   <div className="text-lg font-bold">{stage.count.toLocaleString()}</div>
                 </div>
@@ -172,37 +230,37 @@ export function CommunicationsFunnel() {
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">Open Rate:</span>
             <span className="font-semibold">
-              {stages[1].percentage}%
+              {stages[1].percentage.toFixed(1)}%
             </span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">Reply Rate:</span>
             <span className="font-semibold">
-              {stages[2].percentage}%
+              {stages[2].percentage.toFixed(1)}%
             </span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">Call Rate:</span>
             <span className="font-semibold">
-              {stages[3].percentage}%
+              {stages[3].percentage.toFixed(1)}%
             </span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">Booked Rate:</span>
             <span className="font-semibold">
-              {stages[4].percentage}%
+              {stages[4].percentage.toFixed(1)}%
             </span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">Conducted Rate:</span>
             <span className="font-semibold">
-              {stages[5].percentage}%
+              {stages[5].percentage.toFixed(1)}%
             </span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">Handoff Rate:</span>
             <span className="font-semibold">
-              {stages[6].percentage}%
+              {stages[6].percentage.toFixed(1)}%
             </span>
           </div>
         </div>

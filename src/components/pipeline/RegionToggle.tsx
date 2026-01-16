@@ -1,8 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Globe, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { RegionFilter } from "@/lib/regions/regionConstants";
 
-export type RegionFilter = "all" | "west" | "east";
+// Re-export for backwards compatibility
+export type { RegionFilter };
 
 interface RegionToggleProps {
   value: RegionFilter;

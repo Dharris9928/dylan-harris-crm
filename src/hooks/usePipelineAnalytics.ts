@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays, format } from "date-fns";
 import { Perspective } from "@/components/common/PerspectiveSelector";
-import { RegionFilter } from "@/components/pipeline/RegionToggle";
+import { WEST_STATES, EAST_STATES, getFilterStates, type RegionFilter } from "@/lib/regions/regionConstants";
 
 interface DateRange {
   from: Date;
@@ -75,24 +75,8 @@ interface PipelineMetrics {
 
 export type { PipelineMetrics, EmailedCompany, ResponseDetail, HandoffDetail };
 
-// State mappings based on user's map (Purple = West, Blue = East)
-const WEST_STATES = [
-  'WA', 'OR', 'CA', 'NV', 'ID', 'MT', 'WY', 'UT', 'CO', 'AZ', 'NM',
-  'TX', 'OK', 'KS', 'NE', 'SD', 'ND', 'AK', 'HI'
-];
-
-const EAST_STATES = [
-  'MN', 'IA', 'MO', 'AR', 'LA', 'WI', 'IL', 'IN', 'MI', 'OH',
-  'KY', 'TN', 'MS', 'AL', 'GA', 'FL', 'SC', 'NC', 'VA', 'WV',
-  'MD', 'DE', 'PA', 'NJ', 'NY', 'CT', 'RI', 'MA', 'VT', 'NH', 'ME', 'DC'
-];
-
-// Get states array based on filter
-function getFilterStates(regionFilter: RegionFilter): string[] | null {
-  if (regionFilter === "west") return WEST_STATES;
-  if (regionFilter === "east") return EAST_STATES;
-  return null;
-}
+// Re-export for convenience
+export { WEST_STATES, EAST_STATES };
 
 export function usePipelineAnalytics(
   dateRange: DateRange,

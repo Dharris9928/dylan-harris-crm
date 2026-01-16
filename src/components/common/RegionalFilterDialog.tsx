@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, X } from "lucide-react";
+import { WEST_STATES, EAST_STATES } from "@/lib/regions/regionConstants";
 
 interface RegionalFilterDialogProps {
   open: boolean;
@@ -22,29 +23,47 @@ export interface RegionalFilters {
   cities?: string[];
 }
 
+// Binary East vs West regions matching Pipeline Analytics
 const REGIONS = {
   West: {
     color: 'bg-purple-500',
-    states: ['CA', 'OR', 'WA', 'NV', 'AZ', 'UT', 'ID', 'MT', 'WY', 'CO', 'NM', 'AK', 'HI']
+    textColor: 'text-purple-600',
+    states: [...WEST_STATES] as string[]
   },
-  Central: {
-    color: 'bg-red-500',
-    states: ['TX', 'OK', 'KS', 'NE', 'SD', 'ND', 'MN', 'IA', 'MO', 'AR', 'LA', 'WI', 'IL', 'IN', 'MI', 'OH']
-  },
-  Northeast: {
+  East: {
     color: 'bg-blue-500',
-    states: ['PA', 'NY', 'NJ', 'CT', 'RI', 'MA', 'VT', 'NH', 'ME', 'DE', 'MD', 'WV', 'VA']
-  },
-  Southeast: {
-    color: 'bg-green-500',
-    states: ['KY', 'TN', 'NC', 'SC', 'GA', 'FL', 'AL', 'MS']
+    textColor: 'text-blue-600',
+    states: [...EAST_STATES] as string[]
   }
 };
 
 const MAJOR_METROS = [
-  'Atlanta', 'Austin', 'Boston', 'Charlotte', 'Chicago', 'Dallas', 'Denver', 'Houston',
-  'Los Angeles', 'Miami', 'Minneapolis', 'New York', 'Philadelphia', 'Phoenix',
-  'Portland', 'San Diego', 'San Francisco', 'Seattle', 'Washington DC'
+  // West Coast
+  { name: 'Los Angeles', region: 'West' },
+  { name: 'San Francisco', region: 'West' },
+  { name: 'San Diego', region: 'West' },
+  { name: 'Seattle', region: 'West' },
+  { name: 'Portland', region: 'West' },
+  { name: 'Phoenix', region: 'West' },
+  { name: 'Denver', region: 'West' },
+  { name: 'Las Vegas', region: 'West' },
+  { name: 'Austin', region: 'West' },
+  { name: 'Dallas', region: 'West' },
+  { name: 'Houston', region: 'West' },
+  { name: 'San Antonio', region: 'West' },
+  // East Coast / Midwest
+  { name: 'New York', region: 'East' },
+  { name: 'Chicago', region: 'East' },
+  { name: 'Philadelphia', region: 'East' },
+  { name: 'Boston', region: 'East' },
+  { name: 'Washington DC', region: 'East' },
+  { name: 'Atlanta', region: 'East' },
+  { name: 'Miami', region: 'East' },
+  { name: 'Charlotte', region: 'East' },
+  { name: 'Minneapolis', region: 'East' },
+  { name: 'Detroit', region: 'East' },
+  { name: 'Tampa', region: 'East' },
+  { name: 'Nashville', region: 'East' },
 ];
 
 export const RegionalFilterDialog = ({ 
@@ -136,16 +155,16 @@ export const RegionalFilterDialog = ({
             </RadioGroup>
           </div>
 
-          {/* Region Selection */}
+          {/* Region Selection - Binary East vs West */}
           {filterType === 'region' && (
             <div>
               <Label className="text-base font-semibold mb-3 block">Select Regions</Label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 {Object.entries(REGIONS).map(([region, data]) => (
                   <div
                     key={region}
-                    className={`flex items-center space-x-3 border rounded-lg p-4 hover:bg-accent cursor-pointer ${
-                      selectedRegions.includes(region) ? 'border-primary bg-accent' : ''
+                    className={`flex items-center space-x-3 border rounded-lg p-5 hover:bg-accent cursor-pointer transition-all ${
+                      selectedRegions.includes(region) ? 'border-primary bg-accent ring-2 ring-primary/20' : ''
                     }`}
                     onClick={() => handleRegionToggle(region)}
                   >
@@ -155,71 +174,122 @@ export const RegionalFilterDialog = ({
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <div className={`w-3 h-3 rounded-full ${data.color}`} />
-                        <span className="font-medium">{region}</span>
+                        <div className={`w-4 h-4 rounded-full ${data.color}`} />
+                        <span className={`font-semibold text-lg ${data.textColor}`}>{region}</span>
                       </div>
-                      <div className="text-xs text-muted-foreground mt-1">
+                      <div className="text-sm text-muted-foreground mt-1">
                         {data.states.length} states
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
+              
+              {/* Visual hint about region contents */}
+              <div className="mt-4 p-3 bg-muted/50 rounded-lg text-sm">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="font-medium text-purple-600">West:</span>
+                    <span className="text-muted-foreground ml-2">
+                      Pacific, Mountain, Great Plains, TX
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-blue-600">East:</span>
+                    <span className="text-muted-foreground ml-2">
+                      Midwest, Southeast, Northeast, Atlantic
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
-          {/* State Selection */}
+          {/* State Selection - organized by East/West */}
           {filterType === 'state' && (
             <div>
               <Label className="text-base font-semibold mb-3 block">Select States</Label>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 gap-6">
                 {Object.entries(REGIONS).map(([region, data]) => (
-                  <div key={region} className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm font-medium">
-                      <div className={`w-2 h-2 rounded-full ${data.color}`} />
-                      {region}
+                  <div key={region} className="space-y-3">
+                    <div className="flex items-center gap-2 pb-2 border-b">
+                      <div className={`w-3 h-3 rounded-full ${data.color}`} />
+                      <span className={`font-semibold ${data.textColor}`}>{region}</span>
+                      <span className="text-xs text-muted-foreground">({data.states.length} states)</span>
                     </div>
-                    {data.states.map(state => (
-                      <div
-                        key={state}
-                        className={`flex items-center space-x-2 p-2 rounded hover:bg-accent cursor-pointer ${
-                          selectedStates.includes(state) ? 'bg-accent' : ''
-                        }`}
-                        onClick={() => handleStateToggle(state)}
-                      >
-                        <Checkbox
-                          checked={selectedStates.includes(state)}
-                          onCheckedChange={() => handleStateToggle(state)}
-                        />
-                        <span className="text-sm">{state}</span>
-                      </div>
-                    ))}
+                    <div className="grid grid-cols-3 gap-1 max-h-64 overflow-y-auto">
+                      {data.states.map(state => (
+                        <div
+                          key={state}
+                          className={`flex items-center space-x-2 p-2 rounded hover:bg-accent cursor-pointer ${
+                            selectedStates.includes(state) ? 'bg-accent' : ''
+                          }`}
+                          onClick={() => handleStateToggle(state)}
+                        >
+                          <Checkbox
+                            checked={selectedStates.includes(state)}
+                            onCheckedChange={() => handleStateToggle(state)}
+                          />
+                          <span className="text-sm">{state}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {/* Quick select all button */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-xs"
+                      onClick={() => {
+                        const allSelected = data.states.every(s => selectedStates.includes(s));
+                        if (allSelected) {
+                          setSelectedStates(prev => prev.filter(s => !data.states.includes(s)));
+                        } else {
+                          setSelectedStates(prev => [...new Set([...prev, ...data.states])]);
+                        }
+                      }}
+                    >
+                      {data.states.every(s => selectedStates.includes(s)) ? 'Deselect All' : 'Select All'} {region}
+                    </Button>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Metro Area Selection */}
+          {/* Metro Area Selection - organized by East/West */}
           {filterType === 'metro' && (
             <div>
               <Label className="text-base font-semibold mb-3 block">Select Metro Areas</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {MAJOR_METROS.map(metro => (
-                  <div
-                    key={metro}
-                    className={`flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent cursor-pointer ${
-                      selectedMetros.includes(metro) ? 'border-primary bg-accent' : ''
-                    }`}
-                    onClick={() => handleMetroToggle(metro)}
-                  >
-                    <Checkbox
-                      checked={selectedMetros.includes(metro)}
-                      onCheckedChange={() => handleMetroToggle(metro)}
-                    />
-                    <span>{metro}</span>
-                  </div>
-                ))}
+              <div className="grid grid-cols-2 gap-6">
+                {['West', 'East'].map(region => {
+                  const regionData = REGIONS[region as keyof typeof REGIONS];
+                  const regionMetros = MAJOR_METROS.filter(m => m.region === region);
+                  return (
+                    <div key={region} className="space-y-3">
+                      <div className="flex items-center gap-2 pb-2 border-b">
+                        <div className={`w-3 h-3 rounded-full ${regionData.color}`} />
+                        <span className={`font-semibold ${regionData.textColor}`}>{region}</span>
+                      </div>
+                      <div className="space-y-1">
+                        {regionMetros.map(metro => (
+                          <div
+                            key={metro.name}
+                            className={`flex items-center space-x-2 p-2 rounded-lg border hover:bg-accent cursor-pointer ${
+                              selectedMetros.includes(metro.name) ? 'border-primary bg-accent' : ''
+                            }`}
+                            onClick={() => handleMetroToggle(metro.name)}
+                          >
+                            <Checkbox
+                              checked={selectedMetros.includes(metro.name)}
+                              onCheckedChange={() => handleMetroToggle(metro.name)}
+                            />
+                            <span>{metro.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -229,12 +299,16 @@ export const RegionalFilterDialog = ({
             <div className="border-t pt-4">
               <Label className="text-sm font-semibold mb-2 block">Active Filters</Label>
               <div className="flex flex-wrap gap-2">
-                {selectedRegions.map(region => (
-                  <Badge key={region} variant="secondary">
-                    {region}
-                    <X className="h-3 w-3 ml-1 cursor-pointer" onClick={() => handleRegionToggle(region)} />
-                  </Badge>
-                ))}
+                {selectedRegions.map(region => {
+                  const regionData = REGIONS[region as keyof typeof REGIONS];
+                  return (
+                    <Badge key={region} variant="secondary" className="gap-1">
+                      <div className={`w-2 h-2 rounded-full ${regionData?.color}`} />
+                      {region}
+                      <X className="h-3 w-3 ml-1 cursor-pointer" onClick={() => handleRegionToggle(region)} />
+                    </Badge>
+                  );
+                })}
                 {selectedStates.map(state => (
                   <Badge key={state} variant="secondary">
                     {state}

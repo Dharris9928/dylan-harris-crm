@@ -18,6 +18,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { RegionalFilterDialog, RegionalFilters } from "@/components/common/RegionalFilterDialog";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
+import { WEST_STATES, EAST_STATES } from "@/lib/regions/regionConstants";
 
 const Contacts = () => {
   const location = useLocation();
@@ -75,8 +76,20 @@ const Contacts = () => {
         query = query.eq('companies.created_by', userId);
       }
 
-      // Apply regional filters
+      // Apply regional filters - convert regions to states
       if (regionalFilters) {
+        // First check for region-based filtering (East/West)
+        if (regionalFilters.regions && regionalFilters.regions.length > 0) {
+          const regionStates: string[] = [];
+          regionalFilters.regions.forEach(region => {
+            if (region === 'West') regionStates.push(...WEST_STATES);
+            if (region === 'East') regionStates.push(...EAST_STATES);
+          });
+          if (regionStates.length > 0) {
+            query = query.in('companies.state', regionStates);
+          }
+        }
+        // Also support direct state selection
         if (regionalFilters.states && regionalFilters.states.length > 0) {
           query = query.in('companies.state', regionalFilters.states);
         }

@@ -32,6 +32,7 @@ import { useToast } from "@/hooks/use-toast";
 import { PerspectiveSelector } from "@/components/common/PerspectiveSelector";
 import { usePerspective } from "@/hooks/usePerspective";
 import { useUserRole } from "@/hooks/useUserRole";
+import { WEST_STATES, EAST_STATES } from "@/lib/regions/regionConstants";
 
 const Companies = () => {
   const location = useLocation();
@@ -236,11 +237,19 @@ const Companies = () => {
       if (priorityFilter) query = query.eq('priority_tier', priorityFilter);
       if (segmentFilter) query = query.eq('segment', segmentFilter);
       
-      // Regional filters - TODO: Enable after database migration adds 'region' column
-      // if (regionFilter) {
-      //   const regions = regionFilter.split(',');
-      //   query = query.in('region', regions);
-      // }
+      // Regional filters - convert region names to states using shared constants
+      if (regionFilter) {
+        const regions = regionFilter.split(',');
+        const regionStates: string[] = [];
+        regions.forEach(region => {
+          if (region === 'West') regionStates.push(...WEST_STATES);
+          if (region === 'East') regionStates.push(...EAST_STATES);
+        });
+        if (regionStates.length > 0) {
+          query = query.in('state', regionStates);
+        }
+      }
+      // Also support direct state filter (in addition to region)
       if (statesFilter) {
         const states = statesFilter.split(',');
         query = query.in('state', states);

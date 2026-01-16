@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,11 +19,11 @@ import { AddCommunicationDialog } from '@/components/communications/AddCommunica
 import { MarkAsRepliedDialog } from '@/components/communications/MarkAsRepliedDialog';
 import { HandoffDialog } from '@/components/communications/HandoffDialog';
 import { ScheduleMeetingDialog } from '@/components/communications/ScheduleMeetingDialog';
-import { useNavigate } from 'react-router-dom';
 
 export default function Communications() {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [industryTypeFilter, setIndustryTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -44,6 +45,38 @@ export default function Communications() {
   const [openHandoffDialog, setOpenHandoffDialog] = useState(false);
   const [meetingDialogComm, setMeetingDialogComm] = useState<any>(null);
   const [openMeetingDialog, setOpenMeetingDialog] = useState(false);
+
+  // Handle URL query param to auto-open communication by ID
+  const commIdFromUrl = searchParams.get('id');
+  
+  const { data: commFromUrl } = useQuery({
+    queryKey: ["communication-by-id", commIdFromUrl],
+    queryFn: async () => {
+      if (!commIdFromUrl) return null;
+      const { data, error } = await supabase
+        .from("company_communications")
+        .select(`
+          *,
+          companies(company_name, industry_type),
+          contacts(first_name, last_name)
+        `)
+        .eq("id", commIdFromUrl)
+        .single();
+      if (error) return null;
+      return data;
+    },
+    enabled: !!commIdFromUrl,
+  });
+
+  // Auto-open communication from URL param
+  useEffect(() => {
+    if (commFromUrl && commIdFromUrl) {
+      setEditCommunication(commFromUrl);
+      setOpenEditDialog(true);
+      // Clear the URL param after opening
+      setSearchParams({}, { replace: true });
+    }
+  }, [commFromUrl, commIdFromUrl, setSearchParams]);
 
   const { data: communications, isLoading, refetch } = useQuery({
     queryKey: ['all-communications'],

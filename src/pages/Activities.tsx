@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Activity, Calendar, Plus, MapPin, X } from "lucide-react";
@@ -21,6 +22,7 @@ import { RegionalFilterDialog, RegionalFilters } from "@/components/common/Regio
 
 const Activities = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isRegionalDialogOpen, setIsRegionalDialogOpen] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState<any>(null);
@@ -47,6 +49,39 @@ const Activities = () => {
       to: new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
     };
   });
+
+  // Handle URL query param to auto-open activity by ID
+  const activityIdFromUrl = searchParams.get('id');
+  
+  const { data: activityFromUrl } = useQuery({
+    queryKey: ["activity-by-id", activityIdFromUrl],
+    queryFn: async () => {
+      if (!activityIdFromUrl) return null;
+      const { data, error } = await supabase
+        .from("outreach_activities")
+        .select(`
+          *, 
+          companies(company_name, created_by, assigned_to, state, city), 
+          contacts(first_name, last_name),
+          activity_contacts(contact_id)
+        `)
+        .eq("id", activityIdFromUrl)
+        .single();
+      if (error) return null;
+      return data;
+    },
+    enabled: !!activityIdFromUrl,
+  });
+
+  // Auto-open activity from URL param
+  useEffect(() => {
+    if (activityFromUrl && activityIdFromUrl) {
+      setSelectedActivity(activityFromUrl);
+      setIsDetailsDialogOpen(true);
+      // Clear the URL param after opening
+      setSearchParams({}, { replace: true });
+    }
+  }, [activityFromUrl, activityIdFromUrl, setSearchParams]);
 
   const handleFollowUp = (activity: any) => {
     // Extract all contact IDs from the activity

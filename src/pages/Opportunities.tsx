@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Plus, MapPin, X } from "lucide-react";
@@ -21,6 +22,7 @@ import { RegionalFilterDialog, RegionalFilters } from "@/components/common/Regio
 
 export default function Opportunities() {
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isRegionalDialogOpen, setIsRegionalDialogOpen] = useState(false);
@@ -29,6 +31,39 @@ export default function Opportunities() {
   const [regionalFilters, setRegionalFilters] = useState<RegionalFilters | null>(null);
   const { perspective, setPerspective } = usePerspective('my_records');
   const { data: userRoleData } = useUserRole();
+
+  // Handle URL query param to auto-open opportunity by ID
+  const oppIdFromUrl = searchParams.get('id');
+  
+  const { data: oppFromUrl } = useQuery({
+    queryKey: ["opportunity-by-id", oppIdFromUrl],
+    queryFn: async () => {
+      if (!oppIdFromUrl) return null;
+      const { data, error } = await supabase
+        .from("opportunities")
+        .select(`
+          *, 
+          companies!opportunities_company_id_fkey(company_name, state, city), 
+          profiles!opportunities_assigned_to_fkey(first_name, last_name),
+          opportunity_products(*)
+        `)
+        .eq("id", oppIdFromUrl)
+        .single();
+      if (error) return null;
+      return data;
+    },
+    enabled: !!oppIdFromUrl,
+  });
+
+  // Auto-open opportunity from URL param
+  useEffect(() => {
+    if (oppFromUrl && oppIdFromUrl) {
+      setSelectedOpportunity(oppFromUrl);
+      setIsEditDialogOpen(true);
+      // Clear the URL param after opening
+      setSearchParams({}, { replace: true });
+    }
+  }, [oppFromUrl, oppIdFromUrl, setSearchParams]);
 
   const { data: opportunities, isLoading, refetch } = useQuery({
     queryKey: ['opportunities', perspective, regionalFilters, userRoleData?.hasElevatedAccess ?? 'unknown'],

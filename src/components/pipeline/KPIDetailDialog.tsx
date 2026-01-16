@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
@@ -10,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
+import { ExternalLink } from "lucide-react";
 
 export type KPICategory = 
   | "comms_sent"
@@ -31,6 +33,8 @@ interface KPIDetailDialogProps {
 }
 
 export function KPIDetailDialog({ open, onOpenChange, category, title }: KPIDetailDialogProps) {
+  const navigate = useNavigate();
+  
   const { data: items, isLoading } = useQuery({
     queryKey: ["kpi-detail", category],
     queryFn: async () => {
@@ -51,6 +55,7 @@ export function KPIDetailDialog({ open, onOpenChange, category, title }: KPIDeta
             subtitle: d.companies?.company_name || "Unknown company",
             contact: d.contacts ? `${d.contacts.first_name} ${d.contacts.last_name}` : null,
             date: d.sent_at,
+            type: "communication" as const,
           })) || [];
         }
 
@@ -68,6 +73,7 @@ export function KPIDetailDialog({ open, onOpenChange, category, title }: KPIDeta
             subtitle: d.companies?.company_name || "Unknown company",
             contact: d.contacts ? `${d.contacts.first_name} ${d.contacts.last_name}` : null,
             date: d.email_opened_at,
+            type: "communication" as const,
           })) || [];
         }
 
@@ -85,6 +91,7 @@ export function KPIDetailDialog({ open, onOpenChange, category, title }: KPIDeta
             subtitle: d.companies?.company_name || "Unknown company",
             contact: d.contacts ? `${d.contacts.first_name} ${d.contacts.last_name}` : null,
             date: d.email_responded_at,
+            type: "communication" as const,
           })) || [];
         }
 
@@ -102,6 +109,7 @@ export function KPIDetailDialog({ open, onOpenChange, category, title }: KPIDeta
             subtitle: d.companies?.company_name || "Unknown company",
             contact: null,
             date: d.completed_date,
+            type: "activity" as const,
           })) || [];
         }
 
@@ -123,6 +131,7 @@ export function KPIDetailDialog({ open, onOpenChange, category, title }: KPIDeta
             contact: d.scheduled_date ? `Scheduled for: ${format(new Date(d.scheduled_date), "MMM d, yyyy")}` : null,
             date: d.created_at,
             badge: d.outcome,
+            type: "activity" as const,
           })) || [];
         }
 
@@ -143,6 +152,7 @@ export function KPIDetailDialog({ open, onOpenChange, category, title }: KPIDeta
             contact: d.scheduled_date ? `Was scheduled for: ${format(new Date(d.scheduled_date), "MMM d, yyyy")}` : null,
             date: d.completed_date,
             badge: d.outcome === "Completed" ? "Completed" : "Conducted",
+            type: "activity" as const,
           })) || [];
         }
 
@@ -164,6 +174,7 @@ export function KPIDetailDialog({ open, onOpenChange, category, title }: KPIDeta
             contact: d.scheduled_date ? `Was scheduled for: ${format(new Date(d.scheduled_date), "MMM d, yyyy")} - NEEDS FOLLOW-UP` : null,
             date: d.created_at,
             badge: "Overdue",
+            type: "activity" as const,
           })) || [];
         }
 
@@ -182,6 +193,7 @@ export function KPIDetailDialog({ open, onOpenChange, category, title }: KPIDeta
             subtitle: d.companies?.company_name || "Unknown company",
             contact: null,
             date: d.completed_date,
+            type: "activity" as const,
           })) || [];
         }
 
@@ -199,6 +211,7 @@ export function KPIDetailDialog({ open, onOpenChange, category, title }: KPIDeta
             subtitle: (d.companies as any)?.company_name || "Unknown company",
             contact: d.assigned_profile ? `Assigned to: ${d.assigned_profile.first_name} ${d.assigned_profile.last_name}` : null,
             date: d.created_at,
+            type: "opportunity" as const,
           })) || [];
         }
 
@@ -216,6 +229,7 @@ export function KPIDetailDialog({ open, onOpenChange, category, title }: KPIDeta
             subtitle: (d.companies as any)?.company_name || "Unknown company",
             contact: d.amount ? `$${d.amount.toLocaleString()}` : null,
             date: d.closed_date,
+            type: "opportunity" as const,
           })) || [];
         }
 
@@ -225,6 +239,25 @@ export function KPIDetailDialog({ open, onOpenChange, category, title }: KPIDeta
     },
     enabled: open && !!category,
   });
+
+  const handleItemClick = (item: any) => {
+    onOpenChange(false);
+    
+    // Navigate based on item type
+    switch (item.type) {
+      case "communication":
+        navigate(`/communications?id=${item.id}`);
+        break;
+      case "activity":
+        navigate(`/activities?id=${item.id}`);
+        break;
+      case "opportunity":
+        navigate(`/opportunities?id=${item.id}`);
+        break;
+      default:
+        break;
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -248,11 +281,15 @@ export function KPIDetailDialog({ open, onOpenChange, category, title }: KPIDeta
               {items.map((item: any) => (
                 <div
                   key={item.id}
-                  className="p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                  onClick={() => handleItemClick(item)}
+                  className="p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{item.title}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium truncate">{item.title}</p>
+                        <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
                       <p className="text-sm text-muted-foreground">{item.subtitle}</p>
                       {item.contact && (
                         <p className="text-sm text-muted-foreground">{item.contact}</p>

@@ -201,6 +201,14 @@ export function ApolloEmailImportDialog({ open, onOpenChange, onImportComplete }
     }
   }, [open]);
 
+  // Update dateFrom when lastImportDate changes (default to last import date)
+  useEffect(() => {
+    if (lastImportDate) {
+      const lastDate = format(new Date(lastImportDate), 'yyyy-MM-dd');
+      setDateFrom(lastDate);
+    }
+  }, [lastImportDate]);
+
   const fetchLastImportDate = async () => {
     try {
       const { data } = await supabase

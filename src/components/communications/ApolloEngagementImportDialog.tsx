@@ -2,7 +2,6 @@ import { useState, useCallback, useMemo } from 'react';
 import Papa from 'papaparse';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
@@ -11,7 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, XCircle, Mail, Eye } from 'lucide-react';
+import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, XCircle, Mail, Eye, MousePointerClick, MessageSquare } from 'lucide-react';
 import {
   autoDetectColumns,
   parseOpenedEmails,
@@ -19,7 +18,6 @@ import {
   updateOpenedEmails,
   OpenedEmailRow,
   MatchResult,
-  MatchedRecord,
 } from '@/lib/apollo/importOpenedEmails';
 
 type Step = 'upload' | 'mapping' | 'preview' | 'importing' | 'complete';
@@ -47,6 +45,9 @@ export function ApolloEngagementImportDialog({
     openCount: null,
     apolloId: null,
     sentAt: null,
+    opened: null,
+    clicked: null,
+    replied: null,
   });
   const [matchResult, setMatchResult] = useState<MatchResult | null>(null);
   const [importProgress, setImportProgress] = useState(0);
@@ -64,6 +65,9 @@ export function ApolloEngagementImportDialog({
       openCount: null,
       apolloId: null,
       sentAt: null,
+      opened: null,
+      clicked: null,
+      replied: null,
     });
     setMatchResult(null);
     setImportProgress(0);
@@ -133,11 +137,65 @@ export function ApolloEngagementImportDialog({
     }));
   }, []);
 
+  // Check if we have a valid open indicator (either boolean or timestamp)
+  const hasOpenIndicator = columnMapping.opened || columnMapping.openedAt;
+
+  // Count rows where Open = true for preview
+  const openedRowsCount = useMemo(() => {
+    if (!rawData.length) return 0;
+    
+    if (columnMapping.opened) {
+      return rawData.filter(row => {
+        const val = row[columnMapping.opened!]?.toLowerCase().trim();
+        return val === 'true' || val === 'yes' || val === '1';
+      }).length;
+    }
+    
+    if (columnMapping.openedAt) {
+      return rawData.filter(row => row[columnMapping.openedAt!]?.trim()).length;
+    }
+    
+    return 0;
+  }, [rawData, columnMapping.opened, columnMapping.openedAt]);
+
+  // Count clicked and replied
+  const engagementCounts = useMemo(() => {
+    if (!rawData.length) return { clicked: 0, replied: 0 };
+    
+    let clicked = 0;
+    let replied = 0;
+    
+    if (columnMapping.clicked) {
+      clicked = rawData.filter(row => {
+        const val = row[columnMapping.clicked!]?.toLowerCase().trim();
+        return val === 'true' || val === 'yes' || val === '1';
+      }).length;
+    }
+    
+    if (columnMapping.replied) {
+      replied = rawData.filter(row => {
+        const val = row[columnMapping.replied!]?.toLowerCase().trim();
+        return val === 'true' || val === 'yes' || val === '1';
+      }).length;
+    }
+    
+    return { clicked, replied };
+  }, [rawData, columnMapping.clicked, columnMapping.replied]);
+
   const handlePreview = useCallback(async () => {
-    if (!columnMapping.email || !columnMapping.openedAt) {
+    if (!columnMapping.email) {
       toast({
-        title: 'Required fields missing',
-        description: 'Please map at least Email and Opened At columns',
+        title: 'Required field missing',
+        description: 'Please map the Email column',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!hasOpenIndicator) {
+      toast({
+        title: 'Required field missing',
+        description: 'Please map either the "Open" (boolean) or "Opened At" (timestamp) column',
         variant: 'destructive',
       });
       return;
@@ -152,7 +210,7 @@ export function ApolloEngagementImportDialog({
       if (parsedRows.length === 0) {
         toast({
           title: 'No opened emails found',
-          description: 'The CSV does not contain any emails with opened timestamps',
+          description: 'The CSV does not contain any emails marked as opened',
           variant: 'destructive',
         });
         setStep('mapping');
@@ -170,7 +228,7 @@ export function ApolloEngagementImportDialog({
       });
       setStep('mapping');
     }
-  }, [columnMapping, rawData, toast]);
+  }, [columnMapping, rawData, toast, hasOpenIndicator]);
 
   const handleImport = useCallback(async () => {
     if (!matchResult || matchResult.matched.length === 0) return;
@@ -215,6 +273,8 @@ export function ApolloEngagementImportDialog({
     const byApolloId = matchResult.matched.filter(m => m.matchType === 'apollo_id').length;
     const byEmailSubject = matchResult.matched.filter(m => m.matchType === 'email_subject').length;
     const byEmailOnly = matchResult.matched.filter(m => m.matchType === 'email_only').length;
+    const withClicks = matchResult.matched.filter(m => m.csvRow.clicked).length;
+    const withReplies = matchResult.matched.filter(m => m.csvRow.replied).length;
     
     return {
       total: matchResult.totalCsvRows,
@@ -223,6 +283,8 @@ export function ApolloEngagementImportDialog({
       byApolloId,
       byEmailSubject,
       byEmailOnly,
+      withClicks,
+      withReplies,
     };
   }, [matchResult]);
 
@@ -236,10 +298,10 @@ export function ApolloEngagementImportDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Eye className="h-5 w-5" />
-            Import Apollo Opened Emails
+            Import Apollo Email Engagement
           </DialogTitle>
           <DialogDescription>
-            Upload an Apollo CSV export to update email engagement data
+            Upload an Apollo CSV export to update email open, click, and reply data
           </DialogDescription>
         </DialogHeader>
 
@@ -266,8 +328,8 @@ export function ApolloEngagementImportDialog({
               <Alert className="mt-4">
                 <Mail className="h-4 w-4" />
                 <AlertDescription>
-                  Export your opened emails from Apollo's "Email Activity" or "Sequence Stats" and upload the CSV here.
-                  We'll match emails by Apollo ID, email address, or subject line.
+                  Export your messages from Apollo with Open, Click, and Replied columns.
+                  We'll match emails by subject line and email address.
                 </AlertDescription>
               </Alert>
             </div>
@@ -282,103 +344,168 @@ export function ApolloEngagementImportDialog({
                 <Badge variant="secondary">{rawData.length} rows</Badge>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="email-col">Email Column *</Label>
-                  <Select
-                    value={columnMapping.email || '_none_'}
-                    onValueChange={(v) => handleColumnChange('email', v)}
-                  >
-                    <SelectTrigger id="email-col">
-                      <SelectValue placeholder="Select column" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="_none_">-- Not mapped --</SelectItem>
-                      {headers.map(h => (
-                        <SelectItem key={h} value={h}>{h}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              {/* Required Fields */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium">Required Fields</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="email-col">Email Column *</Label>
+                    <Select
+                      value={columnMapping.email || '_none_'}
+                      onValueChange={(v) => handleColumnChange('email', v)}
+                    >
+                      <SelectTrigger id="email-col">
+                        <SelectValue placeholder="Select column" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="_none_">-- Not mapped --</SelectItem>
+                        {headers.map(h => (
+                          <SelectItem key={h} value={h}>{h}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div>
-                  <Label htmlFor="opened-col">Opened At Column *</Label>
-                  <Select
-                    value={columnMapping.openedAt || '_none_'}
-                    onValueChange={(v) => handleColumnChange('openedAt', v)}
-                  >
-                    <SelectTrigger id="opened-col">
-                      <SelectValue placeholder="Select column" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="_none_">-- Not mapped --</SelectItem>
-                      {headers.map(h => (
-                        <SelectItem key={h} value={h}>{h}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="subject-col">Subject Column</Label>
-                  <Select
-                    value={columnMapping.subject || '_none_'}
-                    onValueChange={(v) => handleColumnChange('subject', v)}
-                  >
-                    <SelectTrigger id="subject-col">
-                      <SelectValue placeholder="Select column" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="_none_">-- Not mapped --</SelectItem>
-                      {headers.map(h => (
-                        <SelectItem key={h} value={h}>{h}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="apollo-id-col">Apollo Message ID</Label>
-                  <Select
-                    value={columnMapping.apolloId || '_none_'}
-                    onValueChange={(v) => handleColumnChange('apolloId', v)}
-                  >
-                    <SelectTrigger id="apollo-id-col">
-                      <SelectValue placeholder="Select column" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="_none_">-- Not mapped --</SelectItem>
-                      {headers.map(h => (
-                        <SelectItem key={h} value={h}>{h}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="count-col">Open Count</Label>
-                  <Select
-                    value={columnMapping.openCount || '_none_'}
-                    onValueChange={(v) => handleColumnChange('openCount', v)}
-                  >
-                    <SelectTrigger id="count-col">
-                      <SelectValue placeholder="Select column" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="_none_">-- Not mapped --</SelectItem>
-                      {headers.map(h => (
-                        <SelectItem key={h} value={h}>{h}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div>
+                    <Label htmlFor="opened-bool-col">Open Status (Boolean) *</Label>
+                    <Select
+                      value={columnMapping.opened || '_none_'}
+                      onValueChange={(v) => handleColumnChange('opened', v)}
+                    >
+                      <SelectTrigger id="opened-bool-col">
+                        <SelectValue placeholder="Select column" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="_none_">-- Not mapped --</SelectItem>
+                        {headers.map(h => (
+                          <SelectItem key={h} value={h}>{h}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Column with true/false values (e.g., "Open")
+                    </p>
+                  </div>
                 </div>
               </div>
+
+              {/* Matching Fields */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium">Matching Fields</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="subject-col">Subject Column</Label>
+                    <Select
+                      value={columnMapping.subject || '_none_'}
+                      onValueChange={(v) => handleColumnChange('subject', v)}
+                    >
+                      <SelectTrigger id="subject-col">
+                        <SelectValue placeholder="Select column" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="_none_">-- Not mapped --</SelectItem>
+                        {headers.map(h => (
+                          <SelectItem key={h} value={h}>{h}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Improves matching accuracy
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="sent-col">Sent At Column</Label>
+                    <Select
+                      value={columnMapping.sentAt || '_none_'}
+                      onValueChange={(v) => handleColumnChange('sentAt', v)}
+                    >
+                      <SelectTrigger id="sent-col">
+                        <SelectValue placeholder="Select column" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="_none_">-- Not mapped --</SelectItem>
+                        {headers.map(h => (
+                          <SelectItem key={h} value={h}>{h}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Used as opened_at timestamp
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Additional Engagement */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium">Additional Engagement (Optional)</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="clicked-col">Click Status</Label>
+                    <Select
+                      value={columnMapping.clicked || '_none_'}
+                      onValueChange={(v) => handleColumnChange('clicked', v)}
+                    >
+                      <SelectTrigger id="clicked-col">
+                        <SelectValue placeholder="Select column" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="_none_">-- Not mapped --</SelectItem>
+                        {headers.map(h => (
+                          <SelectItem key={h} value={h}>{h}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="replied-col">Replied Status</Label>
+                    <Select
+                      value={columnMapping.replied || '_none_'}
+                      onValueChange={(v) => handleColumnChange('replied', v)}
+                    >
+                      <SelectTrigger id="replied-col">
+                        <SelectValue placeholder="Select column" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="_none_">-- Not mapped --</SelectItem>
+                        {headers.map(h => (
+                          <SelectItem key={h} value={h}>{h}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Preview counts */}
+              {openedRowsCount > 0 && (
+                <Alert className="bg-green-500/10 border-green-500/20">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <AlertDescription className="flex items-center gap-4">
+                    <span><strong>{openedRowsCount}</strong> emails marked as opened</span>
+                    {engagementCounts.clicked > 0 && (
+                      <span className="flex items-center gap-1">
+                        <MousePointerClick className="h-3 w-3" />
+                        {engagementCounts.clicked} clicked
+                      </span>
+                    )}
+                    {engagementCounts.replied > 0 && (
+                      <span className="flex items-center gap-1">
+                        <MessageSquare className="h-3 w-3" />
+                        {engagementCounts.replied} replied
+                      </span>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
 
               <DialogFooter className="mt-6">
                 <Button variant="outline" onClick={() => setStep('upload')}>
                   Back
                 </Button>
-                <Button onClick={handlePreview}>
+                <Button onClick={handlePreview} disabled={!columnMapping.email || !hasOpenIndicator}>
                   Preview Matches
                 </Button>
               </DialogFooter>
@@ -405,7 +532,7 @@ export function ApolloEngagementImportDialog({
               </div>
 
               {/* Match breakdown */}
-              <div className="flex gap-2 text-xs">
+              <div className="flex flex-wrap gap-2 text-xs">
                 <Badge variant="outline" className="bg-green-500/10">
                   <CheckCircle2 className="h-3 w-3 mr-1" />
                   Apollo ID: {previewStats.byApolloId}
@@ -416,6 +543,18 @@ export function ApolloEngagementImportDialog({
                 <Badge variant="outline" className="bg-amber-500/10">
                   Email only: {previewStats.byEmailOnly}
                 </Badge>
+                {previewStats.withClicks > 0 && (
+                  <Badge variant="outline" className="bg-purple-500/10">
+                    <MousePointerClick className="h-3 w-3 mr-1" />
+                    Clicks: {previewStats.withClicks}
+                  </Badge>
+                )}
+                {previewStats.withReplies > 0 && (
+                  <Badge variant="outline" className="bg-indigo-500/10">
+                    <MessageSquare className="h-3 w-3 mr-1" />
+                    Replies: {previewStats.withReplies}
+                  </Badge>
+                )}
               </div>
 
               {/* Preview table */}
@@ -425,6 +564,7 @@ export function ApolloEngagementImportDialog({
                     <TableRow>
                       <TableHead>Email</TableHead>
                       <TableHead>Subject</TableHead>
+                      <TableHead>Engagement</TableHead>
                       <TableHead>Match Type</TableHead>
                       <TableHead className="text-right">Confidence</TableHead>
                     </TableRow>
@@ -432,11 +572,18 @@ export function ApolloEngagementImportDialog({
                   <TableBody>
                     {matchResult.matched.slice(0, 50).map((match, idx) => (
                       <TableRow key={idx}>
-                        <TableCell className="font-mono text-xs truncate max-w-[150px]">
+                        <TableCell className="font-mono text-xs truncate max-w-[120px]">
                           {match.csvRow.email}
                         </TableCell>
-                        <TableCell className="truncate max-w-[150px]">
+                        <TableCell className="truncate max-w-[120px]">
                           {match.csvRow.subject || '-'}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Eye className="h-3 w-3 text-green-600" />
+                            {match.csvRow.clicked && <MousePointerClick className="h-3 w-3 text-purple-600" />}
+                            {match.csvRow.replied && <MessageSquare className="h-3 w-3 text-indigo-600" />}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="text-xs">
@@ -453,7 +600,7 @@ export function ApolloEngagementImportDialog({
                     ))}
                     {matchResult.matched.length > 50 && (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center text-muted-foreground">
+                        <TableCell colSpan={5} className="text-center text-muted-foreground">
                           ... and {matchResult.matched.length - 50} more
                         </TableCell>
                       </TableRow>
@@ -478,24 +625,28 @@ export function ApolloEngagementImportDialog({
 
           {/* Step 4: Importing */}
           {step === 'importing' && (
-            <div className="py-8 space-y-4">
-              <div className="text-center">
-                <div className="text-lg font-medium mb-2">Updating email records...</div>
-                <p className="text-sm text-muted-foreground">Please don't close this dialog</p>
+            <div className="py-12 space-y-4">
+              <div className="flex items-center justify-center gap-3">
+                <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
+                <span className="text-lg font-medium">Updating records...</span>
               </div>
               <Progress value={importProgress} className="h-2" />
-              <div className="text-center text-sm text-muted-foreground">
-                {importProgress}% complete
-              </div>
+              <p className="text-center text-sm text-muted-foreground">
+                This may take a moment...
+              </p>
             </div>
           )}
 
           {/* Step 5: Complete */}
           {step === 'complete' && importStats && (
             <div className="py-8 space-y-4">
-              <div className="text-center">
-                <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-3" />
-                <div className="text-lg font-medium">Import Complete!</div>
+              <div className="flex flex-col items-center gap-3">
+                {importStats.errors.length === 0 ? (
+                  <CheckCircle2 className="h-12 w-12 text-green-500" />
+                ) : (
+                  <AlertCircle className="h-12 w-12 text-amber-500" />
+                )}
+                <span className="text-xl font-medium">Import Complete</span>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -510,20 +661,21 @@ export function ApolloEngagementImportDialog({
               </div>
 
               {importStats.errors.length > 0 && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    <div className="font-medium mb-1">Some records failed to update:</div>
-                    <ul className="text-xs space-y-1 max-h-20 overflow-y-auto">
-                      {importStats.errors.slice(0, 5).map((err, idx) => (
-                        <li key={idx}>{err}</li>
-                      ))}
-                      {importStats.errors.length > 5 && (
-                        <li>...and {importStats.errors.length - 5} more</li>
-                      )}
-                    </ul>
-                  </AlertDescription>
-                </Alert>
+                <ScrollArea className="h-[100px] rounded-md border p-3">
+                  <div className="space-y-1">
+                    {importStats.errors.slice(0, 10).map((err, idx) => (
+                      <div key={idx} className="flex items-start gap-2 text-xs">
+                        <XCircle className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-muted-foreground">{err}</span>
+                      </div>
+                    ))}
+                    {importStats.errors.length > 10 && (
+                      <div className="text-xs text-muted-foreground">
+                        ... and {importStats.errors.length - 10} more errors
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
               )}
 
               <DialogFooter>

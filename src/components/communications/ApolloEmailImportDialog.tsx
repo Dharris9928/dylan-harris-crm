@@ -76,11 +76,9 @@ type Step = 'config' | 'preview' | 'importing' | 'results';
 
 type EmailStatus = 'all' | 'draft' | 'scheduled' | 'not_opened' | 'opened' | 'clicked' | 'replied' | 'bounced' | 'failed' | 'spam_blocked' | 'unsubscribed';
 
-// Status options ordered to match Apollo's breakdown (no separate sent/delivered - they use not_opened)
+// Status options - only sent emails are imported (draft/scheduled are excluded by the API)
 const STATUS_OPTIONS: { value: EmailStatus; label: string }[] = [
   { value: 'all', label: 'All' },
-  { value: 'draft', label: 'Draft' },
-  { value: 'scheduled', label: 'Scheduled' },
   { value: 'not_opened', label: 'Not Opened' },  // Delivered but not opened (Apollo's terminology)
   { value: 'opened', label: 'Opened' },
   { value: 'clicked', label: 'Clicked' },

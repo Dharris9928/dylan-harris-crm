@@ -687,15 +687,26 @@ serve(async (req) => {
         };
       });
 
+      // Filter to only include emails that have been sent (exclude draft/scheduled)
+      // "Sent" emails have a sentAt timestamp OR a status that indicates delivery
+      const sentEmails = transformedEmails.filter((email) => {
+        const status = email.status;
+        // Include: not_opened, opened, clicked, replied, bounced, spam_blocked, failed, unsubscribed
+        // Exclude: draft, scheduled
+        return status !== 'draft' && status !== 'scheduled';
+      });
+
+      console.log(`Filtered to ${sentEmails.length} sent emails (excluded ${transformedEmails.length - sentEmails.length} draft/scheduled)`);
+
       return new Response(
         JSON.stringify({
           success: true,
-          emails: transformedEmails,
-          totalCount,
+          emails: sentEmails,
+          totalCount: sentEmails.length,
           pagination: {
             page: startingPage,
             per_page: perPage,
-            total_entries: totalCount,
+            total_entries: sentEmails.length,
             total_pages: totalPagesFromApi ?? null,
           },
         }),

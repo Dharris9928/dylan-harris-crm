@@ -37,6 +37,8 @@ interface JobQuoteContact {
 interface JobQuoteContactsManagerProps {
   contacts: JobQuoteContact[];
   onChange: (contacts: JobQuoteContact[]) => void;
+  distributorId?: string;
+  wholesalerId?: string;
 }
 
 const CONTACT_TYPES = [
@@ -49,6 +51,8 @@ const CONTACT_TYPES = [
 export function JobQuoteContactsManager({
   contacts,
   onChange,
+  distributorId,
+  wholesalerId,
 }: JobQuoteContactsManagerProps) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -90,14 +94,26 @@ export function JobQuoteContactsManager({
     mutationFn: async () => {
       if (!currentUser) throw new Error("User not authenticated");
 
+      // Use distributor or wholesaler company based on contact type, fall back to either
+      let companyId = distributorId || wholesalerId;
+      if (selectedType === 'distributor_personnel' && distributorId) {
+        companyId = distributorId;
+      } else if (selectedType === 'wholesale_personnel' && wholesalerId) {
+        companyId = wholesalerId;
+      }
+
+      if (!companyId) {
+        throw new Error("Please select a distributor or wholesaler company first before creating a new contact.");
+      }
+
       const { data, error } = await supabase
         .from("contacts")
         .insert({
           first_name: newContact.first_name,
           last_name: newContact.last_name,
           email: newContact.email || null,
-          company_id: null as any, // Contact without company association
-        } as any)
+          company_id: companyId,
+        })
         .select()
         .single();
 

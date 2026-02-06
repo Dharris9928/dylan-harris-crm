@@ -317,6 +317,8 @@ export function EditJobQuoteDialog({ open, onOpenChange, quote }: EditJobQuoteDi
               <JobQuoteContactsManager
                 contacts={contacts}
                 onChange={setContacts}
+                distributorId={form.watch("distributor_id")}
+                wholesalerId={form.watch("wholesaler_id")}
               />
             </div>
 

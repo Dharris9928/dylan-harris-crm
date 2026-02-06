@@ -42,6 +42,7 @@ export default function JobQuotes() {
           *,
           distributor:companies!job_quotes_distributor_id_fkey(id, company_name),
           wholesaler:companies!job_quotes_wholesaler_id_fkey(id, company_name),
+          contractor:companies!job_quotes_contractor_id_fkey(id, company_name),
           job_quote_contacts(
             id,
             contact_type,

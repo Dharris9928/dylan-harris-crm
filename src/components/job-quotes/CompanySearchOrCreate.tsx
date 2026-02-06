@@ -23,9 +23,11 @@ import { useToast } from "@/hooks/use-toast";
 interface CompanySearchOrCreateProps {
   value?: string;
   onChange: (value: string) => void;
-  companyType: "Distributor" | "Wholesaler";
+  companyType: "Distributor" | "Wholesaler" | "Contractor";
   placeholder?: string;
 }
+
+const CONTRACTOR_INDUSTRY_TYPES = ['HVAC', 'Plumbing', 'Electrical', 'General Contractor', 'Home Builder'];
 
 export function CompanySearchOrCreate({
   value,
@@ -46,21 +48,25 @@ export function CompanySearchOrCreate({
     },
   });
 
-  // Search companies with industry_specialties matching the type
+  // Search companies matching the type
   const { data: companies = [], isLoading } = useQuery({
     queryKey: ["companies-search", companyType, searchQuery],
     queryFn: async () => {
       let query = supabase
         .from("companies")
-        .select("id, company_name, industry_specialties")
+        .select("id, company_name, industry_specialties, industry_type")
         .order("company_name");
 
       if (searchQuery) {
         query = query.ilike("company_name", `%${searchQuery}%`);
       }
 
-      // Filter by specialty
-      query = query.contains("industry_specialties", [companyType]);
+      // Filter by type
+      if (companyType === "Contractor") {
+        query = query.in("industry_type", CONTRACTOR_INDUSTRY_TYPES);
+      } else {
+        query = query.contains("industry_specialties", [companyType]);
+      }
 
       const { data, error } = await query.limit(20);
       if (error) throw error;
@@ -97,8 +103,8 @@ export function CompanySearchOrCreate({
         .from("companies")
         .insert({
           company_name: companyName,
-          industry_type: "Partner/Other",
-          industry_specialties: [companyType],
+          industry_type: companyType === "Contractor" ? "General Contractor" : "Partner/Other",
+          industry_specialties: companyType === "Contractor" ? [] : [companyType],
           created_by: currentUser.id,
         })
         .select()

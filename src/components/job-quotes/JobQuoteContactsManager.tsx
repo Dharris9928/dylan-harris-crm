@@ -67,6 +67,7 @@ export function JobQuoteContactsManager({
   const [contractorSearch, setContractorSearch] = useState("");
   const [selectedContractorId, setSelectedContractorId] = useState<string | null>(null);
   const [contractorPopoverOpen, setContractorPopoverOpen] = useState(false);
+  const [contactNamesMap, setContactNamesMap] = useState<Record<string, string>>({});
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -95,6 +96,29 @@ export function JobQuoteContactsManager({
 
   const distributorName = quoteCompanies.find(c => c.id === distributorId)?.company_name;
   const wholesalerName = quoteCompanies.find(c => c.id === wholesalerId)?.company_name;
+
+  // Fetch names for contacts that aren't in the cache (e.g. loaded from existing quote)
+  const uncachedContactIds = contacts
+    .map(c => c.contact_id)
+    .filter(id => !contactNamesMap[id]);
+  
+  useQuery({
+    queryKey: ["contact-names", ...uncachedContactIds],
+    queryFn: async () => {
+      if (uncachedContactIds.length === 0) return [];
+      const { data } = await supabase
+        .from("contacts")
+        .select("id, first_name, last_name")
+        .in("id", uncachedContactIds);
+      if (data) {
+        const newMap: Record<string, string> = {};
+        data.forEach(c => { newMap[c.id] = `${c.first_name} ${c.last_name}`; });
+        setContactNamesMap(prev => ({ ...prev, ...newMap }));
+      }
+      return data || [];
+    },
+    enabled: uncachedContactIds.length > 0,
+  });
 
   const { data: availableContacts = [], isLoading } = useQuery({
     queryKey: ["contacts-search", searchQuery],
@@ -172,6 +196,7 @@ export function JobQuoteContactsManager({
       
       // Add the newly created contact
       onChange([...contacts, { contact_id: data.id, contact_type: selectedType }]);
+      setContactNamesMap(prev => ({ ...prev, [data.id]: `${data.first_name} ${data.last_name}` }));
       
       // Reset form
       setNewContact({ first_name: "", last_name: "", email: "" });
@@ -203,6 +228,11 @@ export function JobQuoteContactsManager({
       });
       return;
     }
+    // Cache the name from available contacts
+    const found = availableContacts.find(c => c.id === contactId);
+    if (found) {
+      setContactNamesMap(prev => ({ ...prev, [contactId]: `${found.first_name} ${found.last_name}` }));
+    }
     onChange([...contacts, { contact_id: contactId, contact_type: selectedType }]);
     setOpen(false);
   };
@@ -220,10 +250,12 @@ export function JobQuoteContactsManager({
   };
 
   const getContactName = (contactId: string) => {
+    // Check cached names first, then search results
+    if (contactNamesMap[contactId]) return contactNamesMap[contactId];
     const contact = availableContacts.find((c) => c.id === contactId);
     return contact
       ? `${contact.first_name} ${contact.last_name}`
-      : "Unknown Contact";
+      : "Loading...";
   };
 
   const getTypeBadgeVariant = (type: string) => {

@@ -1956,7 +1956,7 @@ export type Database = {
       contacts: {
         Row: {
           branch_id: string | null
-          company_id: string
+          company_id: string | null
           created_at: string | null
           decision_tier: Database["public"]["Enums"]["decision_tier"] | null
           email: string | null
@@ -1982,7 +1982,7 @@ export type Database = {
         }
         Insert: {
           branch_id?: string | null
-          company_id: string
+          company_id?: string | null
           created_at?: string | null
           decision_tier?: Database["public"]["Enums"]["decision_tier"] | null
           email?: string | null
@@ -2008,7 +2008,7 @@ export type Database = {
         }
         Update: {
           branch_id?: string | null
-          company_id?: string
+          company_id?: string | null
           created_at?: string | null
           decision_tier?: Database["public"]["Enums"]["decision_tier"] | null
           email?: string | null

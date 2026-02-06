@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, X, User, Loader2 } from "lucide-react";
+import { Plus, X, User, Loader2, Building2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,6 +48,10 @@ const CONTACT_TYPES = [
   { value: "distributor_personnel", label: "Distributor Personnel" },
 ] as const;
 
+type CompanyAssignment = "unassigned" | "wholesaler" | "distributor" | "contractor";
+
+const CONTRACTOR_INDUSTRY_TYPES = ['HVAC', 'Plumbing', 'Electrical', 'General Contractor', 'Home Builder'];
+
 export function JobQuoteContactsManager({
   contacts,
   onChange,
@@ -59,6 +63,10 @@ export function JobQuoteContactsManager({
   const [selectedType, setSelectedType] = useState<JobQuoteContact["contact_type"]>("customer");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newContact, setNewContact] = useState({ first_name: "", last_name: "", email: "" });
+  const [companyAssignment, setCompanyAssignment] = useState<CompanyAssignment>("unassigned");
+  const [contractorSearch, setContractorSearch] = useState("");
+  const [selectedContractorId, setSelectedContractorId] = useState<string | null>(null);
+  const [contractorPopoverOpen, setContractorPopoverOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -69,6 +77,24 @@ export function JobQuoteContactsManager({
       return user;
     },
   });
+
+  // Fetch company names for distributor/wholesaler
+  const companyIds = [distributorId, wholesalerId].filter(Boolean) as string[];
+  const { data: quoteCompanies = [] } = useQuery({
+    queryKey: ["quote-companies", ...companyIds],
+    queryFn: async () => {
+      if (companyIds.length === 0) return [];
+      const { data } = await supabase
+        .from("companies")
+        .select("id, company_name")
+        .in("id", companyIds);
+      return data || [];
+    },
+    enabled: companyIds.length > 0,
+  });
+
+  const distributorName = quoteCompanies.find(c => c.id === distributorId)?.company_name;
+  const wholesalerName = quoteCompanies.find(c => c.id === wholesalerId)?.company_name;
 
   const { data: availableContacts = [], isLoading } = useQuery({
     queryKey: ["contacts-search", searchQuery],
@@ -90,21 +116,41 @@ export function JobQuoteContactsManager({
     },
   });
 
+  // Search contractors for the company assignment option
+  const { data: contractors = [] } = useQuery({
+    queryKey: ["contractor-search", contractorSearch],
+    queryFn: async () => {
+      let query = supabase
+        .from("companies")
+        .select("id, company_name")
+        .in("industry_type", CONTRACTOR_INDUSTRY_TYPES)
+        .order("company_name")
+        .limit(15);
+
+      if (contractorSearch) {
+        query = query.ilike("company_name", `%${contractorSearch}%`);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: companyAssignment === "contractor",
+  });
+
   const createContactMutation = useMutation({
     mutationFn: async () => {
       if (!currentUser) throw new Error("User not authenticated");
 
-      // Use distributor or wholesaler company based on contact type, fall back to either
-      let companyId = distributorId || wholesalerId;
-      if (selectedType === 'distributor_personnel' && distributorId) {
-        companyId = distributorId;
-      } else if (selectedType === 'wholesale_personnel' && wholesalerId) {
-        companyId = wholesalerId;
+      let companyId: string | null = null;
+      if (companyAssignment === "wholesaler") {
+        companyId = wholesalerId || null;
+      } else if (companyAssignment === "distributor") {
+        companyId = distributorId || null;
+      } else if (companyAssignment === "contractor") {
+        companyId = selectedContractorId;
       }
-
-      if (!companyId) {
-        throw new Error("Please select a distributor or wholesaler company first before creating a new contact.");
-      }
+      // "unassigned" leaves companyId as null
 
       const { data, error } = await supabase
         .from("contacts")
@@ -112,7 +158,7 @@ export function JobQuoteContactsManager({
           first_name: newContact.first_name,
           last_name: newContact.last_name,
           email: newContact.email || null,
-          company_id: companyId,
+          ...(companyId ? { company_id: companyId } : {}),
         })
         .select()
         .single();
@@ -129,6 +175,9 @@ export function JobQuoteContactsManager({
       
       // Reset form
       setNewContact({ first_name: "", last_name: "", email: "" });
+      setCompanyAssignment("unassigned");
+      setSelectedContractorId(null);
+      setContractorSearch("");
       setShowCreateForm(false);
       setOpen(false);
       
@@ -369,11 +418,97 @@ export function JobQuoteContactsManager({
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Company Assignment */}
+              <div>
+                <Label>Assign to Company</Label>
+                <Select
+                  value={companyAssignment}
+                  onValueChange={(value) => {
+                    setCompanyAssignment(value as CompanyAssignment);
+                    if (value !== "contractor") {
+                      setSelectedContractorId(null);
+                      setContractorSearch("");
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                    {wholesalerId && (
+                      <SelectItem value="wholesaler">
+                        Wholesaler{wholesalerName ? ` — ${wholesalerName}` : ""}
+                      </SelectItem>
+                    )}
+                    {distributorId && (
+                      <SelectItem value="distributor">
+                        Distributor{distributorName ? ` — ${distributorName}` : ""}
+                      </SelectItem>
+                    )}
+                    <SelectItem value="contractor">Contractor...</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Contractor search */}
+              {companyAssignment === "contractor" && (
+                <div>
+                  <Label>Select Contractor</Label>
+                  <Popover open={contractorPopoverOpen} onOpenChange={setContractorPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full justify-start font-normal"
+                      >
+                        <Building2 className="h-4 w-4 mr-2 text-muted-foreground" />
+                        {selectedContractorId
+                          ? contractors.find(c => c.id === selectedContractorId)?.company_name || "Selected"
+                          : "Search contractors..."}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[300px] p-0" align="start">
+                      <Command shouldFilter={false}>
+                        <CommandInput
+                          placeholder="Search contractors..."
+                          value={contractorSearch}
+                          onValueChange={setContractorSearch}
+                        />
+                        <CommandList>
+                          <CommandEmpty>No contractors found</CommandEmpty>
+                          <CommandGroup>
+                            {contractors.map((c) => (
+                              <CommandItem
+                                key={c.id}
+                                value={c.id}
+                                onSelect={() => {
+                                  setSelectedContractorId(c.id);
+                                  setContractorPopoverOpen(false);
+                                }}
+                              >
+                                <Building2 className="mr-2 h-4 w-4" />
+                                {c.company_name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              )}
+
               <div className="flex justify-end gap-2">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setShowCreateForm(false)}
+                  onClick={() => {
+                    setShowCreateForm(false);
+                    setCompanyAssignment("unassigned");
+                    setSelectedContractorId(null);
+                  }}
                 >
                   Cancel
                 </Button>
@@ -383,6 +518,7 @@ export function JobQuoteContactsManager({
                   disabled={
                     !newContact.first_name ||
                     !newContact.last_name ||
+                    (companyAssignment === "contractor" && !selectedContractorId) ||
                     createContactMutation.isPending
                   }
                 >

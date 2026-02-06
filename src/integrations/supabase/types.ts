@@ -3150,6 +3150,7 @@ export type Database = {
       }
       job_quotes: {
         Row: {
+          contractor_id: string | null
           created_at: string
           created_by: string
           date_received: string
@@ -3166,6 +3167,7 @@ export type Database = {
           wholesaler_id: string | null
         }
         Insert: {
+          contractor_id?: string | null
           created_at?: string
           created_by: string
           date_received?: string
@@ -3182,6 +3184,7 @@ export type Database = {
           wholesaler_id?: string | null
         }
         Update: {
+          contractor_id?: string | null
           created_at?: string
           created_by?: string
           date_received?: string
@@ -3198,6 +3201,27 @@ export type Database = {
           wholesaler_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "job_quotes_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_quotes_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "companies_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_quotes_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "companies_financial_masked"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "job_quotes_distributor_id_fkey"
             columns: ["distributor_id"]

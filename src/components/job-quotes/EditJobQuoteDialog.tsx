@@ -39,6 +39,7 @@ const formSchema = z.object({
   status: z.enum(["pending", "won", "lost"]),
   distributor_id: z.string().optional(),
   wholesaler_id: z.string().optional(),
+  contractor_id: z.string().optional(),
   product: z.string().optional(),
   quantity: z.coerce.number().min(1).optional(),
   price: z.coerce.number().optional(),
@@ -81,6 +82,7 @@ export function EditJobQuoteDialog({ open, onOpenChange, quote }: EditJobQuoteDi
         status: quote.status || "pending",
         distributor_id: quote.distributor_id || "",
         wholesaler_id: quote.wholesaler_id || "",
+        contractor_id: quote.contractor_id || "",
         product: quote.product || "",
         quantity: quote.quantity || 1,
         price: quote.price || undefined,
@@ -107,6 +109,7 @@ export function EditJobQuoteDialog({ open, onOpenChange, quote }: EditJobQuoteDi
           status: values.status,
           distributor_id: values.distributor_id || null,
           wholesaler_id: values.wholesaler_id || null,
+          contractor_id: values.contractor_id || null,
           product: values.product || null,
           quantity: values.quantity || 1,
           price: values.price || null,
@@ -261,6 +264,25 @@ export function EditJobQuoteDialog({ open, onOpenChange, quote }: EditJobQuoteDi
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="contractor_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Contractor</FormLabel>
+                  <FormControl>
+                    <CompanySearchOrCreate
+                      value={field.value}
+                      onChange={field.onChange}
+                      companyType="Contractor"
+                      placeholder="Search or create contractor..."
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="grid grid-cols-3 gap-4">
               <FormField

@@ -74,7 +74,7 @@ serve(async (req) => {
       );
     }
 
-    const apolloResponse = await fetch('https://api.apollo.io/v1/mixed_people/search', {
+    const apolloResponse = await fetch('https://api.apollo.io/v1/mixed_people/api_search', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

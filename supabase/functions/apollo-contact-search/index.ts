@@ -69,7 +69,7 @@ serve(async (req) => {
     console.log(`Searching Apollo for contacts at: ${companyName}`);
 
     // Search Apollo.io for contacts
-    const apolloResponse = await fetch('https://api.apollo.io/v1/mixed_people/search', {
+    const apolloResponse = await fetch('https://api.apollo.io/v1/mixed_people/api_search', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

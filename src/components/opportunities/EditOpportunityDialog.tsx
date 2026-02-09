@@ -79,7 +79,7 @@ export function EditOpportunityDialog({ open, onOpenChange, opportunity }: EditO
         expected_close_date: opportunity.expected_close_date || "",
         confidence: opportunity.confidence ? String(opportunity.confidence) : "",
         unit_needed_date: opportunity.unit_needed_date || "",
-        assigned_to: opportunity.assigned_to || "unassigned",
+        assigned_to: opportunity.assigned_to ? `user:${opportunity.assigned_to}` : "unassigned",
         contractor_id: opportunity.contractor_id || "",
         notes: opportunity.notes || "",
       });
@@ -89,6 +89,21 @@ export function EditOpportunityDialog({ open, onOpenChange, opportunity }: EditO
 
   const updateOpportunity = useMutation({
     mutationFn: async () => {
+      // Parse assigned_to — sales reps can't go into the FK column
+      let assignedToValue: string | null = null;
+      const rawAssigned = formData.assigned_to;
+      if (rawAssigned && rawAssigned !== 'unassigned') {
+        if (rawAssigned.startsWith('user:')) {
+          assignedToValue = rawAssigned.replace('user:', '');
+        } else if (rawAssigned.startsWith('salesrep:')) {
+          // Sales rep — don't set assigned_to (FK constraint)
+          assignedToValue = null;
+        } else {
+          // Raw UUID (legacy) — assume it's a profile id
+          assignedToValue = rawAssigned;
+        }
+      }
+
       // Update opportunity
       const { error } = await supabase
         .from('opportunities' as any)
@@ -100,7 +115,7 @@ export function EditOpportunityDialog({ open, onOpenChange, opportunity }: EditO
           expected_close_date: formData.expected_close_date || null,
           confidence: formData.confidence ? parseInt(formData.confidence) : null,
           unit_needed_date: formData.unit_needed_date || null,
-          assigned_to: formData.assigned_to === "unassigned" ? null : (formData.assigned_to || null),
+          assigned_to: assignedToValue,
           contractor_id: formData.contractor_id || null,
           notes: formData.notes || null,
         })
@@ -200,7 +215,6 @@ export function EditOpportunityDialog({ open, onOpenChange, opportunity }: EditO
               <UnifiedAssignmentSelect
                 value={formData.assigned_to}
                 onValueChange={(value) => setFormData({ ...formData, assigned_to: value })}
-                rawIds={true}
               />
             </div>
           </div>

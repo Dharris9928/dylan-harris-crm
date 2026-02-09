@@ -13,8 +13,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 
 interface Opportunity {
   id: string;
@@ -26,8 +24,10 @@ interface Opportunity {
   created_at: string;
   company_id: string;
   assigned_to: string | null;
+  assigned_to_sales_rep_id: string | null;
   companies?: { company_name: string } | null;
   profiles?: { first_name: string; last_name: string } | null;
+  sales_reps?: { first_name: string; last_name: string } | null;
   opportunity_products?: any[];
 }
 
@@ -51,38 +51,12 @@ export function OpportunitiesTable({ opportunities, isLoading, onSelectOpportuni
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
-  // Get assigned_to IDs that don't have profiles (likely sales_reps)
-  const unassignedIds = useMemo(() => {
-    return opportunities
-      .filter(o => o.assigned_to && !o.profiles)
-      .map(o => o.assigned_to as string);
-  }, [opportunities]);
-
-  // Fetch sales_reps for those without profiles
-  const { data: salesRepsMap } = useQuery({
-    queryKey: ['sales-reps-for-opportunities', unassignedIds],
-    queryFn: async () => {
-      if (unassignedIds.length === 0) return {};
-      const { data, error } = await supabase
-        .from('sales_reps' as any)
-        .select('id, first_name, last_name')
-        .in('id', unassignedIds);
-      if (error) throw error;
-      const map: Record<string, string> = {};
-      (data as any[])?.forEach(rep => {
-        map[rep.id] = `${rep.first_name} ${rep.last_name}`;
-      });
-      return map;
-    },
-    enabled: unassignedIds.length > 0,
-  });
-
   const getAssigneeName = (opportunity: Opportunity) => {
     if (opportunity.profiles) {
       return `${opportunity.profiles.first_name} ${opportunity.profiles.last_name}`;
     }
-    if (opportunity.assigned_to && salesRepsMap?.[opportunity.assigned_to]) {
-      return salesRepsMap[opportunity.assigned_to];
+    if (opportunity.sales_reps) {
+      return `${opportunity.sales_reps.first_name} ${opportunity.sales_reps.last_name}`;
     }
     return "Unassigned";
   };

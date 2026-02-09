@@ -64,13 +64,33 @@ export function HandoffDialog({
         isSalesRep = true;
       }
 
+      // Resolve the assignee's name for display in pipeline
+      let assigneeName = 'Unknown';
+      if (isSalesRep) {
+        const { data: rep } = await supabase
+          .from('sales_reps' as any)
+          .select('first_name, last_name')
+          .eq('id', actualUserId)
+          .maybeSingle();
+        if (rep) assigneeName = [(rep as any).first_name, (rep as any).last_name].filter(Boolean).join(' ');
+      } else {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('id', actualUserId)
+          .maybeSingle();
+        if (profile) assigneeName = [profile.first_name, profile.last_name].filter(Boolean).join(' ');
+      }
+
       // Update the communication - only set assigned_to for system users (profiles FK constraint)
       const updateData: Record<string, any> = {};
       if (!isSalesRep) {
         updateData.assigned_to = actualUserId;
       }
       if (notes) {
-        updateData.notes = `Handoff Notes: ${notes}`;
+        updateData.notes = `Handed off to ${assigneeName}.\n\nHandoff Notes: ${notes}`;
+      } else {
+        updateData.notes = `Handed off to ${assigneeName}.`;
       }
 
       if (Object.keys(updateData).length > 0) {
@@ -82,7 +102,6 @@ export function HandoffDialog({
         if (updateError) throw updateError;
       }
 
-
       // Check if there's an existing opportunity for this company
       const { data: existingOpportunity } = await supabase
         .from('opportunities')
@@ -90,13 +109,15 @@ export function HandoffDialog({
         .eq('company_id', communication.company_id)
         .maybeSingle();
 
+      const oppNotes = `Handed off to: ${assigneeName}`;
+
       if (existingOpportunity) {
-        if (!isSalesRep) {
-          await supabase
-            .from('opportunities')
-            .update({ assigned_to: actualUserId })
-            .eq('id', existingOpportunity.id);
-        }
+        const updateFields: Record<string, any> = { notes: oppNotes };
+        if (!isSalesRep) updateFields.assigned_to = actualUserId;
+        await supabase
+          .from('opportunities')
+          .update(updateFields)
+          .eq('id', existingOpportunity.id);
       } else {
         // Create a new opportunity for tracking the handoff
         const assignmentData = isSalesRep ? {} : { assigned_to: actualUserId };
@@ -107,6 +128,7 @@ export function HandoffDialog({
             ...assignmentData,
             stage: 'qualification',
             opportunity_name: `Handoff: ${communication.companies?.company_name || 'Unknown'}`,
+            notes: oppNotes,
             created_by: user.id,
           }]);
       }

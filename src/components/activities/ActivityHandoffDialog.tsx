@@ -70,6 +70,24 @@ export function ActivityHandoffDialog({
         isSalesRep = true;
       }
 
+      // Resolve the assignee's name for display in pipeline
+      let assigneeName = 'Unknown';
+      if (isSalesRep) {
+        const { data: rep } = await supabase
+          .from('sales_reps' as any)
+          .select('first_name, last_name')
+          .eq('id', actualUserId)
+          .maybeSingle();
+        if (rep) assigneeName = [(rep as any).first_name, (rep as any).last_name].filter(Boolean).join(' ');
+      } else {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('id', actualUserId)
+          .maybeSingle();
+        if (profile) assigneeName = [profile.first_name, profile.last_name].filter(Boolean).join(' ');
+      }
+
       // Update the activity with handoff notes
       const updateData: any = {
         outcome: 'Completed',
@@ -77,9 +95,9 @@ export function ActivityHandoffDialog({
       };
       
       if (notes) {
-        updateData.notes = `Handed off to team member.\n\nHandoff Notes: ${notes}`;
+        updateData.notes = `Handed off to ${assigneeName}.\n\nHandoff Notes: ${notes}`;
       } else {
-        updateData.notes = 'Handed off to team member.';
+        updateData.notes = `Handed off to ${assigneeName}.`;
       }
 
       const { error: activityError } = await supabase
@@ -100,15 +118,16 @@ export function ActivityHandoffDialog({
       const assignmentData = isSalesRep
         ? {} 
         : { assigned_to: actualUserId };
+      
+      const oppNotes = `Handed off to: ${assigneeName}`;
 
       if (existingOpportunity) {
-        // Update the existing opportunity's assigned_to
-        if (!isSalesRep) {
-          await supabase
-            .from('opportunities')
-            .update({ assigned_to: actualUserId })
-            .eq('id', existingOpportunity.id);
-        }
+        const updateFields: Record<string, any> = { notes: oppNotes };
+        if (!isSalesRep) updateFields.assigned_to = actualUserId;
+        await supabase
+          .from('opportunities')
+          .update(updateFields)
+          .eq('id', existingOpportunity.id);
       } else {
         // Create a new opportunity for tracking
         await supabase
@@ -118,6 +137,7 @@ export function ActivityHandoffDialog({
             ...assignmentData,
             stage: 'qualification',
             opportunity_name: `Lead from ${activity.activity_type}: ${activity.companies?.company_name || 'Unknown'}`,
+            notes: oppNotes,
             created_by: user.id,
           }]);
       }

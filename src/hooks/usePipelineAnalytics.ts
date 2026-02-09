@@ -330,7 +330,7 @@ export function usePipelineAnalytics(
       let oppsQuery = supabase
         .from("opportunities")
         .select(`
-          id, assigned_to, amount, created_at, stage, closed_date, company_id,
+          id, assigned_to, amount, created_at, stage, closed_date, company_id, notes,
           companies!opportunities_company_id_fkey(id, company_name),
           opportunity_name
         `)
@@ -542,13 +542,21 @@ export function usePipelineAnalytics(
         .slice(0, 10);
 
       const handoffDetails: HandoffDetail[] = oppsData
-        .map(o => ({
-          id: o.id,
-          company_name: (o.companies as any)?.company_name || "Unknown Company",
-          assigned_to_name: assigneeMap[o.assigned_to || ""] || "Unknown Assignee",
-          created_at: o.created_at,
-          amount: o.amount,
-        }))
+        .map(o => {
+          // Resolve name: from assigneeMap, or extract from notes ("Handed off to: Name")
+          let name = assigneeMap[o.assigned_to || ""];
+          if (!name && (o as any).notes) {
+            const match = ((o as any).notes as string).match(/Handed off to:\s*(.+)/);
+            if (match) name = match[1].trim();
+          }
+          return {
+            id: o.id,
+            company_name: (o.companies as any)?.company_name || "Unknown Company",
+            assigned_to_name: name || "Unknown Assignee",
+            created_at: o.created_at,
+            amount: o.amount,
+          };
+        })
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         .slice(0, 10);
 

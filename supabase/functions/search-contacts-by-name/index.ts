@@ -42,29 +42,69 @@ serve(async (req) => {
 
     // Handle Apollo profile URL - direct person lookup
     if (searchType === 'apollo' && apolloUrl) {
-      const apolloIdMatch = apolloUrl.match(/(?:people|contacts|#\/contacts)\/([a-zA-Z0-9_-]+)/i);
-      if (!apolloIdMatch) {
+      // Extract ID and determine if it's a contacts or people URL
+      const contactsMatch = apolloUrl.match(/(?:#\/contacts|\/contacts)\/([a-zA-Z0-9_-]+)/i);
+      const peopleMatch = apolloUrl.match(/\/people\/([a-zA-Z0-9_-]+)/i);
+      const extractedId = contactsMatch?.[1] || peopleMatch?.[1];
+      const isContactId = !!contactsMatch;
+
+      if (!extractedId) {
         return new Response(
           JSON.stringify({ error: 'Invalid Apollo profile URL. Expected format: app.apollo.io/#/contacts/... or app.apollo.io/people/...' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      const apolloPersonId = apolloIdMatch[1];
-      console.log(`Looking up Apollo person by ID: ${apolloPersonId}`);
 
-      const personResponse = await fetch(`https://api.apollo.io/v1/people/${apolloPersonId}?api_key=${apolloApiKey}`, {
-        method: 'GET',
-        headers: { 'Cache-Control': 'no-cache', 'X-Api-Key': apolloApiKey },
-      });
+      console.log(`Looking up Apollo ${isContactId ? 'contact' : 'person'} by ID: ${extractedId}`);
 
-      if (!personResponse.ok) {
-        const errorText = await personResponse.text();
-        console.error('Apollo person lookup error:', errorText);
-        throw new Error(`Apollo API error: ${personResponse.status}`);
+      // Try the appropriate endpoint first, then fall back to the other
+      let person: any = null;
+
+      const tryEndpoint = async (endpoint: string, id: string) => {
+        const resp = await fetch(`https://api.apollo.io/v1/${endpoint}/${id}?api_key=${apolloApiKey}`, {
+          method: 'GET',
+          headers: { 'Cache-Control': 'no-cache', 'X-Api-Key': apolloApiKey },
+        });
+        if (!resp.ok) {
+          const errorText = await resp.text();
+          console.log(`Apollo ${endpoint} lookup returned ${resp.status}: ${errorText}`);
+          return null;
+        }
+        const data = await resp.json();
+        return data.person || data.contact || data;
+      };
+
+      // Try primary endpoint based on URL type
+      if (isContactId) {
+        person = await tryEndpoint('contacts', extractedId);
+        if (!person) person = await tryEndpoint('people', extractedId);
+      } else {
+        person = await tryEndpoint('people', extractedId);
+        if (!person) person = await tryEndpoint('contacts', extractedId);
       }
 
-      const personData = await personResponse.json();
-      const person = personData.person || personData;
+      if (!person || (!person.first_name && !person.last_name)) {
+        // Last resort: search by the ID as a keyword
+        console.log('Direct lookup failed, trying search by Apollo URL');
+        const searchResp = await fetch('https://api.apollo.io/v1/mixed_people/api_search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Api-Key': apolloApiKey },
+          body: JSON.stringify({ api_key: apolloApiKey, page: 1, per_page: 1, q_keywords: extractedId }),
+        });
+        if (searchResp.ok) {
+          const searchData = await searchResp.json();
+          if (searchData.people?.[0]) person = searchData.people[0];
+        } else {
+          await searchResp.text(); // consume body
+        }
+      }
+
+      if (!person || (!person.first_name && !person.last_name)) {
+        return new Response(
+          JSON.stringify({ error: 'Contact not found in Apollo. The profile may no longer exist.' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
       console.log(`Apollo person lookup result: ${person.first_name} ${person.last_name}, email: ${person.email}`);
 
       const contact = {

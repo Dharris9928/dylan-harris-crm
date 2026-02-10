@@ -163,7 +163,7 @@ export function ExternalContactSearchPanel({
               city: contact.organizationCity || null,
               state: contact.organizationState || null,
               total_employees: contact.organizationEmployees || null,
-              status: "New",
+              status: "Lead",
               notes: [
                 `Imported from Apollo.`,
                 contact.organizationIndustry ? `Industry: ${contact.organizationIndustry}` : null,

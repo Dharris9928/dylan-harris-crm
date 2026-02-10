@@ -129,29 +129,8 @@ const Contacts = () => {
     },
   });
 
-  // Filter contacts based on search term
-  const filteredContacts = useMemo(() => {
-    if (!contacts) return [];
-    if (!searchTerm.trim()) return contacts;
-
-    const term = searchTerm.toLowerCase();
-    return contacts.filter((contact: any) => {
-      const firstName = contact.first_name?.toLowerCase() || "";
-      const lastName = contact.last_name?.toLowerCase() || "";
-      const email = contact.email?.toLowerCase() || "";
-      const title = contact.title?.toLowerCase() || "";
-      const companyName = contact.companies?.company_name?.toLowerCase() || "";
-
-      return (
-        firstName.includes(term) ||
-        lastName.includes(term) ||
-        `${firstName} ${lastName}`.includes(term) ||
-        email.includes(term) ||
-        title.includes(term) ||
-        companyName.includes(term)
-      );
-    });
-  }, [contacts, searchTerm]);
+  // Server-side filtering handles search; no need for client-side re-filter
+  const filteredContacts = useMemo(() => contacts || [], [contacts]);
 
   // Handle navigation from reports with editContactId
   useEffect(() => {

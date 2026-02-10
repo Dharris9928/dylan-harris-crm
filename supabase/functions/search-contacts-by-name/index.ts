@@ -105,25 +105,28 @@ serve(async (req) => {
           { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      console.log(`Apollo person lookup result: ${person.first_name} ${person.last_name}, email: ${person.email}`);
+      console.log(`Apollo person lookup result: ${person.first_name} ${person.last_name}, email: ${person.email}, org: ${person.organization?.name || person.account?.name || person.organization_name || 'none'}`);
+
+      // Apollo contacts endpoint uses "account" while people endpoint uses "organization"
+      const org = person.organization || person.account || {};
 
       const contact = {
         firstName: person.first_name || '',
         lastName: person.last_name || '',
         title: person.title || null,
         email: person.email || null,
-        phone: person.phone_numbers?.[0]?.raw_number || null,
+        phone: person.phone_numbers?.[0]?.raw_number || person.sanitized_phone || null,
         mobile: person.phone_numbers?.[1]?.raw_number || null,
         linkedinUrl: person.linkedin_url || null,
-        organizationName: person.organization?.name || null,
-        organizationDomain: person.organization?.primary_domain || null,
-        organizationWebsite: person.organization?.website_url || null,
-        organizationLinkedin: person.organization?.linkedin_url || null,
-        organizationIndustry: person.organization?.industry || null,
-        organizationEmployees: person.organization?.estimated_num_employees || null,
-        organizationRevenue: person.organization?.annual_revenue_printed || null,
-        organizationCity: person.organization?.city || null,
-        organizationState: person.organization?.state || null,
+        organizationName: org.name || person.organization_name || null,
+        organizationDomain: org.primary_domain || org.domain || null,
+        organizationWebsite: org.website_url || null,
+        organizationLinkedin: org.linkedin_url || null,
+        organizationIndustry: org.industry || null,
+        organizationEmployees: org.estimated_num_employees || null,
+        organizationRevenue: org.annual_revenue_printed || null,
+        organizationCity: org.city || null,
+        organizationState: org.state || null,
         photoUrl: person.photo_url || null,
         city: person.city || null,
         state: person.state || null,

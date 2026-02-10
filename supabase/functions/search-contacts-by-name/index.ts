@@ -38,7 +38,68 @@ serve(async (req) => {
     const rateLimitResponse = await checkRateLimit(supabase, user.id, 'search-contacts-by-name');
     if (rateLimitResponse) return rateLimitResponse;
 
-    const { personName, email, phone, linkedinUrl, searchType } = await req.json();
+    const { personName, email, phone, linkedinUrl, apolloUrl, searchType } = await req.json();
+
+    // Handle Apollo profile URL - direct person lookup
+    if (searchType === 'apollo' && apolloUrl) {
+      const apolloIdMatch = apolloUrl.match(/people\/([a-f0-9]+)/i);
+      if (!apolloIdMatch) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid Apollo profile URL. Expected format: app.apollo.io/people/...' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      const apolloPersonId = apolloIdMatch[1];
+      console.log(`Looking up Apollo person by ID: ${apolloPersonId}`);
+
+      const personResponse = await fetch(`https://api.apollo.io/v1/people/${apolloPersonId}?api_key=${apolloApiKey}`, {
+        method: 'GET',
+        headers: { 'Cache-Control': 'no-cache', 'X-Api-Key': apolloApiKey },
+      });
+
+      if (!personResponse.ok) {
+        const errorText = await personResponse.text();
+        console.error('Apollo person lookup error:', errorText);
+        throw new Error(`Apollo API error: ${personResponse.status}`);
+      }
+
+      const personData = await personResponse.json();
+      const person = personData.person || personData;
+      console.log(`Apollo person lookup result: ${person.first_name} ${person.last_name}, email: ${person.email}`);
+
+      const contact = {
+        firstName: person.first_name || '',
+        lastName: person.last_name || '',
+        title: person.title || null,
+        email: person.email || null,
+        phone: person.phone_numbers?.[0]?.raw_number || null,
+        mobile: person.phone_numbers?.[1]?.raw_number || null,
+        linkedinUrl: person.linkedin_url || null,
+        organizationName: person.organization?.name || null,
+        organizationDomain: person.organization?.primary_domain || null,
+        organizationWebsite: person.organization?.website_url || null,
+        organizationLinkedin: person.organization?.linkedin_url || null,
+        organizationIndustry: person.organization?.industry || null,
+        organizationEmployees: person.organization?.estimated_num_employees || null,
+        organizationRevenue: person.organization?.annual_revenue_printed || null,
+        organizationCity: person.organization?.city || null,
+        organizationState: person.organization?.state || null,
+        photoUrl: person.photo_url || null,
+        city: person.city || null,
+        state: person.state || null,
+        country: person.country || null,
+        headline: person.headline || null,
+        seniority: person.seniority || null,
+        departments: person.departments || [],
+        apolloId: person.id,
+        source: 'apollo',
+      };
+
+      return new Response(
+        JSON.stringify({ success: true, contacts: [contact], totalResults: 1 }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
 
     // Build Apollo search body based on search type
     const searchBody: Record<string, any> = {
@@ -65,7 +126,7 @@ serve(async (req) => {
       console.log(`Searching Apollo by name (q_person_name): ${personName}`);
     } else {
       return new Response(
-        JSON.stringify({ error: 'Please provide a search term (name, email, phone, or LinkedIn URL)' }),
+        JSON.stringify({ error: 'Please provide a search term (name, email, phone, LinkedIn URL, or Apollo link)' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

@@ -54,7 +54,7 @@ interface ApolloContact {
   source: string;
 }
 
-type SearchType = "name" | "email" | "phone" | "linkedin";
+type SearchType = "name" | "email" | "phone" | "linkedin" | "apollo";
 
 interface ExternalContactSearchPanelProps {
   searchTerm: string;
@@ -109,6 +109,7 @@ export function ExternalContactSearchPanel({
       else if (searchType === "email") body.email = value;
       else if (searchType === "phone") body.phone = value;
       else if (searchType === "linkedin") body.linkedinUrl = value;
+      else if (searchType === "apollo") body.apolloUrl = value;
 
       const { data, error } = await supabase.functions.invoke("search-contacts-by-name", { body });
 
@@ -230,6 +231,7 @@ export function ExternalContactSearchPanel({
     email: { label: "Email", placeholder: "e.g. john@company.com", icon: <Mail className="h-4 w-4" /> },
     phone: { label: "Phone", placeholder: "e.g. 555-123-4567", icon: <Phone className="h-4 w-4" /> },
     linkedin: { label: "LinkedIn", placeholder: "e.g. linkedin.com/in/john-smith", icon: <Linkedin className="h-4 w-4" /> },
+    apollo: { label: "Apollo Link", placeholder: "e.g. app.apollo.io/people/...", icon: <Globe className="h-4 w-4" /> },
   };
 
   const showPanel = searchTerm.trim().length >= 2 || externalSearchValue.trim().length >= 2;
@@ -259,6 +261,7 @@ export function ExternalContactSearchPanel({
               <SelectItem value="email">Email</SelectItem>
               <SelectItem value="phone">Phone</SelectItem>
               <SelectItem value="linkedin">LinkedIn</SelectItem>
+              <SelectItem value="apollo">Apollo Link</SelectItem>
             </SelectContent>
           </Select>
 

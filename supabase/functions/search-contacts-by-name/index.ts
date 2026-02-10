@@ -48,25 +48,21 @@ serve(async (req) => {
     };
 
     if (searchType === 'email' && email) {
-      // Search by email
       searchBody.q_keywords = email.trim();
       console.log(`Searching Apollo by email: ${email}`);
     } else if (searchType === 'phone' && phone) {
-      // Search by phone
       searchBody.q_keywords = phone.trim();
       console.log(`Searching Apollo by phone: ${phone}`);
     } else if (searchType === 'linkedin' && linkedinUrl) {
-      // Search by LinkedIn URL - extract name from URL or use as keyword
       const linkedinClean = linkedinUrl.trim().replace(/\/$/, '');
       const linkedinSlug = linkedinClean.split('/').pop() || '';
-      // Convert slug like "john-doe-12345" to search terms
       const nameFromLinkedin = linkedinSlug.replace(/-\d+$/, '').replace(/-/g, ' ');
       searchBody.q_keywords = nameFromLinkedin;
       console.log(`Searching Apollo by LinkedIn: ${linkedinUrl} -> keywords: ${nameFromLinkedin}`);
     } else if (personName && personName.trim().length >= 2) {
-      // Default: search by name
-      searchBody.q_keywords = personName.trim();
-      console.log(`Searching Apollo by name: ${personName}`);
+      // Use q_person_name for better structured name matching
+      searchBody.q_person_name = personName.trim();
+      console.log(`Searching Apollo by name (q_person_name): ${personName}`);
     } else {
       return new Response(
         JSON.stringify({ error: 'Please provide a search term (name, email, phone, or LinkedIn URL)' }),
@@ -92,6 +88,10 @@ serve(async (req) => {
 
     const apolloData = await apolloResponse.json();
     console.log(`Found ${apolloData.people?.length || 0} people`);
+    if (apolloData.people?.[0]) {
+      const p = apolloData.people[0];
+      console.log(`First result: ${p.first_name} ${p.last_name}, email: ${p.email}, phone: ${JSON.stringify(p.phone_numbers)}`);
+    }
 
     // Pull ALL available data from Apollo
     const contacts = apolloData.people?.map((person: any) => ({

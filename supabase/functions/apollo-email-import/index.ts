@@ -700,13 +700,13 @@ serve(async (req) => {
         };
       });
 
-      // Filter to only include emails that have been sent (exclude draft/scheduled)
-      // "Sent" emails have a sentAt timestamp OR a status that indicates delivery
+      // Filter to only exclude clear drafts (keep scheduled since Apollo sometimes
+      // misclassifies sent emails as scheduled)
       const sentEmails = transformedEmails.filter((email) => {
-        const status = email.status;
-        // Include: not_opened, opened, clicked, replied, bounced, spam_blocked, failed, unsubscribed
-        // Exclude: draft, scheduled
-        return status !== 'draft' && status !== 'scheduled';
+        // Only exclude drafts — scheduled emails with a sentAt timestamp should be included
+        if (email.status === 'draft') return false;
+        if (email.status === 'scheduled' && !email.sentAt) return false;
+        return true;
       });
 
       const excludedCount = transformedEmails.length - sentEmails.length;

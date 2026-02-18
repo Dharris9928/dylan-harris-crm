@@ -374,13 +374,9 @@ export function ApolloEmailImportDialog({ open, onOpenChange, onImportComplete }
       setImportProgress(Math.round(((i + 1) / selectedEmailsList.length) * 100));
 
       try {
-        const companyName = email.contact?.companyName || email.company?.name;
-        
-        if (!companyName) {
-          result.skipped++;
-          result.errors.push(`Skipped email "${email.subject}" - no company name`);
-          continue;
-        }
+        const companyName = email.contact?.companyName || email.company?.name || 
+          (email.contact?.email ? email.contact.email.split('@')[1]?.split('.')[0] : null) ||
+          'Unknown Company';
 
         // Find or create company
         let companyId = companyMap.get(companyName.toLowerCase());
@@ -468,20 +464,8 @@ export function ApolloEmailImportDialog({ open, onOpenChange, onImportComplete }
           continue;
         }
 
-        // Check for duplicate communication by subject/sent_at as fallback
-        const { data: existingComm } = await supabase
-          .from('company_communications')
-          .select('id')
-          .eq('company_id', companyId)
-          .eq('subject', email.subject || '')
-          .gte('sent_at', email.sentAt ? new Date(new Date(email.sentAt).getTime() - 60000).toISOString() : new Date().toISOString())
-          .lte('sent_at', email.sentAt ? new Date(new Date(email.sentAt).getTime() + 60000).toISOString() : new Date().toISOString())
-          .maybeSingle();
-
-        if (existingComm) {
-          result.skipped++;
-          continue;
-        }
+        // Duplicate check: only skip if we already tracked this Apollo ID
+        // (removed overly strict subject+timestamp matching that was blocking legitimate imports)
 
         // Create communication record
         const { error: commError } = await supabase

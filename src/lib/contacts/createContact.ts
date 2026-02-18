@@ -13,8 +13,8 @@ export async function createContact(contactData: Partial<Contact>) {
         .from('contacts')
         .select('id, first_name, last_name, email')
         .eq('company_id', contactData.company_id)
-        .ilike('first_name', contactData.first_name)
-        .ilike('last_name', contactData.last_name);
+        .ilike('first_name', contactData.first_name.trim())
+        .ilike('last_name', contactData.last_name.trim());
 
       if (checkError) {
         console.error('Error checking for duplicates:', checkError);
@@ -23,7 +23,23 @@ export async function createContact(contactData: Partial<Contact>) {
         throw new Error(
           `A contact named ${duplicate.first_name} ${duplicate.last_name} already exists at this company${
             duplicate.email ? ` (${duplicate.email})` : ''
-          }. Please check if this is a duplicate.`
+          }. If this is not a duplicate, please modify the name slightly.`
+        );
+      }
+    }
+
+    // 1b. Also check by email across all companies (case-insensitive)
+    if (contactData.email && contactData.email.trim()) {
+      const { data: emailMatches } = await supabase
+        .from('contacts')
+        .select('id, first_name, last_name, email, company_id')
+        .ilike('email', contactData.email.trim())
+        .limit(1);
+
+      if (emailMatches && emailMatches.length > 0) {
+        const match = emailMatches[0];
+        throw new Error(
+          `A contact with email "${match.email}" already exists (${match.first_name} ${match.last_name}). Please check if this is a duplicate.`
         );
       }
     }

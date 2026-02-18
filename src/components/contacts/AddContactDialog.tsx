@@ -116,7 +116,16 @@ export function AddContactDialog({ open, onOpenChange, onSuccess, onAdded, compa
       .order("company_name");
     
     if (search) {
-      query = query.ilike("company_name", `%${search}%`);
+      // Split search into words and match each word independently for fuzzy matching
+      const words = search.trim().split(/\s+/).filter(w => w.length > 0);
+      if (words.length > 1) {
+        // Multi-word: each word must appear somewhere in the company name
+        for (const word of words) {
+          query = query.ilike("company_name", `%${word}%`);
+        }
+      } else if (words.length === 1) {
+        query = query.ilike("company_name", `%${words[0]}%`);
+      }
     }
     
     const { data } = await query.limit(50);

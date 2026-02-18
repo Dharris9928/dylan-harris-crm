@@ -103,7 +103,8 @@ const Contacts = () => {
 
       // Apply server-side search filter when search term exists
       if (debouncedSearch.trim()) {
-        const words = debouncedSearch.trim().split(/\s+/);
+        const searchClean = debouncedSearch.trim().replace(/[%_]/g, '');
+        const words = searchClean.split(/\s+/);
         if (words.length > 1) {
           // Multi-word: match each word against name fields (e.g. "Aaron Wells")
           const conditions = words.map(w => {

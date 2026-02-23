@@ -1,9 +1,21 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://esm.sh/zod@3.23.8";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const requestSchema = z.object({
+  message: z.string().max(10000).optional(),
+  conversationHistory: z.array(z.object({
+    role: z.enum(['user', 'assistant', 'system']),
+    content: z.union([z.string(), z.array(z.any())]),
+  })).max(50).default([]),
+  images: z.array(z.string().url().max(10000)).max(5).default([]),
+}).refine(data => data.message || data.images.length > 0, {
+  message: "Message or at least one image is required",
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -11,20 +23,25 @@ serve(async (req) => {
   }
 
   try {
-    const { message, conversationHistory = [], images = [] } = await req.json();
+    const body = await req.json();
+    const validation = requestSchema.safeParse(body);
     
-    if (!message && images.length === 0) {
-      throw new Error("Message or image is required");
+    if (!validation.success) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: validation.error.flatten() }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
+
+    const { message, conversationHistory, images } = validation.data;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    console.log("Processing error help request:", message);
+    console.log("Processing error help request");
 
-    // Build messages array with system prompt and conversation history
     const messages = [
       {
         role: "system",
@@ -80,25 +97,15 @@ Keep responses focused and actionable. If you're unsure, be honest and suggest w
       
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({ 
-            error: "Rate limit exceeded. Please wait a moment and try again." 
-          }), 
-          {
-            status: 429,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
+          JSON.stringify({ error: "Rate limit exceeded. Please wait a moment and try again." }), 
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       
       if (response.status === 402) {
         return new Response(
-          JSON.stringify({ 
-            error: "AI credits exhausted. Please add credits to your Lovable workspace in Settings → Workspace → Usage." 
-          }), 
-          {
-            status: 402,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
+          JSON.stringify({ error: "AI credits exhausted. Please add credits to your Lovable workspace in Settings → Workspace → Usage." }), 
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       
@@ -112,24 +119,15 @@ Keep responses focused and actionable. If you're unsure, be honest and suggest w
       throw new Error("No response from AI");
     }
 
-    console.log("AI response generated successfully");
-
     return new Response(
       JSON.stringify({ response: aiResponse }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error("Error in ai-error-helper:", error);
     return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : "An unexpected error occurred" 
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      JSON.stringify({ error: "An unexpected error occurred. Please try again." }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

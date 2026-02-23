@@ -2,15 +2,16 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 import { requireAdmin } from "../_shared/authorization.ts";
+import { z } from "https://esm.sh/zod@3.23.8";
 
-interface CreateUserRequest {
-  email: string;
-  firstName: string;
-  lastName: string;
-  password?: string;
-  role: 'admin' | 'sales_manager' | 'sales_rep' | 'read_only';
-  useTemporaryPassword: boolean;
-}
+const createUserSchema = z.object({
+  email: z.string().email().max(255),
+  firstName: z.string().trim().min(1).max(100),
+  lastName: z.string().trim().min(1).max(100),
+  password: z.string().min(8).max(128).optional(),
+  role: z.enum(['admin', 'sales_manager', 'sales_rep', 'read_only']),
+  useTemporaryPassword: z.boolean(),
+});
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -21,16 +22,17 @@ serve(async (req) => {
     // Verify admin access
     const { supabase } = await requireAdmin(req);
 
-    const requestData: CreateUserRequest = await req.json();
-    const { email, firstName, lastName, password, role, useTemporaryPassword } = requestData;
+    const body = await req.json();
+    const validation = createUserSchema.safeParse(body);
 
-    // Validate required fields
-    if (!email || !firstName || !lastName || !role) {
+    if (!validation.success) {
       return new Response(
-        JSON.stringify({ error: "Missing required fields" }),
+        JSON.stringify({ error: "Invalid input", details: validation.error.flatten() }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    const { email, firstName, lastName, password, role, useTemporaryPassword } = validation.data;
 
     // Generate temporary password if needed
     const actualPassword = useTemporaryPassword 
@@ -80,14 +82,12 @@ serve(async (req) => {
     const { data: { user: adminUser } } = await supabase.auth.getUser(token);
 
     // Update profile with temp password, email tracking, and auto-approve invited users
-    // (profile is created by handle_new_user trigger)
     const { error: profileError } = await supabase
       .from('profiles')
       .update({
         temp_password: useTemporaryPassword ? actualPassword : null,
         invitation_email_sent_at: useTemporaryPassword ? new Date().toISOString() : null,
         invitation_email_status: useTemporaryPassword ? 'sent' : 'not_applicable',
-        // Auto-approve invited users (those with temp passwords)
         approval_status: useTemporaryPassword ? 'approved' : 'pending',
         approved_at: useTemporaryPassword ? new Date().toISOString() : null,
         approved_by: useTemporaryPassword ? adminUser?.id : null
@@ -96,10 +96,9 @@ serve(async (req) => {
 
     if (profileError) {
       console.error("Profile update error:", profileError);
-      // Try to clean up the auth user
       await supabase.auth.admin.deleteUser(authData.user.id);
       return new Response(
-        JSON.stringify({ error: `Failed to update profile: ${profileError.message}` }),
+        JSON.stringify({ error: "Failed to update profile. Please try again." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -114,10 +113,9 @@ serve(async (req) => {
 
     if (roleUpsertError) {
       console.error("Role upsert error:", roleUpsertError);
-      // Try to clean up the auth user if role assignment fails
       await supabase.auth.admin.deleteUser(authData.user.id);
       return new Response(
-        JSON.stringify({ error: `Failed to assign role: ${roleUpsertError.message}` }),
+        JSON.stringify({ error: "Failed to assign role. Please try again." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -133,9 +131,8 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Error in admin-create-user:", error);
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: "An unexpected error occurred. Please try again." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

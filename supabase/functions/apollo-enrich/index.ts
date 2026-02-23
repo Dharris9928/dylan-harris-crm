@@ -1,11 +1,18 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { checkRateLimit } from '../_shared/rateLimiting.ts';
+import { z } from "https://esm.sh/zod@3.23.8";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const enrichRequestSchema = z.object({
+  companyName: z.string().trim().min(1).max(500),
+  websiteUrl: z.string().url().max(2000).optional().nullable(),
+  linkedinUrl: z.string().url().max(2000).optional().nullable(),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -33,14 +40,17 @@ serve(async (req) => {
       }
     }
 
-    const { companyName, websiteUrl, linkedinUrl } = await req.json();
+    const body = await req.json();
+    const validation = enrichRequestSchema.safeParse(body);
 
-    if (!companyName) {
+    if (!validation.success) {
       return new Response(
-        JSON.stringify({ error: 'companyName is required' }),
+        JSON.stringify({ error: 'Invalid input', details: validation.error.flatten() }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    const { companyName, websiteUrl, linkedinUrl } = validation.data;
 
     const APOLLO_API_KEY = Deno.env.get('APOLLO_API_KEY');
     if (!APOLLO_API_KEY) {

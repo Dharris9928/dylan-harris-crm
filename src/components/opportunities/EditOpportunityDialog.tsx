@@ -95,23 +95,24 @@ export function EditOpportunityDialog({ open, onOpenChange, opportunity }: EditO
     mutationFn: async () => {
       // Parse assigned_to — sales reps can't go into the FK column
       let assignedToValue: string | null = null;
+      let salesRepValue: string | null = null;
       const rawAssigned = formData.assigned_to;
+      
       if (rawAssigned && rawAssigned !== 'unassigned') {
         if (rawAssigned.startsWith('user:')) {
           assignedToValue = rawAssigned.replace('user:', '');
+          salesRepValue = null;
         } else if (rawAssigned.startsWith('salesrep:')) {
-          // Sales rep — don't set assigned_to (FK constraint)
+          // Sales rep — goes into assigned_to_sales_rep_id, NOT assigned_to
           assignedToValue = null;
+          salesRepValue = rawAssigned.replace('salesrep:', '');
         } else {
-          // Raw UUID (legacy) — assume it's a profile id
-          assignedToValue = rawAssigned;
+          // Raw UUID without prefix — could be legacy data
+          // Safety: set as null to avoid FK violations; user can re-select
+          console.warn('Unexpected raw UUID in assigned_to, clearing to avoid FK violation:', rawAssigned);
+          assignedToValue = null;
+          salesRepValue = null;
         }
-      }
-
-      // Parse sales rep ID if applicable
-      let salesRepValue: string | null = null;
-      if (rawAssigned && rawAssigned.startsWith('salesrep:')) {
-        salesRepValue = rawAssigned.replace('salesrep:', '');
       }
 
       // Update opportunity

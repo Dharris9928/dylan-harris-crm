@@ -133,7 +133,7 @@ export default function PipelineAnalytics() {
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
+            <PopoverContent className="w-auto p-0 z-50" align="end">
               <Calendar
                 initialFocus
                 mode="range"
@@ -141,6 +141,7 @@ export default function PipelineAnalytics() {
                 selected={{ from: dateRange.from, to: dateRange.to }}
                 onSelect={(range) => handleDateRangeChange(range || {})}
                 numberOfMonths={2}
+                className={cn("p-3 pointer-events-auto")}
               />
             </PopoverContent>
           </Popover>

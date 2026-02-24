@@ -2562,6 +2562,7 @@ export type Database = {
           id: string
           is_active: boolean
           key_rotated_at: string | null
+          key_value: string | null
           key_version: number
           notes: string | null
           rotated_by: string | null
@@ -2570,6 +2571,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           key_rotated_at?: string | null
+          key_value?: string | null
           key_version?: number
           notes?: string | null
           rotated_by?: string | null
@@ -2578,6 +2580,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           key_rotated_at?: string | null
+          key_value?: string | null
           key_version?: number
           notes?: string | null
           rotated_by?: string | null

@@ -13,7 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useMemo } from "react";
 import { DeleteRecordDialog } from "@/components/common/DeleteRecordDialog";
 import { useUserRole } from "@/hooks/useUserRole";
-
+import { ContactActivityDialog } from "./ContactActivityDialog";
 interface Contact {
   id: string;
   first_name: string;
@@ -44,6 +44,7 @@ export function ContactTable({ contacts, isLoading, onEdit, onDelete }: ContactT
   const navigate = useNavigate();
   const { data: userData } = useUserRole();
   const [deleteContact, setDeleteContact] = useState<Contact | null>(null);
+  const [activityContact, setActivityContact] = useState<Contact | null>(null);
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   
@@ -158,7 +159,13 @@ export function ContactTable({ contacts, isLoading, onEdit, onDelete }: ContactT
           {sortedContacts.map((contact) => (
             <TableRow key={contact.id}>
               <TableCell className="font-medium">
-                {contact.first_name} {contact.last_name}
+                <Button
+                  variant="link"
+                  className="p-0 h-auto font-medium text-foreground hover:text-primary"
+                  onClick={() => setActivityContact(contact)}
+                >
+                  {contact.first_name} {contact.last_name}
+                </Button>
               </TableCell>
               <TableCell className="text-sm">{contact.title || "—"}</TableCell>
               <TableCell className="text-sm">
@@ -240,6 +247,14 @@ export function ContactTable({ contacts, isLoading, onEdit, onDelete }: ContactT
             email: deleteContact.email,
             company: deleteContact.companies?.company_name,
           }}
+        />
+      )}
+
+      {activityContact && (
+        <ContactActivityDialog
+          open={!!activityContact}
+          onOpenChange={(open) => !open && setActivityContact(null)}
+          contact={activityContact}
         />
       )}
     </div>

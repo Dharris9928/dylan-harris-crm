@@ -23,9 +23,14 @@ interface Contact {
   phone: string | null;
   decision_tier: string;
   company_id: string;
+  assigned_to: string | null;
   companies?: {
     company_name: string;
   };
+  assigned_profile?: {
+    first_name: string;
+    last_name: string;
+  } | null;
 }
 
 interface ContactTableProps {
@@ -144,6 +149,7 @@ export function ContactTable({ contacts, isLoading, onEdit, onDelete }: ContactT
             <SortableHeader field="title">Title</SortableHeader>
             <SortableHeader field="company">Company</SortableHeader>
             <SortableHeader field="decision_tier">Decision Tier</SortableHeader>
+            <TableHead>Assigned To</TableHead>
             <TableHead>Contact Info</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
@@ -172,6 +178,11 @@ export function ContactTable({ contacts, isLoading, onEdit, onDelete }: ContactT
                 <Badge className={getTierColor(contact.decision_tier)}>
                   {contact.decision_tier}
                 </Badge>
+              </TableCell>
+              <TableCell className="text-sm">
+                {contact.assigned_profile
+                  ? `${contact.assigned_profile.first_name} ${contact.assigned_profile.last_name}`
+                  : "—"}
               </TableCell>
               <TableCell>
                 <div className="flex gap-2">

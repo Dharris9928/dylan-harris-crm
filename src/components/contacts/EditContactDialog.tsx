@@ -38,6 +38,7 @@ import { Check, ChevronsUpDown, Mail, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useDebounce } from "@/hooks/useDebounce";
+import { UserAssignmentSelect } from "@/components/companies/UserAssignmentSelect";
 
 interface Contact {
   id: string;
@@ -51,6 +52,7 @@ interface Contact {
   linkedin_url: string | null;
   decision_tier: string;
   preferred_contact_method: string;
+  assigned_to?: string | null;
 }
 
 interface EditContactDialogProps {
@@ -83,6 +85,7 @@ export function EditContactDialog({ open, onOpenChange, onSuccess, contact }: Ed
     linkedin_url: contact.linkedin_url || "",
     decision_tier: contact.decision_tier,
     preferred_contact_method: contact.preferred_contact_method,
+    assigned_to: contact.assigned_to || "",
   });
 
   useEffect(() => {
@@ -142,6 +145,7 @@ export function EditContactDialog({ open, onOpenChange, onSuccess, contact }: Ed
         linkedin_url: formData.linkedin_url || null,
         decision_tier: formData.decision_tier as "Primary" | "Secondary" | "Influencer",
         preferred_contact_method: formData.preferred_contact_method as "Email" | "Phone" | "LinkedIn" | "Text",
+        assigned_to: formData.assigned_to && formData.assigned_to !== "unassigned" ? formData.assigned_to : null,
       };
 
       const { error } = await supabase
@@ -332,6 +336,14 @@ export function EditContactDialog({ open, onOpenChange, onSuccess, contact }: Ed
                 type="url"
                 value={formData.linkedin_url}
                 onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Assigned To</Label>
+              <UserAssignmentSelect
+                value={formData.assigned_to || "unassigned"}
+                onValueChange={(value) => setFormData({ ...formData, assigned_to: value })}
+                placeholder="Select assignee..."
               />
             </div>
             <div className="grid gap-2">

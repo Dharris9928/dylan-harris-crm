@@ -1955,6 +1955,7 @@ export type Database = {
       }
       contacts: {
         Row: {
+          assigned_to: string | null
           branch_id: string | null
           company_id: string | null
           created_at: string | null
@@ -1981,6 +1982,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          assigned_to?: string | null
           branch_id?: string | null
           company_id?: string | null
           created_at?: string | null
@@ -2007,6 +2009,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          assigned_to?: string | null
           branch_id?: string | null
           company_id?: string | null
           created_at?: string | null
@@ -2033,6 +2036,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "contacts_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "contacts_branch_id_fkey"
             columns: ["branch_id"]

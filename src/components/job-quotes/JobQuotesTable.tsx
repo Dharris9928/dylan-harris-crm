@@ -101,6 +101,7 @@ export function JobQuotesTable({
             <TableHead>Wholesaler</TableHead>
             <TableHead>Assignee</TableHead>
             <TableHead>Comments</TableHead>
+            <TableHead>Notes</TableHead>
             <TableHead>Contacts</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Date Won</TableHead>
@@ -145,6 +146,9 @@ export function JobQuotesTable({
               </TableCell>
               <TableCell className="max-w-[150px] truncate">
                 {quote.comments || "-"}
+              </TableCell>
+              <TableCell className="max-w-[150px] truncate">
+                {quote.notes || "-"}
               </TableCell>
               <TableCell>
                 <div className="flex flex-wrap gap-1 max-w-[200px]">

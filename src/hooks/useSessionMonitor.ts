@@ -86,6 +86,9 @@ export function useSessionMonitor() {
 
     if (!config) return;
 
+    // Skip idle check while paused (e.g. during uploads)
+    if (pausedRef.current) return;
+
     const idleTime = Date.now() - lastActivityRef.current;
     const timeoutMs = config.idle_timeout_minutes * 60 * 1000;
     const warningMs = timeoutMs - (2 * 60 * 1000); // 2 minutes before timeout

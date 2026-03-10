@@ -2597,6 +2597,48 @@ export type Database = {
         }
         Relationships: []
       }
+      encryption_rotation_progress: {
+        Row: {
+          completed_at: string | null
+          id: string
+          initiated_by: string | null
+          migrated_companies: number | null
+          migrated_contacts: number | null
+          new_version: number
+          old_version: number
+          started_at: string | null
+          status: string | null
+          total_companies: number | null
+          total_contacts: number | null
+        }
+        Insert: {
+          completed_at?: string | null
+          id?: string
+          initiated_by?: string | null
+          migrated_companies?: number | null
+          migrated_contacts?: number | null
+          new_version: number
+          old_version: number
+          started_at?: string | null
+          status?: string | null
+          total_companies?: number | null
+          total_contacts?: number | null
+        }
+        Update: {
+          completed_at?: string | null
+          id?: string
+          initiated_by?: string | null
+          migrated_companies?: number | null
+          migrated_contacts?: number | null
+          new_version?: number
+          old_version?: number
+          started_at?: string | null
+          status?: string | null
+          total_companies?: number | null
+          total_contacts?: number | null
+        }
+        Relationships: []
+      }
       enrichment_logs: {
         Row: {
           company_id: string
@@ -6428,6 +6470,14 @@ export type Database = {
           expired_at: string
           revoked_role: Database["public"]["Enums"]["app_role"]
           revoked_user_id: string
+        }[]
+      }
+      rotate_encryption_key: {
+        Args: { _batch_size?: number; _new_key: string; _new_version: number }
+        Returns: {
+          companies_migrated: number
+          contacts_migrated: number
+          status: string
         }[]
       }
       schedule_key_rotation: {

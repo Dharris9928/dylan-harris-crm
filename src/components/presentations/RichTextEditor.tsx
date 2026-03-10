@@ -80,10 +80,8 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
       
       // Re-sanitize the editor content on every input to strip anything
       // the browser may have injected (e.g. via paste, drag-drop, etc.)
-      const sanitized = DOMPurify.sanitize(htmlContent, SANITIZE_CONFIG);
+      const sanitized = DOMPurify.sanitize(htmlContent, SANITIZE_CONFIG) as string;
       if (sanitized !== htmlContent) {
-        // Content was modified by sanitizer – update the editor
-        const sel = window.getSelection();
         const hadFocus = document.activeElement === editorRef.current;
         editorRef.current.innerHTML = sanitized;
         if (hadFocus) editorRef.current.focus();

@@ -60,7 +60,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
         .join('');
       
       // Sanitize before setting innerHTML
-      const sanitized = DOMPurify.sanitize(htmlContent, SANITIZE_CONFIG);
+      const sanitized = DOMPurify.sanitize(htmlContent, SANITIZE_CONFIG) as string;
       editorRef.current.innerHTML = sanitized;
     }
   }, [value]);

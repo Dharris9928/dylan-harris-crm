@@ -353,6 +353,7 @@ export function ApolloEmailImportDialog({ open, onOpenChange, onImportComplete }
 
   const importEmails = async () => {
     setStep('importing');
+    pauseTimeout();
     setImportProgress(0);
 
     const selectedEmailsList = emails.filter(e => selectedEmails.has(e.apolloId));

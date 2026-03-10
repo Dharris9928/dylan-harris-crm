@@ -53,6 +53,7 @@ export function AIImportDialog({ open, onClose, onImportComplete, targetTable }:
   const [importProgress, setImportProgress] = useState(0);
   const [importStats, setImportStats] = useState({ success: 0, failed: 0 });
   const { toast } = useToast();
+  const { pauseTimeout, resumeTimeout } = useSessionTimeout();
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];

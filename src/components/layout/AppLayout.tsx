@@ -19,7 +19,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [approvalStatus, setApprovalStatus] = useState<string | null>(null);
-  const { showWarning, timeRemaining, extendSession, handleTimeout } = useSessionMonitor();
+  const { showWarning, timeRemaining, extendSession, handleTimeout, pauseTimeout, resumeTimeout, isPaused } = useSessionMonitor();
 
   useEffect(() => {
     // Set up auth state listener

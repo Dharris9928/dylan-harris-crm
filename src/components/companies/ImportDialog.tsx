@@ -53,6 +53,11 @@ export function ImportDialog({ open, onClose, onImportComplete }: ImportDialogPr
   const { toast } = useToast();
   const { pauseTimeout, resumeTimeout } = useSessionTimeout();
 
+  useEffect(() => {
+    if (step === 'importing') pauseTimeout();
+    else resumeTimeout();
+  }, [step]);
+
   const handleFileUpload = async (uploadedFile: File) => {
     // Validate file size (10MB max)
     const maxSize = 10 * 1024 * 1024;

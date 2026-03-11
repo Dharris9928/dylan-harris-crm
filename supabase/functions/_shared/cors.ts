@@ -7,6 +7,14 @@ const ALLOWED_ORIGINS = [
   'http://localhost:3000',
 ];
 
+function isAllowedOrigin(origin: string): boolean {
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  // Allow all Lovable preview/project domains
+  if (/^https:\/\/.*\.lovableproject\.com$/.test(origin)) return true;
+  if (/^https:\/\/.*\.lovable\.app$/.test(origin)) return true;
+  return false;
+}
+
 /**
  * Returns CORS headers scoped to allowed origins.
  * If no origin header is present (e.g. server-to-server), allows the request.
@@ -14,7 +22,7 @@ const ALLOWED_ORIGINS = [
 export function getCorsHeaders(req: Request): Record<string, string> {
   const origin = req.headers.get('origin');
 
-  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+  if (origin && isAllowedOrigin(origin)) {
     return {
       'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',

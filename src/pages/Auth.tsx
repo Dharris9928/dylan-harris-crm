@@ -54,11 +54,11 @@ const Auth = () => {
           .from('allowed_email_domains')
           .select('domain')
           .eq('is_active', true)
-          .eq('verification_status', 'verified');
+          .or('verification_status.is.null,verification_status.eq.verified');
 
         if (error) throw error;
 
-        const domains = data?.map(d => `@${d.domain.toLowerCase()}`) || [];
+        const domains = data?.map(d => `@${d.domain.toLowerCase().trim()}`) || [];
         setAllowedDomains(domains);
       } catch (error) {
         console.error('Error fetching allowed domains:', error);
@@ -72,10 +72,11 @@ const Auth = () => {
   }, []);
 
   const validateEmailDomain = (email: string): boolean => {
-    if (email.toLowerCase() === ADMIN_EXCEPTION.toLowerCase()) {
+    const normalizedEmail = email.toLowerCase().trim();
+    if (normalizedEmail === ADMIN_EXCEPTION.toLowerCase()) {
       return true;
     }
-    return allowedDomains.some(domain => email.toLowerCase().endsWith(domain));
+    return allowedDomains.some(domain => normalizedEmail.endsWith(domain));
   };
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 

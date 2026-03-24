@@ -290,7 +290,7 @@ export function OpportunitiesTable({ opportunities, isLoading, onSelectOpportuni
                 </TableCell>
                 <TableCell style={{ width: columnWidths.notes, maxWidth: columnWidths.notes }}>
                   {opportunity.notes ? (
-                    <span className="text-sm text-muted-foreground truncate block" title={opportunity.notes}>
+                    <span className="text-sm text-muted-foreground whitespace-pre-wrap break-words block">
                       {opportunity.notes}
                     </span>
                   ) : (

@@ -186,7 +186,7 @@ export function JobQuotesTable({
                   <div className="whitespace-pre-wrap break-words text-sm">{quote.comments || "-"}</div>
                 </TableCell>
                 <TableCell style={{ width: columnWidths.notes, maxWidth: columnWidths.notes }}>
-                  <div className="truncate" title={quote.notes || ''}>{quote.notes || "-"}</div>
+                  <div className="whitespace-pre-wrap break-words text-sm">{quote.notes || "-"}</div>
                 </TableCell>
                 <TableCell style={{ width: columnWidths.contacts, maxWidth: columnWidths.contacts }}>
                   <div className="flex flex-wrap gap-1">

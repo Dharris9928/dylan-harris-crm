@@ -14,6 +14,8 @@ import { useState, useMemo } from "react";
 import { DeleteRecordDialog } from "@/components/common/DeleteRecordDialog";
 import { useUserRole } from "@/hooks/useUserRole";
 import { ContactActivityDialog } from "./ContactActivityDialog";
+import { useResizableColumns } from "@/hooks/useResizableColumns";
+
 interface Contact {
   id: string;
   first_name: string;
@@ -40,6 +42,16 @@ interface ContactTableProps {
   onDelete?: () => void;
 }
 
+const DEFAULT_WIDTHS: Record<string, number> = {
+  name: 180,
+  title: 160,
+  company: 180,
+  decision_tier: 130,
+  assigned: 150,
+  contact_info: 120,
+  actions: 100,
+};
+
 export function ContactTable({ contacts, isLoading, onEdit, onDelete }: ContactTableProps) {
   const navigate = useNavigate();
   const { data: userData } = useUserRole();
@@ -47,6 +59,7 @@ export function ContactTable({ contacts, isLoading, onEdit, onDelete }: ContactT
   const [activityContact, setActivityContact] = useState<Contact | null>(null);
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const { columnWidths, handleMouseDown, totalWidth } = useResizableColumns(DEFAULT_WIDTHS);
   
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -103,16 +116,28 @@ export function ContactTable({ contacts, isLoading, onEdit, onDelete }: ContactT
       <ArrowDown className="ml-2 h-4 w-4" />;
   };
 
-  const SortableHeader = ({ field, children }: { field: string; children: React.ReactNode }) => (
-    <TableHead>
-      <Button
-        variant="ghost"
-        onClick={() => handleSort(field)}
-        className="h-auto p-0 hover:bg-transparent font-semibold"
-      >
-        {children}
-        {renderSortIcon(field)}
-      </Button>
+  const ResizableHeader = ({ field, sortable = true, children }: { field: string; sortable?: boolean; children: React.ReactNode }) => (
+    <TableHead style={{ width: columnWidths[field], minWidth: 60, maxWidth: columnWidths[field], position: 'relative' }} className="group">
+      <div className="flex items-center justify-between pr-2">
+        {sortable ? (
+          <Button
+            variant="ghost"
+            onClick={() => handleSort(field)}
+            className="h-auto p-0 hover:bg-transparent font-semibold truncate"
+          >
+            <span className="truncate">{children}</span>
+            {renderSortIcon(field)}
+          </Button>
+        ) : (
+          <span className="text-sm font-medium truncate">{children}</span>
+        )}
+        <div
+          className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize opacity-0 group-hover:opacity-100 hover:opacity-100 flex items-center justify-center z-10"
+          onMouseDown={(e) => handleMouseDown(field, e)}
+        >
+          <div className="h-4 w-0.5 bg-border rounded-full" />
+        </div>
+      </div>
     </TableHead>
   );
 
@@ -143,93 +168,103 @@ export function ContactTable({ contacts, isLoading, onEdit, onDelete }: ContactT
 
   return (
     <div className="border border-border rounded-lg">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <SortableHeader field="name">Name</SortableHeader>
-            <SortableHeader field="title">Title</SortableHeader>
-            <SortableHeader field="company">Company</SortableHeader>
-            <SortableHeader field="decision_tier">Decision Tier</SortableHeader>
-            <TableHead>Assigned To</TableHead>
-            <TableHead>Contact Info</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sortedContacts.map((contact) => (
-            <TableRow key={contact.id}>
-              <TableCell className="font-medium">
-                <Button
-                  variant="link"
-                  className="p-0 h-auto font-medium text-foreground hover:text-primary"
-                  onClick={() => setActivityContact(contact)}
-                >
-                  {contact.first_name} {contact.last_name}
-                </Button>
-              </TableCell>
-              <TableCell className="text-sm">{contact.title || "—"}</TableCell>
-              <TableCell className="text-sm">
-                {contact.companies?.company_name ? (
-                  <Button
-                    variant="link"
-                    className="p-0 h-auto text-sm text-foreground hover:text-primary"
-                    onClick={() => navigate('/companies', { state: { editCompanyId: contact.company_id } })}
-                  >
-                    {contact.companies.company_name}
-                  </Button>
-                ) : (
-                  "—"
-                )}
-              </TableCell>
-              <TableCell>
-                <Badge className={getTierColor(contact.decision_tier)}>
-                  {contact.decision_tier}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-sm">
-                {contact.assigned_profile
-                  ? `${contact.assigned_profile.first_name} ${contact.assigned_profile.last_name}`
-                  : "—"}
-              </TableCell>
-              <TableCell>
-                <div className="flex gap-2">
-                  {contact.email && (
-                    <Button variant="ghost" size="sm" asChild>
-                      <a href={`mailto:${contact.email}`}>
-                        <Mail className="h-4 w-4" />
-                      </a>
-                    </Button>
-                  )}
-                  {contact.phone && (
-                    <Button variant="ghost" size="sm" asChild>
-                      <a href={`tel:${contact.phone}`}>
-                        <Phone className="h-4 w-4" />
-                      </a>
-                    </Button>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex gap-1">
-                  <Button variant="ghost" size="sm" onClick={() => onEdit(contact)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  {userData?.role === 'admin' && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => setDeleteContact(contact)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </TableCell>
+      <div className="overflow-x-auto">
+        <Table style={{ tableLayout: 'fixed', width: totalWidth }}>
+          <TableHeader>
+            <TableRow>
+              <ResizableHeader field="name">Name</ResizableHeader>
+              <ResizableHeader field="title">Title</ResizableHeader>
+              <ResizableHeader field="company">Company</ResizableHeader>
+              <ResizableHeader field="decision_tier">Decision Tier</ResizableHeader>
+              <ResizableHeader field="assigned" sortable={false}>Assigned To</ResizableHeader>
+              <ResizableHeader field="contact_info" sortable={false}>Contact Info</ResizableHeader>
+              <ResizableHeader field="actions" sortable={false}>Actions</ResizableHeader>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {sortedContacts.map((contact) => (
+              <TableRow key={contact.id}>
+                <TableCell style={{ width: columnWidths.name, maxWidth: columnWidths.name }} className="font-medium">
+                  <div className="truncate">
+                    <Button
+                      variant="link"
+                      className="p-0 h-auto font-medium text-foreground hover:text-primary"
+                      onClick={() => setActivityContact(contact)}
+                    >
+                      {contact.first_name} {contact.last_name}
+                    </Button>
+                  </div>
+                </TableCell>
+                <TableCell style={{ width: columnWidths.title, maxWidth: columnWidths.title }} className="text-sm">
+                  <div className="truncate" title={contact.title || ''}>{contact.title || "—"}</div>
+                </TableCell>
+                <TableCell style={{ width: columnWidths.company, maxWidth: columnWidths.company }} className="text-sm">
+                  <div className="truncate">
+                    {contact.companies?.company_name ? (
+                      <Button
+                        variant="link"
+                        className="p-0 h-auto text-sm text-foreground hover:text-primary"
+                        onClick={() => navigate('/companies', { state: { editCompanyId: contact.company_id } })}
+                      >
+                        {contact.companies.company_name}
+                      </Button>
+                    ) : (
+                      "—"
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell style={{ width: columnWidths.decision_tier, maxWidth: columnWidths.decision_tier }}>
+                  <Badge className={getTierColor(contact.decision_tier)}>
+                    {contact.decision_tier}
+                  </Badge>
+                </TableCell>
+                <TableCell style={{ width: columnWidths.assigned, maxWidth: columnWidths.assigned }} className="text-sm">
+                  <div className="truncate" title={contact.assigned_profile ? `${contact.assigned_profile.first_name} ${contact.assigned_profile.last_name}` : ''}>
+                    {contact.assigned_profile
+                      ? `${contact.assigned_profile.first_name} ${contact.assigned_profile.last_name}`
+                      : "—"}
+                  </div>
+                </TableCell>
+                <TableCell style={{ width: columnWidths.contact_info, maxWidth: columnWidths.contact_info }}>
+                  <div className="flex gap-2">
+                    {contact.email && (
+                      <Button variant="ghost" size="sm" asChild>
+                        <a href={`mailto:${contact.email}`}>
+                          <Mail className="h-4 w-4" />
+                        </a>
+                      </Button>
+                    )}
+                    {contact.phone && (
+                      <Button variant="ghost" size="sm" asChild>
+                        <a href={`tel:${contact.phone}`}>
+                          <Phone className="h-4 w-4" />
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell style={{ width: columnWidths.actions, maxWidth: columnWidths.actions }}>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => onEdit(contact)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    {userData?.role === 'admin' && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setDeleteContact(contact)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
 
       {deleteContact && (
         <DeleteRecordDialog

@@ -8,12 +8,12 @@ interface OpportunitiesListViewProps {
 }
 
 const statusColors: Record<string, string> = {
-  prospecting: 'bg-blue-500',
-  qualification: 'bg-purple-500',
-  proposal: 'bg-yellow-500',
-  negotiation: 'bg-orange-500',
-  closed_won: 'bg-green-500',
-  closed_lost: 'bg-red-500',
+  prospecting: 'bg-sky-100 text-sky-800 border border-sky-300',
+  qualification: 'bg-amber-100 text-amber-800 border border-amber-300',
+  proposal: 'bg-violet-100 text-violet-800 border border-violet-300',
+  negotiation: 'bg-orange-100 text-orange-800 border border-orange-300',
+  closed_won: 'bg-emerald-100 text-emerald-800 border border-emerald-300',
+  closed_lost: 'bg-red-100 text-red-800 border border-red-300',
 };
 
 export function OpportunitiesListView({ opportunities, onSelectItem }: OpportunitiesListViewProps) {

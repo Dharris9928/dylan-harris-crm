@@ -4,11 +4,11 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 
 const STAGE_COLUMNS = [
-  { id: 'prospecting', label: 'Prospecting', color: 'bg-blue-500' },
-  { id: 'qualification', label: 'Qualification', color: 'bg-purple-500' },
-  { id: 'proposal', label: 'Proposal', color: 'bg-yellow-500' },
+  { id: 'prospecting', label: 'Prospecting', color: 'bg-sky-500' },
+  { id: 'qualification', label: 'Qualification', color: 'bg-amber-500' },
+  { id: 'proposal', label: 'Proposal', color: 'bg-violet-500' },
   { id: 'negotiation', label: 'Negotiation', color: 'bg-orange-500' },
-  { id: 'closed_won', label: 'Closed Won', color: 'bg-green-500' },
+  { id: 'closed_won', label: 'Closed Won', color: 'bg-emerald-500' },
   { id: 'closed_lost', label: 'Closed Lost', color: 'bg-red-500' },
 ];
 

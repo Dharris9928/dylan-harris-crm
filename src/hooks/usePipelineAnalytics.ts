@@ -78,19 +78,18 @@ export type { PipelineMetrics, EmailedCompany, ResponseDetail, HandoffDetail };
 // Re-export for convenience
 export { WEST_STATES, EAST_STATES };
 
-// Helper to fetch all rows from a query, paginating past the 1000-row default limit
-async function fetchAllRows<T>(queryBuilder: any): Promise<T[]> {
+// Helper to fetch all rows by paginating through results
+async function paginatedFetch(buildQuery: () => any): Promise<any[]> {
   const PAGE_SIZE = 1000;
-  let allRows: T[] = [];
+  let allRows: any[] = [];
   let offset = 0;
-  let hasMore = true;
 
-  while (hasMore) {
-    const { data, error } = await queryBuilder.range(offset, offset + PAGE_SIZE - 1);
+  while (true) {
+    const { data, error } = await buildQuery().range(offset, offset + PAGE_SIZE - 1);
     if (error) throw error;
-    const rows = (data || []) as T[];
+    const rows = data || [];
     allRows = allRows.concat(rows);
-    hasMore = rows.length === PAGE_SIZE;
+    if (rows.length < PAGE_SIZE) break;
     offset += PAGE_SIZE;
   }
 

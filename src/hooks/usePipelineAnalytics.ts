@@ -294,33 +294,34 @@ export function usePipelineAnalytics(
         return true;
       });
 
-      // Fetch previous period activities
-      let prevActivitiesQuery = supabase
-        .from("outreach_activities")
-        .select("id, activity_type, outcome, scheduled_date, completed_date, created_at, company_id")
-        .in("activity_type", ["Meeting", "Demo", "Phone"])
-        .or(`scheduled_date.gte.${prevFrom},completed_date.gte.${prevFrom},created_at.gte.${prevFrom}`)
-        .or(`scheduled_date.lte.${prevTo},completed_date.lte.${prevTo},created_at.lte.${prevTo}`);
-      
-      prevActivitiesQuery = buildPerspectiveFilter(prevActivitiesQuery);
-      const { data: prevActivitiesDataRaw } = await prevActivitiesQuery;
+      // Fetch previous period activities (paginated)
+      const buildPrevActivitiesQuery = () => {
+        let q = supabase
+          .from("outreach_activities")
+          .select("id, activity_type, outcome, scheduled_date, completed_date, created_at, company_id")
+          .in("activity_type", ["Meeting", "Demo", "Phone"])
+          .or(`scheduled_date.gte.${prevFrom},completed_date.gte.${prevFrom},created_at.gte.${prevFrom}`)
+          .or(`scheduled_date.lte.${prevTo},completed_date.lte.${prevTo},created_at.lte.${prevTo}`);
+        return buildPerspectiveFilter(q);
+      };
+      const prevActivitiesDataRaw = await paginatedFetch(buildPrevActivitiesQuery);
       
       let prevActivitiesData = prevActivitiesDataRaw || [];
-      prevActivitiesData = prevActivitiesData.filter(a => {
+      prevActivitiesData = prevActivitiesData.filter((a: any) => {
         const schedDate = a.scheduled_date ? new Date(a.scheduled_date) : null;
         const compDate = a.completed_date ? new Date(a.completed_date) : null;
         const createdDate = a.created_at ? new Date(a.created_at) : null;
         const from = new Date(prevFrom);
         from.setHours(0, 0, 0, 0);
         const to = new Date(prevTo);
-        to.setHours(23, 59, 59, 999); // Include full end day
+        to.setHours(23, 59, 59, 999);
         return (schedDate && schedDate >= from && schedDate <= to) || 
                (compDate && compDate >= from && compDate <= to) ||
                (createdDate && createdDate >= from && createdDate <= to);
       });
 
       if (filterStates && prevActivitiesData.length > 0) {
-        const companyIds = [...new Set(prevActivitiesData.map(m => m.company_id).filter(Boolean))];
+        const companyIds = [...new Set(prevActivitiesData.map((m: any) => m.company_id).filter(Boolean))];
         if (companyIds.length > 0) {
           const { data: companies } = await supabase
             .from("companies")
@@ -328,41 +329,38 @@ export function usePipelineAnalytics(
             .in("id", companyIds)
             .in("state", filterStates);
           const validCompanyIds = new Set(companies?.map(c => c.id) || []);
-          prevActivitiesData = prevActivitiesData.filter(m => validCompanyIds.has(m.company_id));
+          prevActivitiesData = prevActivitiesData.filter((m: any) => validCompanyIds.has(m.company_id));
         }
       }
 
-      const prevMeetingsData = prevActivitiesData.filter(a => a.activity_type === "Meeting");
-      const prevDemosData = prevActivitiesData.filter(a => a.activity_type === "Demo");
-      const prevPhoneData = prevActivitiesData.filter(a => a.activity_type === "Phone");
+      const prevMeetingsData = prevActivitiesData.filter((a: any) => a.activity_type === "Meeting");
+      const prevDemosData = prevActivitiesData.filter((a: any) => a.activity_type === "Demo");
+      const prevPhoneData = prevActivitiesData.filter((a: any) => a.activity_type === "Phone");
       
-      // Previous period upcoming meetings (for comparison) - exclude completed
-      const prevUpcomingMeetingsData = prevActivitiesData.filter(a => {
+      const prevUpcomingMeetingsData = prevActivitiesData.filter((a: any) => {
         if (!["Meeting", "Demo"].includes(a.activity_type)) return false;
         if (!a.scheduled_date) return false;
-        // Exclude completed meetings
         if (a.outcome === "Completed" || a.completed_date) return false;
         return true;
       });
 
-      // Fetch opportunities (leads assigned / handoffs) with company and assignee info
-      let oppsQuery = supabase
-        .from("opportunities")
-        .select(`
-          id, assigned_to, assigned_to_sales_rep_id, amount, created_at, stage, closed_date, company_id, notes,
-          companies!opportunities_company_id_fkey(id, company_name),
-          profiles!opportunities_assigned_to_fkey(first_name, last_name),
-          sales_reps!opportunities_assigned_to_sales_rep_id_fkey(first_name, last_name),
-          opportunity_name
-        `)
-        .gte("created_at", fromDate)
-        .lte("created_at", toDate)
-        .or("assigned_to.not.is.null,assigned_to_sales_rep_id.not.is.null,opportunity_name.ilike.Lead from%,opportunity_name.ilike.Handoff:%");
-      
-      oppsQuery = buildPerspectiveFilter(oppsQuery);
-      const { data: oppsDataRaw, error: oppsError } = await oppsQuery;
-      
-      if (oppsError) throw oppsError;
+      // Fetch opportunities (paginated)
+      const buildOppsQuery = () => {
+        let q = supabase
+          .from("opportunities")
+          .select(`
+            id, assigned_to, assigned_to_sales_rep_id, amount, created_at, stage, closed_date, company_id, notes,
+            companies!opportunities_company_id_fkey(id, company_name),
+            profiles!opportunities_assigned_to_fkey(first_name, last_name),
+            sales_reps!opportunities_assigned_to_sales_rep_id_fkey(first_name, last_name),
+            opportunity_name
+          `)
+          .gte("created_at", fromDate)
+          .lte("created_at", toDate)
+          .or("assigned_to.not.is.null,assigned_to_sales_rep_id.not.is.null,opportunity_name.ilike.Lead from%,opportunity_name.ilike.Handoff:%");
+        return buildPerspectiveFilter(q);
+      };
+      const oppsDataRaw = await paginatedFetch(buildOppsQuery);
 
       let oppsData = oppsDataRaw || [];
       if (filterStates && oppsData.length > 0) {

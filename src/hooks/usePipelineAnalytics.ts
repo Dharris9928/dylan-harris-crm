@@ -199,55 +199,22 @@ export function usePipelineAnalytics(
         }
       }
 
-      // Fetch Apollo email activities (paginated)
-      const buildApolloQuery = () => {
-        let q = supabase
-          .from("apollo_email_activities")
-          .select("id, sent_at, opened_at, replied_at, status, company_id, contact_id, open_count, click_count, reply_count, activity_date")
-          .gte("activity_date", fromDate)
-          .lte("activity_date", toDate);
-        return buildPerspectiveFilter(q);
-      };
-      const apolloDataRaw = await paginatedFetch(buildApolloQuery);
-      
-      let apolloData = apolloDataRaw || [];
-      if (filterStates && apolloData.length > 0) {
-        const companyIds = [...new Set(apolloData.map((a: any) => a.company_id).filter(Boolean))];
-        if (companyIds.length > 0) {
-          const { data: companies } = await supabase
-            .from("companies")
-            .select("id, state")
-            .in("id", companyIds)
-            .in("state", filterStates);
-          const validCompanyIds = new Set(companies?.map(c => c.id) || []);
-          apolloData = apolloData.filter((a: any) => validCompanyIds.has(a.company_id));
-        }
-      }
+      const apolloSentFilter = "sent_at.not.is.null,status.in.(sent,not_opened,opened,replied,bounced)";
+      const apolloOpenedFilter = "opened_at.not.is.null,open_count.gt.0,status.in.(opened,replied)";
+      const apolloRespondedFilter = "replied_at.not.is.null,reply_count.gt.0,status.eq.replied";
 
-      // Fetch previous period Apollo data (paginated)
-      const buildPrevApolloQuery = () => {
-        let q = supabase
-          .from("apollo_email_activities")
-          .select("id, sent_at, opened_at, replied_at, status, company_id, open_count, click_count, reply_count, activity_date")
-          .gte("activity_date", prevFrom)
-          .lte("activity_date", prevTo);
-        return buildPerspectiveFilter(q);
-      };
-      const prevApolloDataRaw = await paginatedFetch(buildPrevApolloQuery);
-      
-      let prevApolloData = prevApolloDataRaw || [];
-      if (filterStates && prevApolloData.length > 0) {
-        const companyIds = [...new Set(prevApolloData.map((a: any) => a.company_id).filter(Boolean))];
-        if (companyIds.length > 0) {
-          const { data: companies } = await supabase
-            .from("companies")
-            .select("id, state")
-            .in("id", companyIds)
-            .in("state", filterStates);
-          const validCompanyIds = new Set(companies?.map(c => c.id) || []);
-          prevApolloData = prevApolloData.filter((a: any) => validCompanyIds.has(a.company_id));
-        }
-      }
+      const [apolloMetrics, prevApolloMetrics]: [ApolloMetrics, ApolloMetrics] = await Promise.all([
+        Promise.all([
+          runApolloCount(fromDate, toDate, apolloSentFilter, regionalCompanyIds),
+          runApolloCount(fromDate, toDate, apolloOpenedFilter, regionalCompanyIds),
+          runApolloCount(fromDate, toDate, apolloRespondedFilter, regionalCompanyIds),
+        ]).then(([sent, opened, responded]) => ({ sent, opened, responded })),
+        Promise.all([
+          runApolloCount(prevFrom, prevTo, apolloSentFilter, regionalCompanyIds),
+          runApolloCount(prevFrom, prevTo, apolloOpenedFilter, regionalCompanyIds),
+          runApolloCount(prevFrom, prevTo, apolloRespondedFilter, regionalCompanyIds),
+        ]).then(([sent, opened, responded]) => ({ sent, opened, responded })),
+      ]);
 
       // Fetch previous period communications (paginated)
       const buildPrevCommsQuery = () => {

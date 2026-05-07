@@ -468,8 +468,10 @@ export function usePipelineAnalytics(
       const demosScheduled = demosData.filter(d => d.outcome === "Scheduled" || d.outcome === "Completed").length;
       const demosCompleted = demosData.filter(d => d.outcome === "Completed").length;
       
-      // Phone calls (count all completed phone activities)
-      const phoneCalls = phoneData.filter(p => p.outcome === "Completed" || p.completed_date).length;
+      // Phone calls — combine outreach_activities (Phone) + company_communications (call_script)
+      const phoneCallsFromActivities = phoneData.filter(p => p.outcome === "Completed" || p.completed_date).length;
+      const phoneCallsFromComms = commsData.filter((c: any) => c.communication_type === "call_script").length;
+      const phoneCalls = phoneCallsFromActivities + phoneCallsFromComms;
       
       // Upcoming meetings count (scheduled for future)
       const upcomingMeetings = upcomingMeetingsData.length;

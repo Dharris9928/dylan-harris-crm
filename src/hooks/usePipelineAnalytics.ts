@@ -174,7 +174,7 @@ export function usePipelineAnalytics(
         let q = supabase
           .from("company_communications")
           .select(`
-            id, sent_at, email_opened_at, email_responded_at, company_id, contact_id,
+            id, sent_at, email_opened_at, email_responded_at, company_id, contact_id, communication_type,
             companies!company_communications_company_id_fkey(id, company_name),
             contacts(id, first_name, last_name)
           `)

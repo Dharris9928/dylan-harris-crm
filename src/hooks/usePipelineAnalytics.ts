@@ -30,6 +30,12 @@ interface HandoffDetail {
   amount: number | null;
 }
 
+interface ApolloMetrics {
+  sent: number;
+  opened: number;
+  responded: number;
+}
+
 interface PipelineMetrics {
   commsSent: number;
   emailsOpened: number;
@@ -123,6 +129,45 @@ export function usePipelineAnalytics(
         }
         return query;
       };
+
+      const countRows = async (query: any) => {
+        const { count, error } = await query;
+        if (error) throw error;
+        return count || 0;
+      };
+
+      const runApolloCount = async (from: string, to: string, filter: string, companyIds?: string[]) => {
+        const buildCountQuery = (ids?: string[]) => {
+          let q = supabase
+            .from("apollo_email_activities")
+            .select("id", { count: "exact", head: true })
+            .gte("activity_date", from)
+            .lte("activity_date", to)
+            .or(filter);
+          if (ids) q = q.in("company_id", ids);
+          return buildPerspectiveFilter(q);
+        };
+
+        if (!companyIds) return countRows(buildCountQuery());
+        if (companyIds.length === 0) return 0;
+
+        let total = 0;
+        for (let i = 0; i < companyIds.length; i += 200) {
+          total += await countRows(buildCountQuery(companyIds.slice(i, i + 200)));
+        }
+        return total;
+      };
+
+      let regionalCompanyIds: string[] | undefined;
+      if (filterStates) {
+        const companies = await paginatedFetch(() =>
+          supabase
+            .from("companies")
+            .select("id")
+            .in("state", filterStates)
+        );
+        regionalCompanyIds = companies.map((company: any) => company.id);
+      }
 
       // Fetch communications data with contact info (paginated)
       const buildCommsQuery = () => {

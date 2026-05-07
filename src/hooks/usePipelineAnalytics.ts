@@ -115,12 +115,10 @@ export function usePipelineAnalytics(
 
       const filterStates = getFilterStates(regionFilter);
 
-      // Build perspective filter
-      const buildPerspectiveFilter = (query: any) => {
-        if (perspective === "my_records" && userId) {
-          return query.eq("created_by", userId);
-        } else if (perspective === "assigned_to_me" && userId) {
-          return query.eq("created_by", userId);
+      // Build perspective filter — column name varies per table
+      const buildPerspectiveFilter = (query: any, ownerColumn: string = "created_by") => {
+        if ((perspective === "my_records" || perspective === "assigned_to_me") && userId) {
+          return query.eq(ownerColumn, userId);
         }
         return query;
       };

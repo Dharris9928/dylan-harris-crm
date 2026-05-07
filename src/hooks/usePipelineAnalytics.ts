@@ -185,7 +185,7 @@ export function usePipelineAnalytics(
         regionalCompanyIds = companies.map((company: any) => company.id);
       }
 
-      // Fetch communications data with contact info (paginated)
+      // Build all the main fetch queries
       const buildCommsQuery = () => {
         let q = supabase
           .from("company_communications")
@@ -198,44 +198,7 @@ export function usePipelineAnalytics(
           .lte("sent_at", toDate);
         return buildPerspectiveFilter(q, "user_id");
       };
-      const commsDataRaw = await paginatedFetch(buildCommsQuery);
 
-      // Filter by region if needed
-      let commsData = commsDataRaw || [];
-      if (filterStates && commsData.length > 0) {
-        const companyIds = [...new Set(commsData.map((c: any) => c.company_id).filter(Boolean))];
-        if (companyIds.length > 0) {
-          const { data: companies } = await supabase
-            .from("companies")
-            .select("id, state")
-            .in("id", companyIds)
-            .in("state", filterStates);
-          const validCompanyIds = new Set(companies?.map(c => c.id) || []);
-          commsData = commsData.filter((c: any) => validCompanyIds.has(c.company_id));
-        }
-      }
-
-      // Strict filters — match what Apollo's UI reports.
-      // 'sent' = the email was actually delivered (sent_at populated).
-      // Loose status-based filters were inflating counts ~2.5x due to draft/queued rows.
-      const apolloSentFilter = "sent_at.not.is.null";
-      const apolloOpenedFilter = "opened_at.not.is.null";
-      const apolloRespondedFilter = "replied_at.not.is.null";
-
-      const [apolloMetrics, prevApolloMetrics]: [ApolloMetrics, ApolloMetrics] = await Promise.all([
-        Promise.all([
-          runApolloCount(fromDate, toDate, apolloSentFilter, regionalCompanyIds),
-          runApolloCount(fromDate, toDate, apolloOpenedFilter, regionalCompanyIds),
-          runApolloCount(fromDate, toDate, apolloRespondedFilter, regionalCompanyIds),
-        ]).then(([sent, opened, responded]) => ({ sent, opened, responded })),
-        Promise.all([
-          runApolloCount(prevFrom, prevTo, apolloSentFilter, regionalCompanyIds),
-          runApolloCount(prevFrom, prevTo, apolloOpenedFilter, regionalCompanyIds),
-          runApolloCount(prevFrom, prevTo, apolloRespondedFilter, regionalCompanyIds),
-        ]).then(([sent, opened, responded]) => ({ sent, opened, responded })),
-      ]);
-
-      // Fetch previous period communications (paginated)
       const buildPrevCommsQuery = () => {
         let q = supabase
           .from("company_communications")
@@ -244,23 +207,7 @@ export function usePipelineAnalytics(
           .lte("sent_at", prevTo);
         return buildPerspectiveFilter(q, "user_id");
       };
-      const prevCommsDataRaw = await paginatedFetch(buildPrevCommsQuery);
-      
-      let prevCommsData = prevCommsDataRaw || [];
-      if (filterStates && prevCommsData.length > 0) {
-        const companyIds = [...new Set(prevCommsData.map((c: any) => c.company_id).filter(Boolean))];
-        if (companyIds.length > 0) {
-          const { data: companies } = await supabase
-            .from("companies")
-            .select("id, state")
-            .in("id", companyIds)
-            .in("state", filterStates);
-          const validCompanyIds = new Set(companies?.map(c => c.id) || []);
-          prevCommsData = prevCommsData.filter((c: any) => validCompanyIds.has(c.company_id));
-        }
-      }
 
-      // Fetch all activities (Meeting, Demo, Phone) - paginated
       const buildActivitiesQuery = () => {
         let q = supabase
           .from("outreach_activities")
@@ -270,63 +217,7 @@ export function usePipelineAnalytics(
           .or(`created_at.lte.${toDate},completed_date.lte.${toDate},scheduled_date.lte.${toDate}`);
         return buildPerspectiveFilter(q);
       };
-      const activitiesDataRaw = await paginatedFetch(buildActivitiesQuery);
 
-      let activitiesData = activitiesDataRaw || [];
-      const currentDate = new Date();
-      currentDate.setHours(0, 0, 0, 0);
-      const from = new Date(fromDate);
-      from.setHours(0, 0, 0, 0);
-      const to = new Date(toDate);
-      to.setHours(23, 59, 59, 999);
-      
-      // Filter activities: include those in date range OR upcoming future meetings
-      activitiesData = activitiesData.filter(a => {
-        const schedDate = a.scheduled_date ? new Date(a.scheduled_date) : null;
-        const compDate = a.completed_date ? new Date(a.completed_date) : null;
-        const createdDate = a.created_at ? new Date(a.created_at) : null;
-        
-        // Include if: created within range, completed within range, scheduled within range
-        const createdInRange = createdDate && createdDate >= from && createdDate <= to;
-        const completedInRange = compDate && compDate >= from && compDate <= to;
-        const scheduledInRange = schedDate && schedDate >= from && schedDate <= to;
-        
-        // ALWAYS include upcoming meetings (scheduled for future, not completed)
-        const isUpcoming = schedDate && schedDate >= currentDate && !a.completed_date && a.outcome !== "Completed";
-        
-        return createdInRange || completedInRange || scheduledInRange || isUpcoming;
-      });
-
-      if (filterStates && activitiesData.length > 0) {
-        const companyIds = [...new Set(activitiesData.map(m => m.company_id).filter(Boolean))];
-        if (companyIds.length > 0) {
-          const { data: companies } = await supabase
-            .from("companies")
-            .select("id, state")
-            .in("id", companyIds)
-            .in("state", filterStates);
-          const validCompanyIds = new Set(companies?.map(c => c.id) || []);
-          activitiesData = activitiesData.filter(m => validCompanyIds.has(m.company_id));
-        }
-      }
-
-      // Separate by type
-      const meetingsData = activitiesData.filter(a => a.activity_type === "Meeting");
-      const demosData = activitiesData.filter(a => a.activity_type === "Demo");
-      const phoneData = activitiesData.filter(a => a.activity_type === "Phone");
-
-      // Calculate upcoming meetings - scheduled but NOT yet completed
-      // An activity is "upcoming" if it has a scheduled_date, no completed_date, and outcome is NOT "Completed"
-      const upcomingMeetingsData = activitiesData.filter(a => {
-        if (!["Meeting", "Demo"].includes(a.activity_type)) return false;
-        if (!a.scheduled_date) return false;
-        // If there's a completed_date OR outcome is Completed, it's not upcoming
-        if (a.completed_date) return false;
-        if (a.outcome === "Completed") return false;
-        return true;
-      });
-
-      // Fetch previous period activities (paginated)
       const buildPrevActivitiesQuery = () => {
         let q = supabase
           .from("outreach_activities")
@@ -336,47 +227,7 @@ export function usePipelineAnalytics(
           .or(`scheduled_date.lte.${prevTo},completed_date.lte.${prevTo},created_at.lte.${prevTo}`);
         return buildPerspectiveFilter(q);
       };
-      const prevActivitiesDataRaw = await paginatedFetch(buildPrevActivitiesQuery);
-      
-      let prevActivitiesData = prevActivitiesDataRaw || [];
-      prevActivitiesData = prevActivitiesData.filter((a: any) => {
-        const schedDate = a.scheduled_date ? new Date(a.scheduled_date) : null;
-        const compDate = a.completed_date ? new Date(a.completed_date) : null;
-        const createdDate = a.created_at ? new Date(a.created_at) : null;
-        const from = new Date(prevFrom);
-        from.setHours(0, 0, 0, 0);
-        const to = new Date(prevTo);
-        to.setHours(23, 59, 59, 999);
-        return (schedDate && schedDate >= from && schedDate <= to) || 
-               (compDate && compDate >= from && compDate <= to) ||
-               (createdDate && createdDate >= from && createdDate <= to);
-      });
 
-      if (filterStates && prevActivitiesData.length > 0) {
-        const companyIds = [...new Set(prevActivitiesData.map((m: any) => m.company_id).filter(Boolean))];
-        if (companyIds.length > 0) {
-          const { data: companies } = await supabase
-            .from("companies")
-            .select("id, state")
-            .in("id", companyIds)
-            .in("state", filterStates);
-          const validCompanyIds = new Set(companies?.map(c => c.id) || []);
-          prevActivitiesData = prevActivitiesData.filter((m: any) => validCompanyIds.has(m.company_id));
-        }
-      }
-
-      const prevMeetingsData = prevActivitiesData.filter((a: any) => a.activity_type === "Meeting");
-      const prevDemosData = prevActivitiesData.filter((a: any) => a.activity_type === "Demo");
-      const prevPhoneData = prevActivitiesData.filter((a: any) => a.activity_type === "Phone");
-      
-      const prevUpcomingMeetingsData = prevActivitiesData.filter((a: any) => {
-        if (!["Meeting", "Demo"].includes(a.activity_type)) return false;
-        if (!a.scheduled_date) return false;
-        if (a.outcome === "Completed" || a.completed_date) return false;
-        return true;
-      });
-
-      // Fetch opportunities (paginated)
       const buildOppsQuery = () => {
         let q = supabase
           .from("opportunities")
@@ -392,53 +243,7 @@ export function usePipelineAnalytics(
           .or("assigned_to.not.is.null,assigned_to_sales_rep_id.not.is.null,opportunity_name.ilike.Lead from%,opportunity_name.ilike.Handoff:%");
         return buildPerspectiveFilter(q);
       };
-      const oppsDataRaw = await paginatedFetch(buildOppsQuery);
 
-      let oppsData = oppsDataRaw || [];
-      if (filterStates && oppsData.length > 0) {
-        const companyIds = [...new Set(oppsData.map(o => o.company_id).filter(Boolean))];
-        if (companyIds.length > 0) {
-          const { data: companies } = await supabase
-            .from("companies")
-            .select("id, state")
-            .in("id", companyIds)
-            .in("state", filterStates);
-          const validCompanyIds = new Set(companies?.map(c => c.id) || []);
-          oppsData = oppsData.filter(o => validCompanyIds.has(o.company_id));
-        }
-      }
-
-      // Fetch assignee names (from sales_reps or profiles)
-      const assigneeIds = [...new Set(oppsData.map(o => o.assigned_to).filter(Boolean))];
-      const assigneeMap: Record<string, string> = {};
-      
-      if (assigneeIds.length > 0) {
-        // Check sales_reps first (format: "rep_UUID")
-        const salesRepIds = assigneeIds.filter(id => id?.startsWith("rep_")).map(id => id?.replace("rep_", ""));
-        const profileIds = assigneeIds.filter(id => !id?.startsWith("rep_"));
-        
-        if (salesRepIds.length > 0) {
-          const { data: reps } = await supabase
-            .from("sales_reps")
-            .select("id, first_name, last_name")
-            .in("id", salesRepIds);
-          reps?.forEach(rep => {
-            assigneeMap[`rep_${rep.id}`] = [rep.first_name, rep.last_name].filter(Boolean).join(" ") || "Unknown Rep";
-          });
-        }
-        
-        if (profileIds.length > 0) {
-          const { data: profiles } = await supabase
-            .from("profiles")
-            .select("id, first_name, last_name")
-            .in("id", profileIds);
-          profiles?.forEach(profile => {
-            assigneeMap[profile.id] = [profile.first_name, profile.last_name].filter(Boolean).join(" ") || "Unknown User";
-          });
-        }
-      }
-
-      // Fetch previous period opportunities (paginated)
       const buildPrevOppsQuery = () => {
         let q = supabase
           .from("opportunities")
@@ -448,20 +253,134 @@ export function usePipelineAnalytics(
           .or("assigned_to.not.is.null,opportunity_name.ilike.Lead from%,opportunity_name.ilike.Handoff:%");
         return buildPerspectiveFilter(q);
       };
-      const prevOppsDataRaw = await paginatedFetch(buildPrevOppsQuery);
-      
-      let prevOppsData = prevOppsDataRaw || [];
-      if (filterStates && prevOppsData.length > 0) {
-        const companyIds = [...new Set(prevOppsData.map(o => o.company_id).filter(Boolean))];
-        if (companyIds.length > 0) {
-          const { data: companies } = await supabase
-            .from("companies")
-            .select("id, state")
-            .in("id", companyIds)
-            .in("state", filterStates);
-          const validCompanyIds = new Set(companies?.map(c => c.id) || []);
-          prevOppsData = prevOppsData.filter(o => validCompanyIds.has(o.company_id));
-        }
+
+      // Strict filters — match what Apollo's UI reports.
+      const apolloSentFilter = "sent_at.not.is.null";
+      const apolloOpenedFilter = "opened_at.not.is.null";
+      const apolloRespondedFilter = "replied_at.not.is.null";
+
+      // Run all major fetches in parallel
+      const [
+        commsDataRaw,
+        prevCommsDataRaw,
+        activitiesDataRaw,
+        prevActivitiesDataRaw,
+        oppsDataRaw,
+        prevOppsDataRaw,
+        apolloMetrics,
+        prevApolloMetrics,
+      ] = await Promise.all([
+        paginatedFetch(buildCommsQuery),
+        paginatedFetch(buildPrevCommsQuery),
+        paginatedFetch(buildActivitiesQuery),
+        paginatedFetch(buildPrevActivitiesQuery),
+        paginatedFetch(buildOppsQuery),
+        paginatedFetch(buildPrevOppsQuery),
+        Promise.all([
+          runApolloCount(fromDate, toDate, apolloSentFilter, regionalCompanyIds),
+          runApolloCount(fromDate, toDate, apolloOpenedFilter, regionalCompanyIds),
+          runApolloCount(fromDate, toDate, apolloRespondedFilter, regionalCompanyIds),
+        ]).then(([sent, opened, responded]): ApolloMetrics => ({ sent, opened, responded })),
+        Promise.all([
+          runApolloCount(prevFrom, prevTo, apolloSentFilter, regionalCompanyIds),
+          runApolloCount(prevFrom, prevTo, apolloOpenedFilter, regionalCompanyIds),
+          runApolloCount(prevFrom, prevTo, apolloRespondedFilter, regionalCompanyIds),
+        ]).then(([sent, opened, responded]): ApolloMetrics => ({ sent, opened, responded })),
+      ]);
+
+      // Region filter helper — reuse preloaded regionalCompanyIds (no extra queries)
+      const regionalIdSet = regionalCompanyIds ? new Set(regionalCompanyIds) : null;
+      const filterByRegion = <T extends { company_id?: string | null }>(rows: T[]): T[] => {
+        if (!regionalIdSet) return rows;
+        return rows.filter(r => r.company_id && regionalIdSet.has(r.company_id));
+      };
+
+      let commsData = filterByRegion((commsDataRaw || []) as any[]);
+      let prevCommsData = filterByRegion((prevCommsDataRaw || []) as any[]);
+
+      // Activities — date-range filter in JS, then region
+      const currentDate = new Date();
+      currentDate.setHours(0, 0, 0, 0);
+      const from = new Date(fromDate);
+      from.setHours(0, 0, 0, 0);
+      const to = new Date(toDate);
+      to.setHours(23, 59, 59, 999);
+
+      let activitiesData = ((activitiesDataRaw || []) as any[]).filter((a: any) => {
+        const schedDate = a.scheduled_date ? new Date(a.scheduled_date) : null;
+        const compDate = a.completed_date ? new Date(a.completed_date) : null;
+        const createdDate = a.created_at ? new Date(a.created_at) : null;
+        const createdInRange = createdDate && createdDate >= from && createdDate <= to;
+        const completedInRange = compDate && compDate >= from && compDate <= to;
+        const scheduledInRange = schedDate && schedDate >= from && schedDate <= to;
+        const isUpcoming = schedDate && schedDate >= currentDate && !a.completed_date && a.outcome !== "Completed";
+        return createdInRange || completedInRange || scheduledInRange || isUpcoming;
+      });
+      activitiesData = filterByRegion(activitiesData);
+
+      const meetingsData = activitiesData.filter((a: any) => a.activity_type === "Meeting");
+      const demosData = activitiesData.filter((a: any) => a.activity_type === "Demo");
+      const phoneData = activitiesData.filter((a: any) => a.activity_type === "Phone");
+
+      const upcomingMeetingsData = activitiesData.filter((a: any) => {
+        if (!["Meeting", "Demo"].includes(a.activity_type)) return false;
+        if (!a.scheduled_date) return false;
+        if (a.completed_date) return false;
+        if (a.outcome === "Completed") return false;
+        return true;
+      });
+
+      let prevActivitiesData = ((prevActivitiesDataRaw || []) as any[]).filter((a: any) => {
+        const schedDate = a.scheduled_date ? new Date(a.scheduled_date) : null;
+        const compDate = a.completed_date ? new Date(a.completed_date) : null;
+        const createdDate = a.created_at ? new Date(a.created_at) : null;
+        const pf = new Date(prevFrom);
+        pf.setHours(0, 0, 0, 0);
+        const pt = new Date(prevTo);
+        pt.setHours(23, 59, 59, 999);
+        return (schedDate && schedDate >= pf && schedDate <= pt) ||
+               (compDate && compDate >= pf && compDate <= pt) ||
+               (createdDate && createdDate >= pf && createdDate <= pt);
+      });
+      prevActivitiesData = filterByRegion(prevActivitiesData);
+
+      const prevMeetingsData = prevActivitiesData.filter((a: any) => a.activity_type === "Meeting");
+      const prevDemosData = prevActivitiesData.filter((a: any) => a.activity_type === "Demo");
+      const prevPhoneData = prevActivitiesData.filter((a: any) => a.activity_type === "Phone");
+
+      const prevUpcomingMeetingsData = prevActivitiesData.filter((a: any) => {
+        if (!["Meeting", "Demo"].includes(a.activity_type)) return false;
+        if (!a.scheduled_date) return false;
+        if (a.outcome === "Completed" || a.completed_date) return false;
+        return true;
+      });
+
+      let oppsData = filterByRegion((oppsDataRaw || []) as any[]);
+      let prevOppsData = filterByRegion((prevOppsDataRaw || []) as any[]);
+
+      // Fetch assignee names (from sales_reps or profiles) — parallel
+      const assigneeIds = [...new Set(oppsData.map((o: any) => o.assigned_to).filter(Boolean))] as string[];
+      const assigneeMap: Record<string, string> = {};
+
+      if (assigneeIds.length > 0) {
+        const salesRepIds = assigneeIds.filter(id => id.startsWith("rep_")).map(id => id.replace("rep_", ""));
+        const profileIds = assigneeIds.filter(id => !id.startsWith("rep_"));
+
+        const [repsRes, profilesRes] = await Promise.all([
+          salesRepIds.length > 0
+            ? supabase.from("sales_reps").select("id, first_name, last_name").in("id", salesRepIds)
+            : Promise.resolve({ data: [] as any[] }),
+          profileIds.length > 0
+            ? supabase.from("profiles").select("id, first_name, last_name").in("id", profileIds)
+            : Promise.resolve({ data: [] as any[] }),
+        ]);
+
+        repsRes.data?.forEach((rep: any) => {
+          assigneeMap[`rep_${rep.id}`] = [rep.first_name, rep.last_name].filter(Boolean).join(" ") || "Unknown Rep";
+        });
+        profilesRes.data?.forEach((profile: any) => {
+          assigneeMap[profile.id] = [profile.first_name, profile.last_name].filter(Boolean).join(" ") || "Unknown User";
+        });
       }
 
       // Calculate current period metrics
@@ -664,6 +583,9 @@ export function usePipelineAnalytics(
       };
     },
     enabled: enabled && !!dateRange.from && !!dateRange.to,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }
 

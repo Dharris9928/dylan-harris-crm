@@ -307,8 +307,8 @@ export function usePipelineAnalytics(
         return rows.filter(r => r.company_id && regionalIdSet.has(r.company_id));
       };
 
-      let commsData = filterByRegion((commsDataRaw || []) as any[]);
-      let prevCommsData = filterByRegion((prevCommsDataRaw || []) as any[]);
+      const emailedDetails = filterByRegion((emailedDetailsRaw || []) as any[]);
+      const responseDetailsRows = filterByRegion((responseDetailsRaw || []) as any[]);
 
       // Activities — date-range filter in JS, then region
       const currentDate = new Date();

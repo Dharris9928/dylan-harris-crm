@@ -6292,6 +6292,28 @@ export type Database = {
           total_records: number
         }[]
       }
+      get_pipeline_comms_metrics: {
+        Args: {
+          _company_ids?: string[]
+          _from: string
+          _perspective?: string
+          _prev_from: string
+          _prev_to: string
+          _to: string
+          _user_id?: string
+        }
+        Returns: {
+          cur_avg_response_days: number
+          cur_call_scripts: number
+          cur_email_count: number
+          cur_opened: number
+          cur_responded: number
+          prev_call_scripts: number
+          prev_email_count: number
+          prev_opened: number
+          prev_responded: number
+        }[]
+      }
       get_table_columns: {
         Args: { table_name_param: string }
         Returns: {

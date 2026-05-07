@@ -440,19 +440,16 @@ export function usePipelineAnalytics(
       const closedDealValue = closedDealsData.reduce((sum, opp) => sum + (opp.amount || 0), 0);
 
       // Calculate previous period metrics (Apollo is source of truth for emails)
-      const prevCommsEmailRows = prevCommsData.filter((c: any) => c.communication_type === "email");
       const prevCommsSent = prevApolloMetrics.sent;
-      const prevCommsOpened = prevCommsEmailRows.filter((c: any) => c.email_opened_at).length;
-      const prevEmailsOpened = Math.max(prevCommsOpened, prevApolloMetrics.opened);
-      const prevCommsResponded = prevCommsEmailRows.filter((c: any) => c.email_responded_at).length;
-      const prevResponsesReceived = Math.max(prevCommsResponded, prevApolloMetrics.responded);
+      const prevEmailsOpened = Math.max(commsMetrics.prevOpened, prevApolloMetrics.opened);
+      const prevResponsesReceived = Math.max(commsMetrics.prevResponded, prevApolloMetrics.responded);
       const prevMeetingsScheduled = prevMeetingsData.filter(m => m.outcome === "Scheduled" || m.outcome === "Completed").length;
       const prevMeetingsCompleted = prevMeetingsData.filter(m => m.outcome === "Completed").length;
       const prevDemosScheduled = prevDemosData.filter(d => d.outcome === "Scheduled" || d.outcome === "Completed").length;
       const prevDemosCompleted = prevDemosData.filter(d => d.outcome === "Completed").length;
       const prevPhoneCalls = Math.max(
         prevPhoneData.filter(p => p.outcome === "Completed" || p.completed_date).length,
-        prevCommsData.filter((c: any) => c.communication_type === "call_script").length
+        commsMetrics.prevCallScripts
       );
       const prevUpcomingMeetings = prevUpcomingMeetingsData.length;
       const prevMeetingsConducted = prevMeetingsData.filter(m => m.outcome === "Completed" || m.completed_date).length +

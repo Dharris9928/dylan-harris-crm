@@ -170,26 +170,64 @@ export function usePipelineAnalytics(
         regionalCompanyIds = companies.map((company: any) => company.id);
       }
 
-      // Build all the main fetch queries
-      const buildCommsQuery = () => {
+      // Comms metrics — compute counts/avg in DB instead of downloading thousands of rows
+      const fetchCommsMetrics = async () => {
+        const { data, error } = await (supabase as any).rpc("get_pipeline_comms_metrics", {
+          _from: fromDate,
+          _to: toDate,
+          _prev_from: prevFrom,
+          _prev_to: prevTo,
+          _perspective: perspective,
+          _user_id: userId || null,
+          _company_ids: regionalCompanyIds || null,
+        });
+        if (error) throw error;
+        const row = Array.isArray(data) ? data[0] : data;
+        return {
+          curEmailCount: Number(row?.cur_email_count || 0),
+          curOpened: Number(row?.cur_opened || 0),
+          curResponded: Number(row?.cur_responded || 0),
+          curCallScripts: Number(row?.cur_call_scripts || 0),
+          curAvgResponseDays: Number(row?.cur_avg_response_days || 0),
+          prevEmailCount: Number(row?.prev_email_count || 0),
+          prevOpened: Number(row?.prev_opened || 0),
+          prevResponded: Number(row?.prev_responded || 0),
+          prevCallScripts: Number(row?.prev_call_scripts || 0),
+        };
+      };
+
+      // Only fetch top-10 detail rows (emailed + responded) for the side lists, not all rows
+      const buildEmailedDetailsQuery = () => {
         let q = supabase
           .from("company_communications")
-          .select(`
-            id, sent_at, email_opened_at, email_responded_at, company_id, contact_id, communication_type,
-            companies!company_communications_company_id_fkey(id, company_name),
-            contacts(id, first_name, last_name)
-          `)
+          .select(`id, sent_at, company_id, companies!company_communications_company_id_fkey(id, company_name)`)
+          .eq("communication_type", "email")
+          .not("sent_at", "is", null)
           .gte("sent_at", fromDate)
-          .lte("sent_at", toDate);
+          .lte("sent_at", toDate)
+          .order("sent_at", { ascending: false })
+          .limit(50); // overfetch to allow region filter, then slice to 10
+        if (regionalCompanyIds && regionalCompanyIds.length > 0) {
+          q = q.in("company_id", regionalCompanyIds);
+        }
         return buildPerspectiveFilter(q, "user_id");
       };
 
-      const buildPrevCommsQuery = () => {
+      const buildResponseDetailsQuery = () => {
         let q = supabase
           .from("company_communications")
-          .select("id, sent_at, email_opened_at, email_responded_at, company_id, communication_type")
-          .gte("sent_at", prevFrom)
-          .lte("sent_at", prevTo);
+          .select(`id, email_responded_at, company_id, contact_id,
+            companies!company_communications_company_id_fkey(id, company_name),
+            contacts(id, first_name, last_name)`)
+          .eq("communication_type", "email")
+          .not("email_responded_at", "is", null)
+          .gte("email_responded_at", fromDate)
+          .lte("email_responded_at", toDate)
+          .order("email_responded_at", { ascending: false })
+          .limit(50);
+        if (regionalCompanyIds && regionalCompanyIds.length > 0) {
+          q = q.in("company_id", regionalCompanyIds);
+        }
         return buildPerspectiveFilter(q, "user_id");
       };
 
@@ -241,8 +279,9 @@ export function usePipelineAnalytics(
 
       // Run all major fetches in parallel
       const [
-        commsDataRaw,
-        prevCommsDataRaw,
+        commsMetrics,
+        emailedDetailsRaw,
+        responseDetailsRaw,
         activitiesDataRaw,
         prevActivitiesDataRaw,
         oppsDataRaw,
@@ -250,8 +289,9 @@ export function usePipelineAnalytics(
         apolloMetrics,
         prevApolloMetrics,
       ] = await Promise.all([
-        paginatedFetch(buildCommsQuery),
-        paginatedFetch(buildPrevCommsQuery),
+        fetchCommsMetrics(),
+        paginatedFetch(buildEmailedDetailsQuery),
+        paginatedFetch(buildResponseDetailsQuery),
         paginatedFetch(buildActivitiesQuery),
         paginatedFetch(buildPrevActivitiesQuery),
         paginatedFetch(buildOppsQuery),
@@ -267,8 +307,8 @@ export function usePipelineAnalytics(
         return rows.filter(r => r.company_id && regionalIdSet.has(r.company_id));
       };
 
-      let commsData = filterByRegion((commsDataRaw || []) as any[]);
-      let prevCommsData = filterByRegion((prevCommsDataRaw || []) as any[]);
+      const emailedDetails = filterByRegion((emailedDetailsRaw || []) as any[]);
+      const responseDetailsRows = filterByRegion((responseDetailsRaw || []) as any[]);
 
       // Activities — date-range filter in JS, then region
       const currentDate = new Date();
@@ -355,18 +395,11 @@ export function usePipelineAnalytics(
         });
       }
 
-      // Calculate current period metrics
-      // IMPORTANT: company_communications email rows are mirrors of Apollo imports (same company+sent_at).
-      // To avoid double-counting, only count non-email comms here; Apollo is the source of truth for emails.
-      const commsEmailRows = commsData.filter(c => c.communication_type === "email");
+      // Calculate current period metrics — counts come from DB RPC (no row download)
+      // company_communications email rows are mirrors of Apollo imports; use max() to avoid double-counting.
       const commsSent = apolloMetrics.sent;
-
-      const commsOpened = commsEmailRows.filter(c => c.email_opened_at).length;
-      // Use max() instead of sum to avoid double-counting opens that exist in both tables
-      const emailsOpened = Math.max(commsOpened, apolloMetrics.opened);
-
-      const commsResponded = commsEmailRows.filter(c => c.email_responded_at).length;
-      const responsesReceived = Math.max(commsResponded, apolloMetrics.responded);
+      const emailsOpened = Math.max(commsMetrics.curOpened, apolloMetrics.opened);
+      const responsesReceived = Math.max(commsMetrics.curResponded, apolloMetrics.responded);
       
       // Meetings (Scheduled or Completed outcome)
       const meetingsScheduled = meetingsData.filter(m => m.outcome === "Scheduled" || m.outcome === "Completed").length;
@@ -380,7 +413,7 @@ export function usePipelineAnalytics(
       // AND a company_communications row (call_script) at the same timestamp.
       // Use the max to avoid double-counting (in case one side is missing for older records).
       const phoneCallsFromActivities = phoneData.filter(p => p.outcome === "Completed" || p.completed_date).length;
-      const phoneCallsFromComms = commsData.filter((c: any) => c.communication_type === "call_script").length;
+      const phoneCallsFromComms = commsMetrics.curCallScripts;
       const phoneCalls = Math.max(phoneCallsFromActivities, phoneCallsFromComms);
       
       // Upcoming meetings count (scheduled for future)
@@ -407,19 +440,16 @@ export function usePipelineAnalytics(
       const closedDealValue = closedDealsData.reduce((sum, opp) => sum + (opp.amount || 0), 0);
 
       // Calculate previous period metrics (Apollo is source of truth for emails)
-      const prevCommsEmailRows = prevCommsData.filter((c: any) => c.communication_type === "email");
       const prevCommsSent = prevApolloMetrics.sent;
-      const prevCommsOpened = prevCommsEmailRows.filter((c: any) => c.email_opened_at).length;
-      const prevEmailsOpened = Math.max(prevCommsOpened, prevApolloMetrics.opened);
-      const prevCommsResponded = prevCommsEmailRows.filter((c: any) => c.email_responded_at).length;
-      const prevResponsesReceived = Math.max(prevCommsResponded, prevApolloMetrics.responded);
+      const prevEmailsOpened = Math.max(commsMetrics.prevOpened, prevApolloMetrics.opened);
+      const prevResponsesReceived = Math.max(commsMetrics.prevResponded, prevApolloMetrics.responded);
       const prevMeetingsScheduled = prevMeetingsData.filter(m => m.outcome === "Scheduled" || m.outcome === "Completed").length;
       const prevMeetingsCompleted = prevMeetingsData.filter(m => m.outcome === "Completed").length;
       const prevDemosScheduled = prevDemosData.filter(d => d.outcome === "Scheduled" || d.outcome === "Completed").length;
       const prevDemosCompleted = prevDemosData.filter(d => d.outcome === "Completed").length;
       const prevPhoneCalls = Math.max(
         prevPhoneData.filter(p => p.outcome === "Completed" || p.completed_date).length,
-        prevCommsData.filter((c: any) => c.communication_type === "call_script").length
+        commsMetrics.prevCallScripts
       );
       const prevUpcomingMeetings = prevUpcomingMeetingsData.length;
       const prevMeetingsConducted = prevMeetingsData.filter(m => m.outcome === "Completed" || m.completed_date).length +
@@ -443,42 +473,28 @@ export function usePipelineAnalytics(
       const handoffRate = totalCompleted > 0 ? (leadsAssigned / totalCompleted) * 100 : 0;
       const closeRate = leadsAssigned > 0 ? (closedDeals / leadsAssigned) * 100 : 0;
 
-      // Calculate average response time
-      let totalResponseTime = 0;
-      let responseCount = 0;
-      commsData.forEach(c => {
-        if (c.sent_at && c.email_responded_at) {
-          const sentDate = new Date(c.sent_at);
-          const respondedDate = new Date(c.email_responded_at);
-          const diffDays = (respondedDate.getTime() - sentDate.getTime()) / (1000 * 60 * 60 * 24);
-          if (diffDays >= 0) {
-            totalResponseTime += diffDays;
-            responseCount++;
-          }
-        }
-      });
-      const avgResponseTimeDays = responseCount > 0 ? totalResponseTime / responseCount : 0;
+      // Average response time — computed in DB
+      const avgResponseTimeDays = commsMetrics.curAvgResponseDays;
 
       // Calculate total pipeline value
       const totalPipelineValue = oppsData.reduce((sum, opp) => sum + (opp.amount || 0), 0);
 
-      // Build detailed lists
-      const emailedCompanies: EmailedCompany[] = commsData
-        .filter(c => c.sent_at)
-        .map(c => ({
+      // Build detailed lists (already ordered DESC and limited by DB)
+      const emailedCompanies: EmailedCompany[] = emailedDetails
+        .filter((c: any) => c.sent_at)
+        .map((c: any) => ({
           id: c.id,
           company_name: (c.companies as any)?.company_name || "Unknown Company",
           sent_at: c.sent_at!,
         }))
-        .sort((a, b) => new Date(b.sent_at).getTime() - new Date(a.sent_at).getTime())
-        .slice(0, 10); // Limit to 10 most recent
+        .slice(0, 10);
 
-      const responseDetails: ResponseDetail[] = commsData
-        .filter(c => c.email_responded_at)
-        .map(c => {
+      const responseDetails: ResponseDetail[] = responseDetailsRows
+        .filter((c: any) => c.email_responded_at)
+        .map((c: any) => {
           const contact = c.contacts as any;
-          const contactName = contact 
-            ? [contact.first_name, contact.last_name].filter(Boolean).join(" ") 
+          const contactName = contact
+            ? [contact.first_name, contact.last_name].filter(Boolean).join(" ")
             : null;
           return {
             id: c.id,
@@ -487,7 +503,6 @@ export function usePipelineAnalytics(
             responded_at: c.email_responded_at!,
           };
         })
-        .sort((a, b) => new Date(b.responded_at).getTime() - new Date(a.responded_at).getTime())
         .slice(0, 10);
 
       const handoffDetails: HandoffDetail[] = oppsData

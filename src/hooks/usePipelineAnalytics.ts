@@ -395,18 +395,11 @@ export function usePipelineAnalytics(
         });
       }
 
-      // Calculate current period metrics
-      // IMPORTANT: company_communications email rows are mirrors of Apollo imports (same company+sent_at).
-      // To avoid double-counting, only count non-email comms here; Apollo is the source of truth for emails.
-      const commsEmailRows = commsData.filter(c => c.communication_type === "email");
+      // Calculate current period metrics — counts come from DB RPC (no row download)
+      // company_communications email rows are mirrors of Apollo imports; use max() to avoid double-counting.
       const commsSent = apolloMetrics.sent;
-
-      const commsOpened = commsEmailRows.filter(c => c.email_opened_at).length;
-      // Use max() instead of sum to avoid double-counting opens that exist in both tables
-      const emailsOpened = Math.max(commsOpened, apolloMetrics.opened);
-
-      const commsResponded = commsEmailRows.filter(c => c.email_responded_at).length;
-      const responsesReceived = Math.max(commsResponded, apolloMetrics.responded);
+      const emailsOpened = Math.max(commsMetrics.curOpened, apolloMetrics.opened);
+      const responsesReceived = Math.max(commsMetrics.curResponded, apolloMetrics.responded);
       
       // Meetings (Scheduled or Completed outcome)
       const meetingsScheduled = meetingsData.filter(m => m.outcome === "Scheduled" || m.outcome === "Completed").length;

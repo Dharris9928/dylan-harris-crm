@@ -100,7 +100,8 @@ export function usePipelineAnalytics(
   dateRange: DateRange,
   perspective: Perspective,
   userId?: string,
-  regionFilter: RegionFilter = "all"
+  regionFilter: RegionFilter = "all",
+  enabled: boolean = true
 ) {
   return useQuery({
     queryKey: ["pipeline-analytics", dateRange.from, dateRange.to, perspective, userId, regionFilter],
@@ -233,7 +234,9 @@ export function usePipelineAnalytics(
         let q = supabase
           .from("outreach_activities")
           .select("id, activity_type, outcome, scheduled_date, completed_date, created_at, company_id")
-          .in("activity_type", ["Meeting", "Demo", "Phone"]);
+          .in("activity_type", ["Meeting", "Demo", "Phone"])
+          .or(`created_at.gte.${fromDate},completed_date.gte.${fromDate},scheduled_date.gte.${fromDate}`)
+          .or(`created_at.lte.${toDate},completed_date.lte.${toDate},scheduled_date.lte.${toDate}`);
         return buildPerspectiveFilter(q);
       };
       const activitiesDataRaw = await paginatedFetch(buildActivitiesQuery);
@@ -639,7 +642,7 @@ export function usePipelineAnalytics(
         },
       };
     },
-    enabled: !!dateRange.from && !!dateRange.to,
+    enabled: enabled && !!dateRange.from && !!dateRange.to,
   });
 }
 

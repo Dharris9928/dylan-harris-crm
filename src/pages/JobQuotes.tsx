@@ -311,11 +311,11 @@ export default function JobQuotes() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-4 flex-wrap">
+      <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-muted-foreground" />
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
@@ -326,25 +326,93 @@ export default function JobQuotes() {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Day preset buttons */}
+        <div className="flex items-center gap-1">
+          {[
+            { label: "All Time", value: "all" },
+            { label: "30 Days", value: "30" },
+            { label: "60 Days", value: "60" },
+            { label: "90 Days", value: "90" },
+          ].map((preset) => (
+            <Button
+              key={preset.value}
+              variant={datePreset === preset.value ? "default" : "outline"}
+              size="sm"
+              onClick={() => {
+                setDatePreset(preset.value);
+                setCustomRange({});
+              }}
+            >
+              {preset.label}
+            </Button>
+          ))}
+        </div>
+
+        {/* Quarter dropdown */}
         <div className="flex items-center gap-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
-          <Select value={quarterFilter} onValueChange={setQuarterFilter}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Filter by quarter" />
+          <Select
+            value={quarterOptions.find(q => q.value === datePreset) ? datePreset : "none"}
+            onValueChange={(val) => {
+              if (val !== "none") {
+                setDatePreset(val);
+                setCustomRange({});
+              }
+            }}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Quarter" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Quarters</SelectItem>
-              <SelectItem value="Q1">Q1 ({new Date().getFullYear()})</SelectItem>
-              <SelectItem value="Q2">Q2 ({new Date().getFullYear()})</SelectItem>
-              <SelectItem value="Q3">Q3 ({new Date().getFullYear()})</SelectItem>
-              <SelectItem value="Q4">Q4 ({new Date().getFullYear()})</SelectItem>
-              <SelectItem value="Q1-prev">Q1 ({new Date().getFullYear() - 1})</SelectItem>
-              <SelectItem value="Q2-prev">Q2 ({new Date().getFullYear() - 1})</SelectItem>
-              <SelectItem value="Q3-prev">Q3 ({new Date().getFullYear() - 1})</SelectItem>
-              <SelectItem value="Q4-prev">Q4 ({new Date().getFullYear() - 1})</SelectItem>
+              <SelectItem value="none">Select Quarter</SelectItem>
+              {quarterOptions.map((q) => (
+                <SelectItem key={q.value} value={q.value}>
+                  {q.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
+
+        {/* Custom date range picker */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant={customRange.from && customRange.to ? "default" : "outline"}
+              size="sm"
+              className={cn("min-w-[180px] justify-start text-left font-normal")}
+            >
+              <Calendar className="mr-2 h-4 w-4" />
+              {customRange.from && customRange.to ? (
+                <>
+                  {format(customRange.from, "MMM d")} - {format(customRange.to, "MMM d, yyyy")}
+                </>
+              ) : (
+                "Custom Range"
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0 z-50" align="end">
+            <CalendarComponent
+              initialFocus
+              mode="range"
+              defaultMonth={customRange.from || new Date()}
+              selected={{ from: customRange.from, to: customRange.to }}
+              onSelect={(range) => {
+                if (range?.from && range?.to) {
+                  setCustomRange({ from: range.from, to: range.to });
+                  setDatePreset("custom");
+                } else if (!range?.from && !range?.to) {
+                  setCustomRange({});
+                  setDatePreset("all");
+                }
+              }}
+              numberOfMonths={2}
+              className={cn("p-3 pointer-events-auto")}
+            />
+          </PopoverContent>
+        </Popover>
       </div>
 
       {/* Table */}

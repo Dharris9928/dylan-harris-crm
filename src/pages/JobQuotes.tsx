@@ -186,6 +186,12 @@ export default function JobQuotes() {
     ? (wonCount / (wonCount + lostCount) * 100).toFixed(1)
     : null;
 
+  // Average Quote Size
+  const quotesWithPrice = quotes.filter((q: any) => q.price !== null && q.price !== undefined);
+  const avgQuoteSize = quotesWithPrice.length > 0
+    ? quotesWithPrice.reduce((sum: number, q: any) => sum + (parseFloat(q.price) || 0), 0) / quotesWithPrice.length
+    : null;
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       {/* Header */}

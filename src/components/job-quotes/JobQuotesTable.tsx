@@ -396,7 +396,7 @@ export function JobQuotesTable({
                         : "-"}
                     </div>
                   </TableCell>
-                  <TableCell style={{ width: columnWidths.actions, maxWidth: columnWidths.actions }}>
+                  <TableCell style={{ width: columnWidths.actions, maxWidth: columnWidths.actions }} onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon">

@@ -278,7 +278,7 @@ export default function JobQuotes() {
       </div>
 
       {/* Secondary Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -312,6 +312,20 @@ export default function JobQuotes() {
           <CardContent>
             <p className="text-2xl font-bold text-success">
               {winLossRatio !== null ? `${winLossRatio}%` : "—"}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Avg Quote Size
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">
+              {avgQuoteSize !== null
+                ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(avgQuoteSize)
+                : "—"}
             </p>
           </CardContent>
         </Card>

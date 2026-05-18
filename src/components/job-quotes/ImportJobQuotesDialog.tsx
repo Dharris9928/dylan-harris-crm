@@ -265,6 +265,18 @@ export function ImportJobQuotesDialog({ open, onOpenChange }: ImportJobQuotesDia
       let productsAdded = 0;
       let failed = 0;
 
+      // Look up "The Stockmarket" once — used when submitter email domain is @the-stockmarket.com
+      let stockmarketId: string | null = null;
+      {
+        const { data: sm } = await supabase
+          .from("companies")
+          .select("id")
+          .or("company_name.ilike.the stock market,company_name.ilike.the stockmarket,company_name.ilike.stockmarket")
+          .limit(1)
+          .maybeSingle();
+        stockmarketId = sm?.id || null;
+      }
+
       const insertProducts = async (quoteId: string, products: ProductLine[]) => {
         if (products.length === 0) return;
         // Clear existing products for this quote (in case of update)
@@ -287,6 +299,10 @@ export function ImportJobQuotesDialog({ open, onOpenChange }: ImportJobQuotesDia
           const mapped = mapRow(rows[i]);
           const wholesalerId = await resolveWholesaler(mapped, user.id, companyCache, counters);
 
+          // Auto-assign distributor when submitter email is @the-stockmarket.com
+          const emailDomain = (mapped.wholesaler_email || "").split("@")[1]?.toLowerCase().trim() || "";
+          const distributorId = emailDomain === "the-stockmarket.com" ? stockmarketId : null;
+
           const payload = {
             date_received: mapped.date_received,
             product: mapped.product,
@@ -295,6 +311,7 @@ export function ImportJobQuotesDialog({ open, onOpenChange }: ImportJobQuotesDia
             comments: mapped.comments,
             status: mapped.status,
             wholesaler_id: wholesalerId,
+            distributor_id: distributorId,
           };
 
           if (mapped.quote_number) {

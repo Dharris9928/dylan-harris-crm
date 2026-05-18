@@ -316,7 +316,11 @@ export function JobQuotesTable({
             </TableHeader>
             <TableBody>
               {processed.map((quote) => (
-                <TableRow key={quote.id}>
+                <TableRow
+                  key={quote.id}
+                  onClick={() => onEdit(quote)}
+                  className="cursor-pointer hover:bg-muted/50"
+                >
                   <TableCell style={{ width: columnWidths.date_received, maxWidth: columnWidths.date_received }}>
                     <div className="flex items-center gap-2">
                       {staleQuoteIds.includes(quote.id) && (
@@ -392,7 +396,7 @@ export function JobQuotesTable({
                         : "-"}
                     </div>
                   </TableCell>
-                  <TableCell style={{ width: columnWidths.actions, maxWidth: columnWidths.actions }}>
+                  <TableCell style={{ width: columnWidths.actions, maxWidth: columnWidths.actions }} onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon">

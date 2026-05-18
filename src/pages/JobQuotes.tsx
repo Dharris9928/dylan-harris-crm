@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { format, subDays } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +18,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { getQuarterOptions } from "@/lib/dates/quarterUtils";
+
+type DatePreset = "all" | "30" | "60" | "90" | string;
 
 export default function JobQuotes() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -24,7 +35,8 @@ export default function JobQuotes() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<any>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [quarterFilter, setQuarterFilter] = useState<string>("all");
+  const [datePreset, setDatePreset] = useState<DatePreset>("all");
+  const [customRange, setCustomRange] = useState<{ from?: Date; to?: Date }>({});
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -36,8 +48,10 @@ export default function JobQuotes() {
     },
   });
 
+  const quarterOptions = getQuarterOptions();
+
   const { data: quotes = [], isLoading } = useQuery({
-    queryKey: ["job-quotes", statusFilter, quarterFilter],
+    queryKey: ["job-quotes", statusFilter, datePreset, customRange.from?.toISOString(), customRange.to?.toISOString()],
     queryFn: async () => {
       let query = supabase
         .from("job_quotes")
@@ -60,23 +74,29 @@ export default function JobQuotes() {
         query = query.eq("status", statusFilter);
       }
 
-      // Apply quarterly filter
-      if (quarterFilter !== "all") {
-        const year = new Date().getFullYear();
-        const quarterMap: Record<string, [string, string]> = {
-          Q1: [`${year}-01-01`, `${year}-03-31`],
-          Q2: [`${year}-04-01`, `${year}-06-30`],
-          Q3: [`${year}-07-01`, `${year}-09-30`],
-          Q4: [`${year}-10-01`, `${year}-12-31`],
-          "Q1-prev": [`${year - 1}-01-01`, `${year - 1}-03-31`],
-          "Q2-prev": [`${year - 1}-04-01`, `${year - 1}-06-30`],
-          "Q3-prev": [`${year - 1}-07-01`, `${year - 1}-09-30`],
-          "Q4-prev": [`${year - 1}-10-01`, `${year - 1}-12-31`],
-        };
-        const range = quarterMap[quarterFilter];
-        if (range) {
-          query = query.gte("date_received", range[0]).lte("date_received", range[1]);
+      // Apply date filter
+      if (datePreset !== "all") {
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+
+        if (datePreset === "30" || datePreset === "60" || datePreset === "90") {
+          const days = parseInt(datePreset);
+          const from = subDays(today, days);
+          query = query.gte("date_received", from.toISOString()).lte("date_received", today.toISOString());
+        } else {
+          // Check quarter presets
+          const quarterMatch = quarterOptions.find(q => q.value === datePreset);
+          if (quarterMatch) {
+            query = query.gte("date_received", quarterMatch.from.toISOString()).lte("date_received", quarterMatch.to.toISOString());
+          }
         }
+      }
+
+      // Apply custom date range
+      if (customRange.from && customRange.to) {
+        const to = new Date(customRange.to);
+        to.setHours(23, 59, 59, 999);
+        query = query.gte("date_received", customRange.from.toISOString()).lte("date_received", to.toISOString());
       }
 
       const { data, error } = await query;
@@ -291,11 +311,11 @@ export default function JobQuotes() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-4 flex-wrap">
+      <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-muted-foreground" />
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
@@ -306,25 +326,93 @@ export default function JobQuotes() {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Day preset buttons */}
+        <div className="flex items-center gap-1">
+          {[
+            { label: "All Time", value: "all" },
+            { label: "30 Days", value: "30" },
+            { label: "60 Days", value: "60" },
+            { label: "90 Days", value: "90" },
+          ].map((preset) => (
+            <Button
+              key={preset.value}
+              variant={datePreset === preset.value ? "default" : "outline"}
+              size="sm"
+              onClick={() => {
+                setDatePreset(preset.value);
+                setCustomRange({});
+              }}
+            >
+              {preset.label}
+            </Button>
+          ))}
+        </div>
+
+        {/* Quarter dropdown */}
         <div className="flex items-center gap-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
-          <Select value={quarterFilter} onValueChange={setQuarterFilter}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Filter by quarter" />
+          <Select
+            value={quarterOptions.find(q => q.value === datePreset) ? datePreset : "none"}
+            onValueChange={(val) => {
+              if (val !== "none") {
+                setDatePreset(val);
+                setCustomRange({});
+              }
+            }}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Quarter" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Quarters</SelectItem>
-              <SelectItem value="Q1">Q1 ({new Date().getFullYear()})</SelectItem>
-              <SelectItem value="Q2">Q2 ({new Date().getFullYear()})</SelectItem>
-              <SelectItem value="Q3">Q3 ({new Date().getFullYear()})</SelectItem>
-              <SelectItem value="Q4">Q4 ({new Date().getFullYear()})</SelectItem>
-              <SelectItem value="Q1-prev">Q1 ({new Date().getFullYear() - 1})</SelectItem>
-              <SelectItem value="Q2-prev">Q2 ({new Date().getFullYear() - 1})</SelectItem>
-              <SelectItem value="Q3-prev">Q3 ({new Date().getFullYear() - 1})</SelectItem>
-              <SelectItem value="Q4-prev">Q4 ({new Date().getFullYear() - 1})</SelectItem>
+              <SelectItem value="none">Select Quarter</SelectItem>
+              {quarterOptions.map((q) => (
+                <SelectItem key={q.value} value={q.value}>
+                  {q.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
+
+        {/* Custom date range picker */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant={customRange.from && customRange.to ? "default" : "outline"}
+              size="sm"
+              className={cn("min-w-[180px] justify-start text-left font-normal")}
+            >
+              <Calendar className="mr-2 h-4 w-4" />
+              {customRange.from && customRange.to ? (
+                <>
+                  {format(customRange.from, "MMM d")} - {format(customRange.to, "MMM d, yyyy")}
+                </>
+              ) : (
+                "Custom Range"
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0 z-50" align="end">
+            <CalendarComponent
+              initialFocus
+              mode="range"
+              defaultMonth={customRange.from || new Date()}
+              selected={{ from: customRange.from, to: customRange.to }}
+              onSelect={(range) => {
+                if (range?.from && range?.to) {
+                  setCustomRange({ from: range.from, to: range.to });
+                  setDatePreset("custom");
+                } else if (!range?.from && !range?.to) {
+                  setCustomRange({});
+                  setDatePreset("all");
+                }
+              }}
+              numberOfMonths={2}
+              className={cn("p-3 pointer-events-auto")}
+            />
+          </PopoverContent>
+        </Popover>
       </div>
 
       {/* Table */}

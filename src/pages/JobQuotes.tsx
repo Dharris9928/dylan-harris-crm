@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { format, subDays } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +18,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { getQuarterOptions } from "@/lib/dates/quarterUtils";
+
+type DatePreset = "all" | "30" | "60" | "90" | string;
 
 export default function JobQuotes() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -24,7 +35,8 @@ export default function JobQuotes() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<any>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [quarterFilter, setQuarterFilter] = useState<string>("all");
+  const [datePreset, setDatePreset] = useState<DatePreset>("all");
+  const [customRange, setCustomRange] = useState<{ from?: Date; to?: Date }>({});
   const { toast } = useToast();
   const queryClient = useQueryClient();
 

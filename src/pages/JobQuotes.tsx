@@ -4,10 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, AlertTriangle, Filter, Calendar } from "lucide-react";
+import { Plus, AlertTriangle, Filter, Calendar, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AddJobQuoteDialog } from "@/components/job-quotes/AddJobQuoteDialog";
 import { EditJobQuoteDialog } from "@/components/job-quotes/EditJobQuoteDialog";
+import { ImportJobQuotesDialog } from "@/components/job-quotes/ImportJobQuotesDialog";
 import { JobQuotesTable } from "@/components/job-quotes/JobQuotesTable";
 import {
   Select,
@@ -19,6 +20,7 @@ import {
 
 export default function JobQuotes() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<any>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -174,6 +176,10 @@ export default function JobQuotes() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            Import CSV
+          </Button>
           <Button onClick={() => setAddDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Add Quote
@@ -334,6 +340,11 @@ export default function JobQuotes() {
       <AddJobQuoteDialog
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
+      />
+
+      <ImportJobQuotesDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
       />
       
       {selectedQuote && (

@@ -313,6 +313,7 @@ export function JobQuotesTable({
                 <ResizableHeader field="contacts">Contacts</ResizableHeader>
                 <ResizableHeader field="status">Status</ResizableHeader>
                 <ResizableHeader field="date_won">Date Won</ResizableHeader>
+                <ResizableHeader field="po_number">PO Number</ResizableHeader>
                 <ResizableHeader field="actions" sortable={false} filterable={false}></ResizableHeader>
               </TableRow>
             </TableHeader>

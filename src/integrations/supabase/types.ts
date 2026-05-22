@@ -3209,6 +3209,7 @@ export type Database = {
           id: string
           job_quote_id: string
           product_name: string
+          purchase_unit_price: number | null
           quantity: number
           total_price: number | null
           unit_price: number
@@ -3218,6 +3219,7 @@ export type Database = {
           id?: string
           job_quote_id: string
           product_name: string
+          purchase_unit_price?: number | null
           quantity?: number
           total_price?: number | null
           unit_price?: number
@@ -3227,6 +3229,7 @@ export type Database = {
           id?: string
           job_quote_id?: string
           product_name?: string
+          purchase_unit_price?: number | null
           quantity?: number
           total_price?: number | null
           unit_price?: number
@@ -3256,6 +3259,7 @@ export type Database = {
           notes: string | null
           price: number | null
           product: string | null
+          purchase_price: number | null
           quantity: number | null
           quote_number: string | null
           status: string
@@ -3276,6 +3280,7 @@ export type Database = {
           notes?: string | null
           price?: number | null
           product?: string | null
+          purchase_price?: number | null
           quantity?: number | null
           quote_number?: string | null
           status?: string
@@ -3296,6 +3301,7 @@ export type Database = {
           notes?: string | null
           price?: number | null
           product?: string | null
+          purchase_price?: number | null
           quantity?: number | null
           quote_number?: string | null
           status?: string

@@ -232,19 +232,34 @@ export function AddJobQuoteDialog({ open, onOpenChange }: AddJobQuoteDialogProps
             </div>
 
             {status === "won" && (
-              <FormField
-                control={form.control}
-                name="date_won"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Date Won</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="date_won"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Date Won</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="po_number"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>PO Number</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Enter PO number..." />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             )}
 
             <div className="grid grid-cols-2 gap-4">

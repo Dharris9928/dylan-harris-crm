@@ -33,6 +33,7 @@ import { CompanySearchOrCreate } from "@/components/job-quotes/CompanySearchOrCr
 import { JobQuoteContactsManager } from "@/components/job-quotes/JobQuoteContactsManager";
 import { ProductLineItems, type ProductLineItem } from "@/components/shared/ProductLineItems";
 import { UnifiedAssignmentSelect } from "@/components/companies/UnifiedAssignmentSelect";
+import { PoFileUpload } from "@/components/job-quotes/PoFileUpload";
 import { Loader2 } from "lucide-react";
 import { getUnitPrice } from "@/lib/products/productCatalog";
 
@@ -67,6 +68,7 @@ export function EditJobQuoteDialog({ open, onOpenChange, quote }: EditJobQuoteDi
   const [contacts, setContacts] = useState<JobQuoteContact[]>([]);
   const [products, setProducts] = useState<ProductLineItem[]>([]);
   const [assignee, setAssignee] = useState<string>("");
+  const [poFileUrl, setPoFileUrl] = useState<string | null>(null);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -120,6 +122,7 @@ export function EditJobQuoteDialog({ open, onOpenChange, quote }: EditJobQuoteDi
       } else {
         setAssignee("");
       }
+      setPoFileUrl(quote.po_file_url || null);
     }
   }, [quote, form]);
 
@@ -162,6 +165,7 @@ export function EditJobQuoteDialog({ open, onOpenChange, quote }: EditJobQuoteDi
           date_won: values.status === "won" && values.date_won ? values.date_won : null,
           status: values.status,
           po_number: values.status === "won" && values.po_number ? values.po_number : null,
+          po_file_url: values.status === "won" ? poFileUrl : null,
           distributor_id: values.distributor_id || null,
           wholesaler_id: values.wholesaler_id || null,
           contractor_id: values.contractor_id || null,
@@ -310,6 +314,13 @@ export function EditJobQuoteDialog({ open, onOpenChange, quote }: EditJobQuoteDi
                     </FormItem>
                   )}
                 />
+              </div>
+            )}
+
+            {status === "won" && (
+              <div className="space-y-2">
+                <FormLabel>PO Document (optional)</FormLabel>
+                <PoFileUpload value={poFileUrl} onChange={setPoFileUrl} quoteId={quote?.id} />
               </div>
             )}
 

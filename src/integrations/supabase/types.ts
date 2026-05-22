@@ -3257,6 +3257,7 @@ export type Database = {
           distributor_id: string | null
           id: string
           notes: string | null
+          po_file_url: string | null
           po_number: string | null
           price: number | null
           product: string | null
@@ -3279,6 +3280,7 @@ export type Database = {
           distributor_id?: string | null
           id?: string
           notes?: string | null
+          po_file_url?: string | null
           po_number?: string | null
           price?: number | null
           product?: string | null
@@ -3301,6 +3303,7 @@ export type Database = {
           distributor_id?: string | null
           id?: string
           notes?: string | null
+          po_file_url?: string | null
           po_number?: string | null
           price?: number | null
           product?: string | null

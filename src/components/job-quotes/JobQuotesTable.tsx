@@ -68,7 +68,6 @@ const DEFAULT_WIDTHS: Record<string, number> = {
 
 type SortDir = "asc" | "desc" | null;
 
-// Accessor for each sortable/filterable field
 const accessors: Record<string, (q: any) => any> = {
   date_received: (q) => (q.date_received ? new Date(q.date_received).getTime() : 0),
   product: (q) => q.product || "",
@@ -122,7 +121,6 @@ export function JobQuotesTable({
   const processed = useMemo(() => {
     let rows = [...quotes];
 
-    // Filter
     for (const [field, value] of Object.entries(filters)) {
       if (!value) continue;
       const accessor = accessors[field];
@@ -131,7 +129,6 @@ export function JobQuotesTable({
       rows = rows.filter((r) => String(accessor(r) ?? "").toLowerCase().includes(needle));
     }
 
-    // Sort
     if (sortField && sortDir) {
       const accessor = accessors[sortField];
       rows.sort((a, b) => {
@@ -404,7 +401,10 @@ export function JobQuotesTable({
                       {quote.po_number || "-"}
                     </div>
                   </TableCell>
-                  <TableCell style={{ width: columnWidths.actions, maxWidth: columnWidths.actions }} onClick={(e) => e.stopPropagation()>
+                  <TableCell
+                    style={{ width: columnWidths.actions, maxWidth: columnWidths.actions }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon">

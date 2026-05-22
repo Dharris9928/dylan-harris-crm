@@ -317,6 +317,13 @@ export function EditJobQuoteDialog({ open, onOpenChange, quote }: EditJobQuoteDi
               </div>
             )}
 
+            {status === "won" && (
+              <div className="space-y-2">
+                <FormLabel>PO Document (optional)</FormLabel>
+                <PoFileUpload value={poFileUrl} onChange={setPoFileUrl} quoteId={quote?.id} />
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}

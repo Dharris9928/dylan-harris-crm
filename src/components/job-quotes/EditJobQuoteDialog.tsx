@@ -33,6 +33,7 @@ import { CompanySearchOrCreate } from "@/components/job-quotes/CompanySearchOrCr
 import { JobQuoteContactsManager } from "@/components/job-quotes/JobQuoteContactsManager";
 import { ProductLineItems, type ProductLineItem } from "@/components/shared/ProductLineItems";
 import { UnifiedAssignmentSelect } from "@/components/companies/UnifiedAssignmentSelect";
+import { PoFileUpload } from "@/components/job-quotes/PoFileUpload";
 import { Loader2 } from "lucide-react";
 import { getUnitPrice } from "@/lib/products/productCatalog";
 

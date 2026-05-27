@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
+import { Route as AuthenticatedPresentationRouteImport } from './routes/_authenticated/presentation'
 import { Route as AuthenticatedPipelineAnalyticsRouteImport } from './routes/_authenticated/pipeline-analytics'
 import { Route as AuthenticatedOpportunitiesRouteImport } from './routes/_authenticated/opportunities'
 import { Route as AuthenticatedJobQuotesRouteImport } from './routes/_authenticated/job-quotes'
@@ -47,6 +48,12 @@ const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedPresentationRoute =
+  AuthenticatedPresentationRouteImport.update({
+    id: '/presentation',
+    path: '/presentation',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedPipelineAnalyticsRoute =
   AuthenticatedPipelineAnalyticsRouteImport.update({
     id: '/pipeline-analytics',
@@ -103,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/job-quotes': typeof AuthenticatedJobQuotesRoute
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
   '/pipeline-analytics': typeof AuthenticatedPipelineAnalyticsRoute
+  '/presentation': typeof AuthenticatedPresentationRoute
   '/reports': typeof AuthenticatedReportsRoute
 }
 export interface FileRoutesByTo {
@@ -116,6 +124,7 @@ export interface FileRoutesByTo {
   '/job-quotes': typeof AuthenticatedJobQuotesRoute
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
   '/pipeline-analytics': typeof AuthenticatedPipelineAnalyticsRoute
+  '/presentation': typeof AuthenticatedPresentationRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/': typeof AuthenticatedIndexRoute
 }
@@ -132,6 +141,7 @@ export interface FileRoutesById {
   '/_authenticated/job-quotes': typeof AuthenticatedJobQuotesRoute
   '/_authenticated/opportunities': typeof AuthenticatedOpportunitiesRoute
   '/_authenticated/pipeline-analytics': typeof AuthenticatedPipelineAnalyticsRoute
+  '/_authenticated/presentation': typeof AuthenticatedPresentationRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
 }
@@ -149,6 +159,7 @@ export interface FileRouteTypes {
     | '/job-quotes'
     | '/opportunities'
     | '/pipeline-analytics'
+    | '/presentation'
     | '/reports'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -162,6 +173,7 @@ export interface FileRouteTypes {
     | '/job-quotes'
     | '/opportunities'
     | '/pipeline-analytics'
+    | '/presentation'
     | '/reports'
     | '/'
   id:
@@ -177,6 +189,7 @@ export interface FileRouteTypes {
     | '/_authenticated/job-quotes'
     | '/_authenticated/opportunities'
     | '/_authenticated/pipeline-analytics'
+    | '/_authenticated/presentation'
     | '/_authenticated/reports'
     | '/_authenticated/'
   fileRoutesById: FileRoutesById
@@ -222,6 +235,13 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/reports'
       preLoaderRoute: typeof AuthenticatedReportsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/presentation': {
+      id: '/_authenticated/presentation'
+      path: '/presentation'
+      fullPath: '/presentation'
+      preLoaderRoute: typeof AuthenticatedPresentationRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/pipeline-analytics': {
@@ -292,6 +312,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedJobQuotesRoute: typeof AuthenticatedJobQuotesRoute
   AuthenticatedOpportunitiesRoute: typeof AuthenticatedOpportunitiesRoute
   AuthenticatedPipelineAnalyticsRoute: typeof AuthenticatedPipelineAnalyticsRoute
+  AuthenticatedPresentationRoute: typeof AuthenticatedPresentationRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
@@ -305,6 +326,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedJobQuotesRoute: AuthenticatedJobQuotesRoute,
   AuthenticatedOpportunitiesRoute: AuthenticatedOpportunitiesRoute,
   AuthenticatedPipelineAnalyticsRoute: AuthenticatedPipelineAnalyticsRoute,
+  AuthenticatedPresentationRoute: AuthenticatedPresentationRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }

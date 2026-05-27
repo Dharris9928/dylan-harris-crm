@@ -87,7 +87,8 @@ export function ApolloCSVImportDialog({
 
           // Get column headers from first row
           const columns = Object.keys(data[0] || {});
-          console.log('CSV columns found:', columns);
+
+
           
           const grouped = groupByCompany(data);
           

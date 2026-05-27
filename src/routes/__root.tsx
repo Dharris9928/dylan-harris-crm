@@ -66,9 +66,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Dylan Harris CRM" },
+      { title: "Dwayne Harris CRM" },
       { name: "description", content: "A premium sales CRM demo app for interview portfolio" },
-      { property: "og:title", content: "Dylan Harris CRM" },
+      { property: "og:title", content: "Dwayne Harris CRM" },
       { property: "og:description", content: "A premium sales CRM demo app for interview portfolio" },
       { property: "og:type", content: "website" },
     ],

@@ -1,90 +1,112 @@
+# Plan: Portfolio Demo + Config-Driven CRM
 
-
-# Enhance Apollo Import Matching with Name + Email Reasoning
-
-## Problem
-The current Apollo import matching logic relies on a narrow set of identifiers:
-1. Apollo Activity ID (exact match)
-2. Email + Subject combination
-3. Email only (when exactly one match exists)
-
-Contact **name** (first/last name) is available in both the Apollo API data and CSV exports but is completely ignored during matching. This causes missed matches and low confidence scores when Apollo IDs are missing or email addresses appear multiple times.
-
-Additionally, there is no visible **reasoning** shown to the user explaining *why* a record was matched or skipped.
-
-## Solution
-
-### 1. Add Name Columns to CSV Engagement Import (`src/lib/apollo/importOpenedEmails.ts`)
-
-- Add `firstName` and `lastName` to `APOLLO_COLUMN_MAPPINGS` with common Apollo CSV variations: `"first name"`, `"contact first name"`, `"first_name"`, etc.
-- Add `firstName` and `lastName` fields to the `OpenedEmailRow` interface
-- Update `parseOpenedEmails()` to extract name fields from CSV rows
-- Add a `matchReason` field to `MatchedRecord` to explain why each match was made
-
-### 2. Enhance Matching Algorithm (`matchOpenedEmails()`)
-
-Add a new matching tier between email+subject and email-only:
-
-```text
-Priority 1: Apollo ID (100% confidence) -- unchanged
-Priority 2: Email + Subject (85%) -- unchanged  
-Priority 3: Email + Subject fuzzy (75%) -- unchanged
-Priority 4: Email + Name match (70%) -- NEW
-Priority 5: Email only, single candidate (60%) -- unchanged
-Priority 6: Email only, name disambiguates (55%) -- NEW
-```
-
-**Priority 4 (new)**: When multiple DB records share the same email, use first/last name from the CSV to find the correct contact record. If a name match is found, confidence is 70%.
-
-**Priority 6 (new)**: When email-only matching finds multiple candidates (currently skipped entirely), use name to disambiguate and pick the best one at 55% confidence.
-
-Each match will include a `matchReason` string explaining the logic, e.g.:
-- "Matched by Apollo ID (exact)"
-- "Matched by email + subject line"
-- "Matched by email; name 'Tommy Nawa' confirmed match"
-- "Matched by email only (single record for this address)"
-
-### 3. Add Name Column Mapping to Engagement Import UI (`ApolloEngagementImportDialog.tsx`)
-
-- Add First Name and Last Name selectors in the "Matching Fields" section
-- Pass name fields through to `parseOpenedEmails()`
-- Display `matchReason` in the preview table so users can see why each row was matched
-
-### 4. Enhance API Import Matching (`ApolloEmailImportDialog.tsx`)
-
-The API-based import already has contact name data from Apollo (`email.contact.firstName`, `email.contact.lastName`). Update the duplicate detection block (lines 461-465) to:
-- When `alreadyImportedIds.has(email.apolloId)` triggers, also verify the contact name matches before confirming it as a true duplicate
-- Store match reasoning in the `apollo_metadata` JSONB field for audit trail
-- When doing the engagement upsert (from the approved plan), use name as an additional verification signal
-
-### 5. Add `matchReason` to the Preview Table
-
-In both import dialogs' preview/results steps, add a "Match Reason" column showing the human-readable explanation of how each record was matched. This gives users transparency into the AI's decision-making.
+Two independent tracks. **Track 1 (demo) first** — it's faster, lower-risk, and unblocks interviews. Track 2 (productize) is a larger refactor we can start in parallel or after.
 
 ---
 
-## Files to Modify
+## Track 1 — Portfolio Demo (priority)
 
-| File | Change |
-|------|--------|
-| `src/lib/apollo/importOpenedEmails.ts` | Add name columns to mappings, add name fields to interfaces, enhance matching with name-based tiers, add `matchReason` field |
-| `src/components/communications/ApolloEngagementImportDialog.tsx` | Add First/Last Name column selectors, display match reasoning in preview table |
-| `src/components/communications/ApolloEmailImportDialog.tsx` | Use contact name in duplicate verification, store match reasoning in metadata |
+**Goal:** A live, click-through CRM branded as your personal portfolio, with realistic fake data and no Google/Nest/Apollo/customer info anywhere.
 
-## Technical Details
+### 1.1 Fork & isolate
+- Create a **new Lovable project** (Remix this one). The new project gets its own Lovable Cloud backend, so real production data is never touched.
+- Publish the demo on a separate domain (e.g. `crm-demo.yourname.com` or the default `*.lovable.app` URL).
+- Keep the current production app running untouched.
 
-### Name Matching Logic
-- Normalize names: `trim()`, `toLowerCase()`
-- Compare first+last name from CSV against contact record's first/last name in the DB
-- Use exact match (not fuzzy) since names in Apollo exports should be consistent with what was imported
+### 1.2 Strip the proprietary layer
+In the forked project only:
+- Remove Apollo edge functions (`apollo-*`) and any Apollo UI (Apollo Email Import, Apollo CSV Import, External Contact Search, Apollo enrichment buttons).
+- Remove the Gmail/Resend webhook integrations and email-content displays.
+- Remove `enrich-company` (Deepseek + Perplexity) — replace with a stub that returns mock enrichment so the UI still demos.
+- Remove all hard-coded Google/Nest references: rename "Nest Pro Connector", product catalog (`src/lib/products/productCatalog.ts`), industry types referencing builders/HVAC if you want neutrality (or keep — it's generic enough).
+- Delete real edge-function secrets (Apollo key, Resend key, etc.) so nothing leaks if a button is clicked.
+- Remove any user emails / domain allowlists tied to real customers; reset to your demo email only.
 
-### Match Reason Examples
-| Scenario | Reason String |
-|----------|---------------|
-| Apollo ID exact | "Exact Apollo ID match" |
-| Email + Subject | "Email and subject line match" |
-| Email + Name | "Email matches; contact name 'Ken Aucoin' confirms identity" |
-| Email only (1 candidate) | "Email matches single database record" |
-| Email + Name disambiguates | "Email matches multiple records; name 'Tommy Nawa' used to disambiguate" |
-| Unmatched | "No matching record found for email or name" |
+### 1.3 Rebrand
+- App name → "**[Your Name] — Sales CRM**" (or "Sales Intelligence Platform").
+- Replace logo, favicon, page title, login screen copy, footer.
+- Neutralize the product catalog to generic SKUs ("Product A / B / C") so it's industry-agnostic.
+- Add a small "Demo" banner on every page: *"Portfolio demo. All data is fictional."*
 
+### 1.4 Seed realistic fake data
+Write one seed script (`scripts/seed-demo-data.ts`) using `@faker-js/faker`:
+- ~150 companies across all industries/segments/regions
+- ~400 contacts with realistic titles, fake emails (`@example.com`)
+- ~80 opportunities across all stages
+- ~200 activities (calls, meetings, emails) with timestamps spread over 12 months
+- ~50 communications (so the funnel/analytics charts populate)
+- ~20 job quotes with line items, a couple with fake PO PDFs
+- ~30 building permits
+- Lead scores already calculated so dashboards look full
+- 2-3 demo user accounts (admin, sales_manager, sales_rep) so interviewers can log in as each role and see RLS/perspective filtering in action
+
+### 1.5 Demo-mode safety rails
+- Disable destructive admin actions on the demo (user creation, deletion approvals run but no-op or restore on a cron).
+- Optional: nightly cron edge function that resets the database back to the seeded state, so visitors can't ruin it.
+
+### 1.6 Interview-ready extras
+- Add a `/demo-guide` page (or README link) that lists:
+  - Login credentials for each role
+  - A 5-minute walkthrough script ("Try filtering by perspective", "Create an opportunity", "Run AI scoring")
+  - Architecture overview + tech stack
+- Loom video walkthrough embedded.
+
+**Estimated effort:** 1 focused session for fork + strip + rebrand, 1 session for seed data + demo guide.
+
+---
+
+## Track 2 — Config-Driven Customizable CRM
+
+**Goal:** Same codebase can be re-deployed for any sales org by editing config tables instead of code. One deploy per customer (no multi-tenant complexity).
+
+### 2.1 Extract vertical-specific data into config tables
+New tables (all admin-editable via a new **Settings → Tenant Configuration** page):
+
+| Table | Replaces (currently hard-coded in) |
+|---|---|
+| `tenant_settings` (name, logo_url, primary_color, support_email) | `index.html`, sidebar, auth page |
+| `product_catalog` (already partially exists — finish it) | `src/lib/products/productCatalog.ts` |
+| `industry_types_config` | enums + `contractorFilteringLogic` memory |
+| `segments_config` | `enrich-company/segmentLogic.ts` |
+| `regions_config` (state → region mapping) | `src/lib/regions/regionConstants.ts` |
+| `pipeline_stages_config` | hard-coded opportunity stages |
+| `scoring_weights_config` (already exists as `scoring_configuration`) | builder/contractor scoring algorithms |
+| `activity_types_config` | hard-coded activity outcomes |
+
+### 2.2 Refactor code to read from config
+- Replace every hard-coded `PRODUCT_CATALOG`, region map, industry enum, stage list with a `useTenantConfig()` hook that loads + caches from the config tables.
+- Scoring engine reads weights from `scoring_weights_config` (already does for ranges — extend to all dimensions).
+- Migrations rewrite enum columns to `text` + FK to config tables (or keep enums and provide a "Add new type" migration helper).
+
+### 2.3 Make integrations optional/pluggable
+- Apollo, Resend, Deepseek, Perplexity become **opt-in connectors**. If the key isn't set, the UI hides the related buttons/sections gracefully instead of erroring.
+- Add a Settings → Integrations page where admins toggle each integration and paste their own API key.
+
+### 2.4 White-label onboarding flow
+- First-run wizard: tenant name, logo upload, primary color, choose industries/segments/regions, seed starter pipeline stages, create first admin user.
+- Saves to `tenant_settings` and config tables — app is usable immediately.
+
+### 2.5 Deployment story
+Document a "**Deploy your own**" flow:
+1. Remix this Lovable project
+2. Enable Lovable Cloud
+3. Run the onboarding wizard
+4. Optionally add Apollo/Resend keys in Settings → Integrations
+
+**Estimated effort:** 3-5 focused sessions. Largest piece is refactoring scoring + enrichment to be config-aware.
+
+---
+
+## Recommended sequencing
+
+1. **This week:** Track 1 (demo) — interview-ready ASAP.
+2. **After demo is live:** Start Track 2 (productize), one config domain at a time (start with `tenant_settings` + branding, then product catalog, then scoring).
+3. Do **not** add multi-tenancy (single DB, many customers) — too much rework on RLS and not needed for "one deploy per customer".
+
+---
+
+## What I need from you to start Track 1
+
+- Confirm: spin up the new Lovable project myself (you'll get an email invite), or do you want to Remix it from the Lovable dashboard and then point me at the new project?
+- Your name / desired demo branding (so I can update the title, login page, and footer).
+- Any features you want **hidden** from the demo (e.g. MFA, deletion approvals) to keep the click-through simple for interviewers?

@@ -271,7 +271,7 @@ function PriorityDistribution() {
 
 function RecentActivity() {
   const [items, setItems] = useState<
-    { id: string; subject: string; type: string; created_at: string }[]
+    { id: string; subject: string | null; type: string; created_at: string }[]
   >([]);
 
   useEffect(() => {

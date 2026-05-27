@@ -56,7 +56,7 @@ export const Route = createFileRoute("/_authenticated/companies")({
   component: CompaniesPage,
 });
 
-type CompanyStatus = "Lead" | "Contacted" | "Engaged" | "Pilot" | "Active" | "Churned";
+type CompanyStatus = "Lead" | "Active" | "Inactive";
 type Industry = "Builder" | "Contractor" | "Energy Implementer" | "Engineer/Architect" | "Partner/Other";
 type Region = "East" | "West";
 
@@ -76,18 +76,15 @@ interface Company {
   created_at: string;
 }
 
-const STATUSES: CompanyStatus[] = ["Lead", "Contacted", "Engaged", "Pilot", "Active", "Churned"];
+const STATUSES: CompanyStatus[] = ["Lead", "Active", "Inactive"];
 const INDUSTRIES: Industry[] = ["Builder", "Contractor", "Energy Implementer", "Engineer/Architect", "Partner/Other"];
-const REGIONS: Region[] = ["Northeast", "Southeast", "Midwest", "Southwest", "West"];
+const REGIONS: Region[] = ["East", "West"];
 const PRIORITIES = ["P1", "P2", "P3", "P4"];
 
 const statusColors: Record<CompanyStatus, string> = {
   Lead: "bg-muted text-muted-foreground",
-  Contacted: "bg-emerald-100 text-emerald-900",
-  Engaged: "bg-emerald-200 text-emerald-900",
-  Pilot: "bg-emerald-400 text-emerald-950",
   Active: "bg-emerald-600 text-white",
-  Churned: "bg-red-100 text-red-900",
+  Inactive: "bg-red-100 text-red-900",
 };
 
 const priorityColors: Record<string, string> = {

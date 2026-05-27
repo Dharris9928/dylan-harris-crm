@@ -13,6 +13,7 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
 import { Route as AuthenticatedOpportunitiesRouteImport } from './routes/_authenticated/opportunities'
 import { Route as AuthenticatedJobQuotesRouteImport } from './routes/_authenticated/job-quotes'
 import { Route as AuthenticatedContactsRouteImport } from './routes/_authenticated/contacts'
@@ -37,6 +38,11 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedOpportunitiesRoute =
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/contacts': typeof AuthenticatedContactsRoute
   '/job-quotes': typeof AuthenticatedJobQuotesRoute
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
+  '/reports': typeof AuthenticatedReportsRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -92,6 +99,7 @@ export interface FileRoutesByTo {
   '/contacts': typeof AuthenticatedContactsRoute
   '/job-quotes': typeof AuthenticatedJobQuotesRoute
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
+  '/reports': typeof AuthenticatedReportsRoute
   '/': typeof AuthenticatedIndexRoute
 }
 export interface FileRoutesById {
@@ -105,6 +113,7 @@ export interface FileRoutesById {
   '/_authenticated/contacts': typeof AuthenticatedContactsRoute
   '/_authenticated/job-quotes': typeof AuthenticatedJobQuotesRoute
   '/_authenticated/opportunities': typeof AuthenticatedOpportunitiesRoute
+  '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
 }
 export interface FileRouteTypes {
@@ -119,6 +128,7 @@ export interface FileRouteTypes {
     | '/contacts'
     | '/job-quotes'
     | '/opportunities'
+    | '/reports'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -129,6 +139,7 @@ export interface FileRouteTypes {
     | '/contacts'
     | '/job-quotes'
     | '/opportunities'
+    | '/reports'
     | '/'
   id:
     | '__root__'
@@ -141,6 +152,7 @@ export interface FileRouteTypes {
     | '/_authenticated/contacts'
     | '/_authenticated/job-quotes'
     | '/_authenticated/opportunities'
+    | '/_authenticated/reports'
     | '/_authenticated/'
   fileRoutesById: FileRoutesById
 }
@@ -178,6 +190,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/reports': {
+      id: '/_authenticated/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof AuthenticatedReportsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/opportunities': {
@@ -232,6 +251,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedContactsRoute: typeof AuthenticatedContactsRoute
   AuthenticatedJobQuotesRoute: typeof AuthenticatedJobQuotesRoute
   AuthenticatedOpportunitiesRoute: typeof AuthenticatedOpportunitiesRoute
+  AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
@@ -242,6 +262,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedContactsRoute: AuthenticatedContactsRoute,
   AuthenticatedJobQuotesRoute: AuthenticatedJobQuotesRoute,
   AuthenticatedOpportunitiesRoute: AuthenticatedOpportunitiesRoute,
+  AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 

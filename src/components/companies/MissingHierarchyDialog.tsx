@@ -112,8 +112,8 @@ export function MissingHierarchyDialog({ open, onOpenChange }: MissingHierarchyD
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['company-hierarchy'] });
-      queryClient.invalidateQueries({ queryKey: ['missing-hierarchy-connections'] });
+      void queryClient.invalidateQueries({ queryKey: ['company-hierarchy'] });
+      void queryClient.invalidateQueries({ queryKey: ['missing-hierarchy-connections'] });
       toast({
         title: 'Connection established',
         description: 'Parent-child relationship has been created.',

@@ -191,8 +191,8 @@ export function JobQuoteContactsManager({
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["contacts-search"] });
-      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      void queryClient.invalidateQueries({ queryKey: ["contacts-search"] });
+      void queryClient.invalidateQueries({ queryKey: ["contacts"] });
       
       // Add the newly created contact
       onChange([...contacts, { contact_id: data.id, contact_type: selectedType }]);

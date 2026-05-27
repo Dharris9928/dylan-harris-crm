@@ -48,7 +48,7 @@ export function ChangeManagementLog() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['change-management'] });
+      void queryClient.invalidateQueries({ queryKey: ['change-management'] });
       toast({ title: "Change request created" });
       setOpen(false);
       setFormData({
@@ -82,7 +82,7 @@ export function ChangeManagementLog() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['change-management'] });
+      void queryClient.invalidateQueries({ queryKey: ['change-management'] });
       toast({ title: "Change status updated" });
     }
   });

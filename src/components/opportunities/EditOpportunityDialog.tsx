@@ -158,7 +158,7 @@ export function EditOpportunityDialog({ open, onOpenChange, opportunity }: EditO
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['opportunities'] });
+      void queryClient.invalidateQueries({ queryKey: ['opportunities'] });
       toast({
         title: "Success",
         description: "Opportunity updated successfully",

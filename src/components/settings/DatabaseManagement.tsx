@@ -133,7 +133,7 @@ export function DatabaseManagement() {
     },
     onSuccess: () => {
       toast.success("SQL executed successfully");
-      queryClient.invalidateQueries({ queryKey: ['admin-tables'] });
+      void queryClient.invalidateQueries({ queryKey: ['admin-tables'] });
       setSqlQuery("");
     },
     onError: (error: Error) => {

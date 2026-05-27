@@ -58,7 +58,7 @@ export function ExportApprovalRequestDialog({
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['export-approvals'] });
+      void queryClient.invalidateQueries({ queryKey: ['export-approvals'] });
       toast({
         title: 'Approval Requested',
         description: 'Your export request has been submitted for admin review.',

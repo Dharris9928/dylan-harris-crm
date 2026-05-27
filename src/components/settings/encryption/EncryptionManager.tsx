@@ -152,8 +152,8 @@ export function EncryptionManager() {
         }
       }
 
-      queryClient.invalidateQueries({ queryKey: ['encryption-status-contacts'] });
-      queryClient.invalidateQueries({ queryKey: ['encryption-audit-logs'] });
+      void queryClient.invalidateQueries({ queryKey: ['encryption-status-contacts'] });
+      void queryClient.invalidateQueries({ queryKey: ['encryption-audit-logs'] });
     },
     onError: (error: any) => {
       if (contactsToastId.current) {
@@ -204,8 +204,8 @@ export function EncryptionManager() {
         }
       }
 
-      queryClient.invalidateQueries({ queryKey: ['encryption-status-companies'] });
-      queryClient.invalidateQueries({ queryKey: ['encryption-audit-logs'] });
+      void queryClient.invalidateQueries({ queryKey: ['encryption-status-companies'] });
+      void queryClient.invalidateQueries({ queryKey: ['encryption-audit-logs'] });
     },
     onError: (error: any) => {
       if (companiesToastId.current) {

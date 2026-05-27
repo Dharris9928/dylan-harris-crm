@@ -78,7 +78,7 @@ export function AccessRequestsPanel() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['access-requests'] });
+      void queryClient.invalidateQueries({ queryKey: ['access-requests'] });
       toast({
         title: 'Request approved',
         description: 'User has been granted access to the record.',
@@ -104,7 +104,7 @@ export function AccessRequestsPanel() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['access-requests'] });
+      void queryClient.invalidateQueries({ queryKey: ['access-requests'] });
       toast({
         title: 'Request denied',
         description: 'User request has been denied.',

@@ -91,7 +91,7 @@ export function ConsentManagement() {
       return data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['user-consents'] });
+      void queryClient.invalidateQueries({ queryKey: ['user-consents'] });
       toast.success('Consent preferences updated', {
         description: `${variables.consentType.replace('_', ' ')} ${variables.granted ? 'enabled' : 'disabled'}`,
       });

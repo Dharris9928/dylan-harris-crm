@@ -220,7 +220,7 @@ export function EditJobQuoteDialog({ open, onOpenChange, quote }: EditJobQuoteDi
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["job-quotes"] });
+      void queryClient.invalidateQueries({ queryKey: ["job-quotes"] });
       toast({ title: "Job quote updated successfully" });
       onOpenChange(false);
     },

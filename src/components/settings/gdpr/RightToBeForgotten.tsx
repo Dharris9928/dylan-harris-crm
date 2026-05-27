@@ -88,7 +88,7 @@ export function RightToBeForgotten() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['my-deletion-requests'] });
+      void queryClient.invalidateQueries({ queryKey: ['my-deletion-requests'] });
       setShowConfirmDialog(false);
       setReason('');
       toast.success('Deletion request submitted', {

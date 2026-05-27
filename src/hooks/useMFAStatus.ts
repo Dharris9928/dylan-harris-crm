@@ -62,7 +62,7 @@ export function useMFAStatus() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['mfa-status'] });
+      void queryClient.invalidateQueries({ queryKey: ['mfa-status'] });
     },
   });
 

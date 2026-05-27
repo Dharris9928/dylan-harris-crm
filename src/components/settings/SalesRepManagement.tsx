@@ -62,7 +62,7 @@ export function SalesRepManagement() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sales-reps'] });
+      void queryClient.invalidateQueries({ queryKey: ['sales-reps'] });
       toast({
         title: "Success",
         description: "Sales rep deleted successfully",

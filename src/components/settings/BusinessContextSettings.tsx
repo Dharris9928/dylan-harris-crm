@@ -49,7 +49,7 @@ export function BusinessContextSettings() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['business-context-settings'] });
+      void queryClient.invalidateQueries({ queryKey: ['business-context-settings'] });
       toast({
         title: 'Success',
         description: 'Business context settings updated successfully',

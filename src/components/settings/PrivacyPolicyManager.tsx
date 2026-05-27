@@ -46,7 +46,7 @@ export function PrivacyPolicyManager() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['compliance-documents'] });
+      void queryClient.invalidateQueries({ queryKey: ['compliance-documents'] });
       toast({ title: "Compliance document created" });
       setOpen(false);
       setFormData({
@@ -73,7 +73,7 @@ export function PrivacyPolicyManager() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['compliance-documents'] });
+      void queryClient.invalidateQueries({ queryKey: ['compliance-documents'] });
       toast({ title: "Document published" });
     }
   });

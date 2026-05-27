@@ -47,7 +47,7 @@ export function SecurityTestingLog() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['security-tests'] });
+      void queryClient.invalidateQueries({ queryKey: ['security-tests'] });
       toast({ title: "Security test logged" });
       setOpen(false);
       setFormData({

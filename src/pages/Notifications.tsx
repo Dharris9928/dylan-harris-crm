@@ -86,7 +86,7 @@ export default function Notifications() {
         .eq('id', notificationId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      void queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast({ title: "Notification marked as read" });
     },
   });
@@ -104,7 +104,7 @@ export default function Notifications() {
         .eq('read', false);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      void queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast({ title: "All notifications marked as read" });
     },
   });
@@ -118,7 +118,7 @@ export default function Notifications() {
         .eq('id', notificationId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      void queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast({ title: "Notification deleted" });
     },
   });

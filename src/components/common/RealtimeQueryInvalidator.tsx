@@ -68,13 +68,13 @@ export function RealtimeQueryInvalidator() {
           if (!table) return;
 
           // Most of our list queries are keyed by table name (e.g. ['companies', ...])
-          queryClient.invalidateQueries({ queryKey: [table] });
+          void queryClient.invalidateQueries({ queryKey: [table] });
 
           // Some screens use custom keys (e.g. 'all-communications')
           const extraKeys = TABLE_TO_QUERY_KEYS[table];
           if (extraKeys?.length) {
             for (const key of extraKeys) {
-              queryClient.invalidateQueries({ queryKey: key as any });
+              void queryClient.invalidateQueries({ queryKey: key as any });
             }
           }
         }

@@ -355,8 +355,8 @@ export function ImportJobQuotesDialog({ open, onOpenChange }: ImportJobQuotesDia
         productsAdded,
         failed,
       });
-      queryClient.invalidateQueries({ queryKey: ["job-quotes"] });
-      queryClient.invalidateQueries({ queryKey: ["companies"] });
+      void queryClient.invalidateQueries({ queryKey: ["job-quotes"] });
+      void queryClient.invalidateQueries({ queryKey: ["companies"] });
       toast({
         title: "Import complete",
         description: `${inserted} added, ${updated} updated${failed ? `, ${failed} failed` : ""}.`,

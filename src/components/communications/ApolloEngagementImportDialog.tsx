@@ -259,10 +259,10 @@ export function ApolloEngagementImportDialog({
       setStep('complete');
 
       if (result.updated > 0) {
-        queryClient.invalidateQueries({ queryKey: ["pipeline-analytics"] });
-        queryClient.invalidateQueries({ queryKey: ["communications-funnel"] });
-        queryClient.invalidateQueries({ queryKey: ["all-communications"] });
-        queryClient.invalidateQueries({ queryKey: ["apollo-email-activities"] });
+        void queryClient.invalidateQueries({ queryKey: ["pipeline-analytics"] });
+        void queryClient.invalidateQueries({ queryKey: ["communications-funnel"] });
+        void queryClient.invalidateQueries({ queryKey: ["all-communications"] });
+        void queryClient.invalidateQueries({ queryKey: ["apollo-email-activities"] });
 
         toast({
           title: 'Import complete',

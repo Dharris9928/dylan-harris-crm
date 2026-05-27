@@ -57,7 +57,7 @@ export function DataWarehouseSync() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["sync-configurations"] });
+      void queryClient.invalidateQueries({ queryKey: ["sync-configurations"] });
       toast({
         title: "Settings updated",
         description: "Sync configuration has been updated",
@@ -84,8 +84,8 @@ export function DataWarehouseSync() {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["sync-configurations"] });
-      queryClient.invalidateQueries({ queryKey: ["sync-logs"] });
+      void queryClient.invalidateQueries({ queryKey: ["sync-configurations"] });
+      void queryClient.invalidateQueries({ queryKey: ["sync-logs"] });
       toast({
         title: "Sync completed",
         description: data.message || "Data sync completed successfully",

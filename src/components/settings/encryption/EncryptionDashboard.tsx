@@ -52,7 +52,7 @@ export function EncryptionDashboard() {
       return data?.[0];
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['encryption-stats'] });
+      void queryClient.invalidateQueries({ queryKey: ['encryption-stats'] });
       toast.success('Contacts encrypted successfully', {
         description: `Migrated ${data.total_migrated} records. ${data.completion_percentage}% complete.`,
       });
@@ -74,7 +74,7 @@ export function EncryptionDashboard() {
       return data?.[0];
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['encryption-stats'] });
+      void queryClient.invalidateQueries({ queryKey: ['encryption-stats'] });
       toast.success('Companies encrypted successfully', {
         description: `Migrated ${data.total_migrated} records. ${data.completion_percentage}% complete.`,
       });
@@ -96,7 +96,7 @@ export function EncryptionDashboard() {
       return data;
     },
     onSuccess: (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ['key-rotation-status'] });
+      void queryClient.invalidateQueries({ queryKey: ['key-rotation-status'] });
       toast.success('Key rotation scheduled', {
         description: `Next rotation: ${new Date(data.next_rotation_date).toLocaleDateString()}`,
       });

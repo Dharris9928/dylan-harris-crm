@@ -158,7 +158,7 @@ export function AddJobQuoteDialog({ open, onOpenChange }: AddJobQuoteDialogProps
       return quote;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["job-quotes"] });
+      void queryClient.invalidateQueries({ queryKey: ["job-quotes"] });
       toast({ title: "Job quote created successfully" });
       form.reset();
       setContacts([]);

@@ -46,7 +46,7 @@ export function SecurityIncidentsTracker() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['security-incidents'] });
+      void queryClient.invalidateQueries({ queryKey: ['security-incidents'] });
       toast({ title: "Security incident reported" });
       setOpen(false);
       setFormData({
@@ -74,7 +74,7 @@ export function SecurityIncidentsTracker() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['security-incidents'] });
+      void queryClient.invalidateQueries({ queryKey: ['security-incidents'] });
       toast({ title: "Incident status updated" });
     }
   });

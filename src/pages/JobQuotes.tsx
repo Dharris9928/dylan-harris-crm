@@ -146,7 +146,7 @@ export default function JobQuotes() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["job-quotes"] });
+      void queryClient.invalidateQueries({ queryKey: ["job-quotes"] });
       toast({ title: "Quote deleted successfully" });
     },
     onError: (error: any) => {

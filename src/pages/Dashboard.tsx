@@ -39,23 +39,23 @@ const Dashboard = () => {
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'companies' },
         () => {
-          queryClient.invalidateQueries({ queryKey: ["companies-count"] });
-          queryClient.invalidateQueries({ queryKey: ["companies-by-status"] });
-          queryClient.invalidateQueries({ queryKey: ["companies-by-priority"] });
-          queryClient.invalidateQueries({ queryKey: ["recent-companies"] });
-          queryClient.invalidateQueries({ queryKey: ["segment-performance"] });
+          void queryClient.invalidateQueries({ queryKey: ["companies-count"] });
+          void queryClient.invalidateQueries({ queryKey: ["companies-by-status"] });
+          void queryClient.invalidateQueries({ queryKey: ["companies-by-priority"] });
+          void queryClient.invalidateQueries({ queryKey: ["recent-companies"] });
+          void queryClient.invalidateQueries({ queryKey: ["segment-performance"] });
         }
       )
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'outreach_activities' },
         () => {
-          queryClient.invalidateQueries({ queryKey: ["monthly-activities"] });
+          void queryClient.invalidateQueries({ queryKey: ["monthly-activities"] });
         }
       )
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'contacts' },
         () => {
-          queryClient.invalidateQueries({ queryKey: ["contacts-count"] });
+          void queryClient.invalidateQueries({ queryKey: ["contacts-count"] });
         }
       )
       .on('postgres_changes',
@@ -488,11 +488,11 @@ const Dashboard = () => {
         open={isAddCompanyOpen}
         onOpenChange={setIsAddCompanyOpen}
         onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ["companies-count"] });
-          queryClient.invalidateQueries({ queryKey: ["companies-by-status"] });
-          queryClient.invalidateQueries({ queryKey: ["companies-by-priority"] });
-          queryClient.invalidateQueries({ queryKey: ["recent-companies"] });
-          queryClient.invalidateQueries({ queryKey: ["segment-performance"] });
+          void queryClient.invalidateQueries({ queryKey: ["companies-count"] });
+          void queryClient.invalidateQueries({ queryKey: ["companies-by-status"] });
+          void queryClient.invalidateQueries({ queryKey: ["companies-by-priority"] });
+          void queryClient.invalidateQueries({ queryKey: ["recent-companies"] });
+          void queryClient.invalidateQueries({ queryKey: ["segment-performance"] });
           setIsAddCompanyOpen(false);
         }}
       />
@@ -501,7 +501,7 @@ const Dashboard = () => {
         open={isAddActivityOpen}
         onOpenChange={setIsAddActivityOpen}
         onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ["monthly-activities"] });
+          void queryClient.invalidateQueries({ queryKey: ["monthly-activities"] });
           setIsAddActivityOpen(false);
         }}
       />

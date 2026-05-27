@@ -45,7 +45,7 @@ export function SecurityPatchManager() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['security-patches'] });
+      void queryClient.invalidateQueries({ queryKey: ['security-patches'] });
       toast({ title: "Security patch created" });
       setOpen(false);
       setFormData({
@@ -73,7 +73,7 @@ export function SecurityPatchManager() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['security-patches'] });
+      void queryClient.invalidateQueries({ queryKey: ['security-patches'] });
       toast({ title: "Patch status updated" });
     }
   });

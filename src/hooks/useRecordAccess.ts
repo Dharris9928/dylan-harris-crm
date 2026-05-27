@@ -70,7 +70,7 @@ export function useRecordAccess({ tableName, recordId }: RecordAccessParams) {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['access-request', tableName, recordId] });
+      void queryClient.invalidateQueries({ queryKey: ['access-request', tableName, recordId] });
       toast({
         title: 'Access requested',
         description: 'Your request has been submitted for review.',

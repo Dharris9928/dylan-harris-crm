@@ -59,7 +59,7 @@ export function DPATemplateManager() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dpa-templates'] });
+      void queryClient.invalidateQueries({ queryKey: ['dpa-templates'] });
       toast({ title: "DPA template created" });
       setOpen(false);
       setFormData({
@@ -87,7 +87,7 @@ export function DPATemplateManager() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dpa-templates'] });
+      void queryClient.invalidateQueries({ queryKey: ['dpa-templates'] });
       toast({ title: "Template approved" });
     }
   });

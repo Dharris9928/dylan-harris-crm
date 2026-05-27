@@ -78,7 +78,7 @@ export function AccessExpirationManager() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["access-approvals"] });
+      void queryClient.invalidateQueries({ queryKey: ["access-approvals"] });
       toast({
         title: "Access Extended",
         description: "The access expiration date has been updated.",
@@ -106,7 +106,7 @@ export function AccessExpirationManager() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["access-approvals"] });
+      void queryClient.invalidateQueries({ queryKey: ["access-approvals"] });
       toast({
         title: "Access Revoked",
         description: "The access approval has been removed.",

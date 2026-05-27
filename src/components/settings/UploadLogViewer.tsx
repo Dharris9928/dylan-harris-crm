@@ -132,11 +132,11 @@ export function UploadLogViewer() {
         });
         
         // Invalidate related queries
-        queryClient.invalidateQueries({ queryKey: ['upload-logs'] });
-        queryClient.invalidateQueries({ queryKey: ['companies'] });
-        queryClient.invalidateQueries({ queryKey: ['contacts'] });
-        queryClient.invalidateQueries({ queryKey: ['communications'] });
-        queryClient.invalidateQueries({ queryKey: ['apollo-email-activities'] });
+        void queryClient.invalidateQueries({ queryKey: ['upload-logs'] });
+        void queryClient.invalidateQueries({ queryKey: ['companies'] });
+        void queryClient.invalidateQueries({ queryKey: ['contacts'] });
+        void queryClient.invalidateQueries({ queryKey: ['communications'] });
+        void queryClient.invalidateQueries({ queryKey: ['apollo-email-activities'] });
         
         refetch();
       } else {

@@ -49,7 +49,7 @@ export function ActiveSessionsManager() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-sessions'] });
+      void queryClient.invalidateQueries({ queryKey: ['user-sessions'] });
       toast({
         title: "Session Terminated",
         description: "The session has been successfully terminated.",

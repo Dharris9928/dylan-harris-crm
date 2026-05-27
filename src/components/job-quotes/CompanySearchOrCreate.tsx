@@ -114,8 +114,8 @@ export function CompanySearchOrCreate({
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["companies-search"] });
-      queryClient.invalidateQueries({ queryKey: ["companies"] });
+      void queryClient.invalidateQueries({ queryKey: ["companies-search"] });
+      void queryClient.invalidateQueries({ queryKey: ["companies"] });
       onChange(data.id);
       setOpen(false);
       toast({

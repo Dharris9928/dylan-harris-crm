@@ -80,7 +80,7 @@ export function NotificationBell() {
             filter: `user_id=eq.${user.id}`,
           },
           () => {
-            queryClient.invalidateQueries({ queryKey: ['notifications'] });
+            void queryClient.invalidateQueries({ queryKey: ['notifications'] });
           }
         )
         .on(
@@ -92,7 +92,7 @@ export function NotificationBell() {
             filter: `user_id=eq.${user.id}`,
           },
           () => {
-            queryClient.invalidateQueries({ queryKey: ['notifications'] });
+            void queryClient.invalidateQueries({ queryKey: ['notifications'] });
           }
         )
         .subscribe();
@@ -114,7 +114,7 @@ export function NotificationBell() {
         .eq('id', notificationId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      void queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
   });
 

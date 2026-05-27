@@ -133,10 +133,10 @@ export function CompleteActivityDialog({ activity, open, onOpenChange, onComplet
           : "Activity marked as completed",
       });
 
-      queryClient.invalidateQueries({ queryKey: ["activities"] });
-      queryClient.invalidateQueries({ queryKey: ["pipeline-analytics"] });
-      queryClient.invalidateQueries({ queryKey: ["upcoming_meetings"] });
-      queryClient.invalidateQueries({ queryKey: ["meetings_conducted"] });
+      void queryClient.invalidateQueries({ queryKey: ["activities"] });
+      void queryClient.invalidateQueries({ queryKey: ["pipeline-analytics"] });
+      void queryClient.invalidateQueries({ queryKey: ["upcoming_meetings"] });
+      void queryClient.invalidateQueries({ queryKey: ["meetings_conducted"] });
 
       // Reset form
       setCompletedDate(format(new Date(), "yyyy-MM-dd'T'HH:mm"));

@@ -53,7 +53,7 @@ export function DataExportRequest() {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['data-export-requests'] });
+      void queryClient.invalidateQueries({ queryKey: ['data-export-requests'] });
       
       // Create blob and download
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });

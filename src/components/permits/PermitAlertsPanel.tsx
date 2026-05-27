@@ -51,7 +51,7 @@ export const PermitAlertsPanel = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['permit-alerts'] });
+      void queryClient.invalidateQueries({ queryKey: ['permit-alerts'] });
       toast({
         title: "Alert Acknowledged",
         description: "The alert has been marked as acknowledged"

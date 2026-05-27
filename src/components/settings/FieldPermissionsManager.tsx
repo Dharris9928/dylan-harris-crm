@@ -84,7 +84,7 @@ export function FieldPermissionsManager() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['field-permissions'] });
+      void queryClient.invalidateQueries({ queryKey: ['field-permissions'] });
       setIsAddDialogOpen(false);
       resetForm();
       toast.success('Field permission created successfully');
@@ -110,7 +110,7 @@ export function FieldPermissionsManager() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['field-permissions'] });
+      void queryClient.invalidateQueries({ queryKey: ['field-permissions'] });
       setEditingPermission(null);
       toast.success('Field permission updated successfully');
     },
@@ -131,7 +131,7 @@ export function FieldPermissionsManager() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['field-permissions'] });
+      void queryClient.invalidateQueries({ queryKey: ['field-permissions'] });
       toast.success('Field permission deleted successfully');
     },
     onError: (error) => {

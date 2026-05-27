@@ -190,7 +190,7 @@ export function AddOpportunityDialog({ open, onOpenChange, prefilledCompanyId }:
       return opportunity as any;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['opportunities'] });
+      void queryClient.invalidateQueries({ queryKey: ['opportunities'] });
       toast({
         title: "Success",
         description: "Opportunity created successfully",

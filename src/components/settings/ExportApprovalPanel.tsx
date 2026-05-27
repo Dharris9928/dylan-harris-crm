@@ -60,7 +60,7 @@ export function ExportApprovalPanel() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['export-approvals'] });
+      void queryClient.invalidateQueries({ queryKey: ['export-approvals'] });
       toast({
         title: 'Request Reviewed',
         description: 'The export request has been reviewed.',

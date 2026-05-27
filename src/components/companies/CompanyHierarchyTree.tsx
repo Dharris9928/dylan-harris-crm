@@ -185,7 +185,7 @@ export function CompanyHierarchyTree() {
         open={!!selectedCompanyId}
         onOpenChange={(open) => !open && setSelectedCompanyId(null)}
         onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ['company-hierarchy'] });
+          void queryClient.invalidateQueries({ queryKey: ['company-hierarchy'] });
         }}
       />
 

@@ -50,7 +50,7 @@ export function AllowedDomainsManager() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allowed-email-domains'] });
+      void queryClient.invalidateQueries({ queryKey: ['allowed-email-domains'] });
       setIsAddDialogOpen(false);
       setNewDomain("");
       setNotes("");
@@ -71,7 +71,7 @@ export function AllowedDomainsManager() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allowed-email-domains'] });
+      void queryClient.invalidateQueries({ queryKey: ['allowed-email-domains'] });
       toast.success('Domain status updated');
     },
     onError: () => {
@@ -89,7 +89,7 @@ export function AllowedDomainsManager() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allowed-email-domains'] });
+      void queryClient.invalidateQueries({ queryKey: ['allowed-email-domains'] });
       toast.success('Domain removed');
     },
     onError: () => {
@@ -112,7 +112,7 @@ export function AllowedDomainsManager() {
       } else {
         toast.error(`Domain ${domain} verification failed: ${data.reason}`);
       }
-      queryClient.invalidateQueries({ queryKey: ['allowed-email-domains'] });
+      void queryClient.invalidateQueries({ queryKey: ['allowed-email-domains'] });
     },
     onError: () => {
       toast.error('Failed to verify domain');

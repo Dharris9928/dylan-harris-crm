@@ -2,22 +2,24 @@ import { createFileRoute, redirect, Outlet, Link } from "@tanstack/react-router"
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import {
-  LayoutDashboard,
+  Home,
   Building2,
   Users,
-  Briefcase,
+  DollarSign,
   ClipboardList,
-  Mail,
-  FileText,
-  HardHat,
+  MessageSquare,
+  Activity,
   BarChart3,
+  TrendingUp,
+  Brain,
+  Presentation,
+  Target,
+  FileText,
+  HelpCircle,
   Settings,
   LogOut,
   Menu,
   X,
-  Presentation,
-  Search,
-  Megaphone,
   Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -34,19 +36,23 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 const navItems = [
-  { label: "Dashboard", to: "/", icon: LayoutDashboard },
+  { label: "Dashboard", to: "/", icon: Home },
   { label: "Companies", to: "/companies", icon: Building2 },
   { label: "Contacts", to: "/contacts", icon: Users },
-  { label: "Opportunities", to: "/opportunities", icon: Briefcase },
-  { label: "Activities", to: "/activities", icon: ClipboardList },
-  { label: "Communications", to: "/communications", icon: Mail },
-  { label: "Job Quotes", to: "/quotes", icon: FileText },
-  { label: "Permits", to: "/permits", icon: HardHat },
-  { label: "Analytics", to: "/analytics", icon: BarChart3 },
-  { label: "Presentations", to: "/presentations", icon: Presentation },
-  { label: "Prospecting", to: "/prospecting", icon: Search },
+  { label: "Opportunities", to: "/opportunities", icon: DollarSign },
+  { label: "Job Quotes", to: "/job-quotes", icon: ClipboardList },
+  { label: "Communications", to: "/communications", icon: MessageSquare },
+  { label: "Activities", to: "/activities", icon: Activity },
+  { label: "Reports", to: "/reports", icon: BarChart3 },
+  { label: "Pipeline Analytics", to: "/pipeline-analytics", icon: TrendingUp },
+  { label: "AI Features", to: "/ai-features", icon: Brain },
+  { label: "Presentations", to: "/presentation", icon: Presentation },
+  { label: "Prospecting", to: "/prospecting", icon: Target },
+  { label: "Building Permits", to: "/permits", icon: FileText },
+  { label: "Help", to: "/help", icon: HelpCircle },
   { label: "Settings", to: "/settings", icon: Settings },
 ];
+
 
 function AuthenticatedLayout() {
   const [collapsed, setCollapsed] = useState(false);

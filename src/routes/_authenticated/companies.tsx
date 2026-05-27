@@ -58,7 +58,7 @@ export const Route = createFileRoute("/_authenticated/companies")({
 
 type CompanyStatus = "Lead" | "Contacted" | "Engaged" | "Pilot" | "Active" | "Churned";
 type Industry = "Builder" | "Contractor" | "Energy Implementer" | "Engineer/Architect" | "Partner/Other";
-type Region = "Northeast" | "Southeast" | "Midwest" | "Southwest" | "West";
+type Region = "East" | "West";
 
 interface Company {
   id: string;

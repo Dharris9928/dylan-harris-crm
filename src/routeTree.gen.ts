@@ -17,6 +17,7 @@ import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedProspectingRouteImport } from './routes/_authenticated/prospecting'
 import { Route as AuthenticatedPresentationRouteImport } from './routes/_authenticated/presentation'
 import { Route as AuthenticatedPipelineAnalyticsRouteImport } from './routes/_authenticated/pipeline-analytics'
+import { Route as AuthenticatedPermitsRouteImport } from './routes/_authenticated/permits'
 import { Route as AuthenticatedOpportunitiesRouteImport } from './routes/_authenticated/opportunities'
 import { Route as AuthenticatedJobQuotesRouteImport } from './routes/_authenticated/job-quotes'
 import { Route as AuthenticatedContactsRouteImport } from './routes/_authenticated/contacts'
@@ -67,6 +68,11 @@ const AuthenticatedPipelineAnalyticsRoute =
     path: '/pipeline-analytics',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedPermitsRoute = AuthenticatedPermitsRouteImport.update({
+  id: '/permits',
+  path: '/permits',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedOpportunitiesRoute =
   AuthenticatedOpportunitiesRouteImport.update({
     id: '/opportunities',
@@ -116,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/contacts': typeof AuthenticatedContactsRoute
   '/job-quotes': typeof AuthenticatedJobQuotesRoute
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
+  '/permits': typeof AuthenticatedPermitsRoute
   '/pipeline-analytics': typeof AuthenticatedPipelineAnalyticsRoute
   '/presentation': typeof AuthenticatedPresentationRoute
   '/prospecting': typeof AuthenticatedProspectingRoute
@@ -131,6 +138,7 @@ export interface FileRoutesByTo {
   '/contacts': typeof AuthenticatedContactsRoute
   '/job-quotes': typeof AuthenticatedJobQuotesRoute
   '/opportunities': typeof AuthenticatedOpportunitiesRoute
+  '/permits': typeof AuthenticatedPermitsRoute
   '/pipeline-analytics': typeof AuthenticatedPipelineAnalyticsRoute
   '/presentation': typeof AuthenticatedPresentationRoute
   '/prospecting': typeof AuthenticatedProspectingRoute
@@ -149,6 +157,7 @@ export interface FileRoutesById {
   '/_authenticated/contacts': typeof AuthenticatedContactsRoute
   '/_authenticated/job-quotes': typeof AuthenticatedJobQuotesRoute
   '/_authenticated/opportunities': typeof AuthenticatedOpportunitiesRoute
+  '/_authenticated/permits': typeof AuthenticatedPermitsRoute
   '/_authenticated/pipeline-analytics': typeof AuthenticatedPipelineAnalyticsRoute
   '/_authenticated/presentation': typeof AuthenticatedPresentationRoute
   '/_authenticated/prospecting': typeof AuthenticatedProspectingRoute
@@ -168,6 +177,7 @@ export interface FileRouteTypes {
     | '/contacts'
     | '/job-quotes'
     | '/opportunities'
+    | '/permits'
     | '/pipeline-analytics'
     | '/presentation'
     | '/prospecting'
@@ -183,6 +193,7 @@ export interface FileRouteTypes {
     | '/contacts'
     | '/job-quotes'
     | '/opportunities'
+    | '/permits'
     | '/pipeline-analytics'
     | '/presentation'
     | '/prospecting'
@@ -200,6 +211,7 @@ export interface FileRouteTypes {
     | '/_authenticated/contacts'
     | '/_authenticated/job-quotes'
     | '/_authenticated/opportunities'
+    | '/_authenticated/permits'
     | '/_authenticated/pipeline-analytics'
     | '/_authenticated/presentation'
     | '/_authenticated/prospecting'
@@ -271,6 +283,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPipelineAnalyticsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/permits': {
+      id: '/_authenticated/permits'
+      path: '/permits'
+      fullPath: '/permits'
+      preLoaderRoute: typeof AuthenticatedPermitsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/opportunities': {
       id: '/_authenticated/opportunities'
       path: '/opportunities'
@@ -331,6 +350,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedContactsRoute: typeof AuthenticatedContactsRoute
   AuthenticatedJobQuotesRoute: typeof AuthenticatedJobQuotesRoute
   AuthenticatedOpportunitiesRoute: typeof AuthenticatedOpportunitiesRoute
+  AuthenticatedPermitsRoute: typeof AuthenticatedPermitsRoute
   AuthenticatedPipelineAnalyticsRoute: typeof AuthenticatedPipelineAnalyticsRoute
   AuthenticatedPresentationRoute: typeof AuthenticatedPresentationRoute
   AuthenticatedProspectingRoute: typeof AuthenticatedProspectingRoute
@@ -346,6 +366,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedContactsRoute: AuthenticatedContactsRoute,
   AuthenticatedJobQuotesRoute: AuthenticatedJobQuotesRoute,
   AuthenticatedOpportunitiesRoute: AuthenticatedOpportunitiesRoute,
+  AuthenticatedPermitsRoute: AuthenticatedPermitsRoute,
   AuthenticatedPipelineAnalyticsRoute: AuthenticatedPipelineAnalyticsRoute,
   AuthenticatedPresentationRoute: AuthenticatedPresentationRoute,
   AuthenticatedProspectingRoute: AuthenticatedProspectingRoute,

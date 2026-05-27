@@ -190,9 +190,7 @@ export function UserManagement() {
         u.approval_status === 'pending'
       );
 
-      console.log('Invited users:', invited);
-      console.log('Pending signups:', signups);
-      console.log('Approved users:', approved);
+
 
       // Initialize selected roles for pending signups
       const initialRoles: Record<string, 'admin' | 'sales_manager' | 'sales_rep' | 'read_only'> = {};

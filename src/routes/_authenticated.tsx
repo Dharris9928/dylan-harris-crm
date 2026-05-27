@@ -101,7 +101,7 @@ function AuthenticatedLayout() {
           <Building2 className={`h-6 w-6 shrink-0 text-gold-400 ${collapsed ? "mx-auto" : ""}`} />
           {!collapsed && (
             <span className="font-mono text-sm font-bold tracking-tight text-white">
-              Dylan Harris CRM
+              Dwayne Harris CRM
             </span>
           )}
           <button

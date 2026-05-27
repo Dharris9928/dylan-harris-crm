@@ -308,7 +308,7 @@ export const seedDatabase = createServerFn({ method: "POST" })
     await supabaseAdmin.from("presentations").insert({
       title: "Demo Sales Deck",
       content: JSON.stringify([
-        { type: "title", text: "Welcome to Dylan Harris CRM" },
+        { type: "title", text: "Welcome to Dwayne Harris CRM" },
         { type: "bullet", text: "Track leads and opportunities" },
         { type: "bullet", text: "Manage communications" },
       ]),

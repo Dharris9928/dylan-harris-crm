@@ -1,5 +1,5 @@
 -- ============================================================
--- Dylan Harris CRM — Full Database Schema
+-- Dwayne Harris CRM — Full Database Schema
 -- ============================================================
 
 -- 1. Enums

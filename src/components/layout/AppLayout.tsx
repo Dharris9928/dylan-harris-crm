@@ -143,6 +143,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           </div>
         </div>
       </SidebarProvider>
+      <FloatingAssistant />
       <SessionTimeoutWarning
         open={showWarning}
         timeRemaining={timeRemaining}

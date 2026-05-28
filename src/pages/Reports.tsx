@@ -3,6 +3,7 @@ import { ScoringBreakdownReport } from '@/components/reports/ScoringBreakdownRep
 import { ContactsScoringReport } from '@/components/reports/ContactsScoringReport';
 import { RecalculateAllScoresButton } from '@/components/reports/RecalculateAllScoresButton';
 import { RecalculateContractorScoresButton } from '@/components/reports/RecalculateContractorScoresButton';
+import { BulkEnrichButton } from '@/components/reports/BulkEnrichButton';
 
 const Reports = () => {
   const [refreshKey, setRefreshKey] = useState(0);

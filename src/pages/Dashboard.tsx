@@ -24,6 +24,7 @@ import { PriorityDistributionCard } from "@/components/dashboard/PriorityDistrib
 import { EnrichmentAnalyticsCard } from "@/components/dashboard/EnrichmentAnalyticsCard";
 import { SmartEnrichmentRecommendations } from "@/components/companies/SmartEnrichmentRecommendations";
 import { BuyingIntentAnalytics } from "@/components/dashboard/BuyingIntentAnalytics";
+import { CommunicationsCard } from "@/components/dashboard/CommunicationsCard";
 
 const Dashboard = () => {
   const queryClient = useQueryClient();
@@ -384,7 +385,10 @@ const Dashboard = () => {
 
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {/* Communications Card */}
+        <CommunicationsCard />
+
         {/* Total Contacts Card */}
         <Card 
           className="cursor-pointer hover:shadow-lg hover:bg-accent/50 transition-all duration-200"

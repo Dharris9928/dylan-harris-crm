@@ -67,31 +67,36 @@ serve(async (req) => {
       );
     }
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    // Detect service-role calls (cron / bulk runner) and bypass user auth checks
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    const isServiceRole = serviceRoleKey && authHeader === `Bearer ${serviceRoleKey}`;
 
-    // Verify user and get company
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    const supabase = isServiceRole
+      ? createClient(Deno.env.get('SUPABASE_URL') ?? '', serviceRoleKey)
+      : createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+          { global: { headers: { Authorization: authHeader } } }
+        );
 
-    // Check rate limit
-    const rateLimitResponse = await checkRateLimit(supabase, user.id, 'enrich-company');
-    if (rateLimitResponse) {
-      return rateLimitResponse;
-    }
-    if (!user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    let user: { id: string } | null = null;
+    if (isServiceRole) {
+      user = { id: '00000000-0000-0000-0000-000000000000' }; // system user for cron
+    } else {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      user = authUser;
+
+      // Check rate limit (skip for service-role/cron)
+      const rateLimitResponse = await checkRateLimit(supabase, user.id, 'enrich-company');
+      if (rateLimitResponse) {
+        return rateLimitResponse;
+      }
     }
 
     // Check company access

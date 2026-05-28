@@ -201,6 +201,101 @@ geographic_tier — enum: sun_belt_tier1 | sun_belt_tier2 |
 
 // Convenience: full directives block for a single agent call
 export function buildEnrichmentSystemPrompt(industry: 'Builder' | 'Contractor' | string): string {
-  const channelBlock = industry === 'Builder' ? BUILDER_FIELD_DIRECTIVES : CONTRACTOR_FIELD_DIRECTIVES;
-  return [MASTER_ENRICHMENT_PROMPT, '', channelBlock].join('\n');
+  const isBuilder = (industry || '').toLowerCase() === 'builder';
+  const channelBlock = isBuilder ? BUILDER_FIELD_DIRECTIVES : CONTRACTOR_FIELD_DIRECTIVES;
+  return [
+    'You are a B2B data enrichment specialist for the Google Nest Pro Channel CRM.',
+    MASTER_ENRICHMENT_PROMPT,
+    '',
+    channelBlock,
+    '',
+    'In addition to the strategic v2.0 signals above, also populate the standard firmographic, digital-engagement, and contact fields described in the function/tool schema.',
+  ].join('\n');
 }
+
+// ── Scoring v2.0 strategic-signal tool-schema fragment ──────
+// Spread this into any provider function/tool parameters.properties
+// so the model returns the new segment-aware signals.
+export const V2_STRATEGIC_TOOL_PROPERTIES = {
+  geographic_tier: {
+    type: 'string',
+    enum: ['sun_belt_tier1', 'sun_belt_tier2', 'major_metro_other', 'secondary_market', 'rural_small'],
+    description: 'Geographic market tier. Sun Belt tier1 = Phoenix, Dallas, Houston, Tampa, Orlando, Atlanta, Charlotte, Raleigh, Nashville, Austin, San Antonio, Las Vegas. Only set if confident.',
+  },
+  tech_adoption_signal: {
+    type: 'string',
+    enum: ['servicetitan_or_equivalent', 'basic_crm_or_software', 'paper_based'],
+    description: 'Field-software adoption. ServiceTitan / FieldEdge / Housecall Pro / Service Fusion named → servicetitan_or_equivalent.',
+  },
+  training_readiness: {
+    type: 'string',
+    enum: ['formal_training_program', 'informal_occasional', 'no_training_infrastructure'],
+    description: 'Training infrastructure maturity (careers page, certifications, apprenticeships).',
+  },
+  contact_trust_level: {
+    type: 'string',
+    enum: ['established_relationship', 'neutral_prior_contact', 'cold_no_prior_contact', 'previous_friction'],
+    description: 'Default cold_no_prior_contact unless CRM history indicates otherwise.',
+  },
+  builder_segment: {
+    type: 'string',
+    enum: ['production_tract', 'regional_mid_volume', 'spec_home', 'luxury_custom', 'multi_family', 'affordable_housing', 'active_adult_55plus', 'unknown'],
+    description: 'Builder segment per directive priority order.',
+  },
+  smart_home_readiness: {
+    type: 'string',
+    enum: ['active_program', 'evaluating', 'open_no_program', 'not_interested'],
+    description: 'Smart-home program maturity. Default fallback: open_no_program.',
+  },
+  wholesale_partner_match: {
+    type: 'string',
+    enum: ['key_nest_pro_partner', 'distributor_with_relationship', 'non_partner_distributor', 'unknown'],
+    description: 'Key Nest Pro partners: Ferguson, Winsupply, Johnstone Supply, ADI Global, CED.',
+  },
+  nest_pro_status: {
+    type: 'string',
+    enum: ['enrolled_elite', 'enrolled_standard', 'purchased_not_enrolled', 'no_history'],
+    description: 'Internal CRM data — return no_history if unknown.',
+  },
+  permits_in_pipeline: {
+    type: 'integer',
+    description: 'Units in approved permits (Dodge / BuildFax / county portals). 0 if none found.',
+  },
+  contractor_segment: {
+    type: 'string',
+    enum: ['smart_home_champion', 'customer_experience_innovator', 'premium_service_specialist', 'high_volume_installer', 'specialty_hvac_integrator', 'regional_growth_contractor', 'service_first_traditionalist', 'emergency_repair_focused'],
+    description: 'Contractor segment (use strongest 3+ signals).',
+  },
+  work_type_focus: {
+    type: 'string',
+    enum: ['new_construction_dominant', 'mixed_new_and_service', 'replacement_retrofit_focus', 'service_maintenance_only'],
+    description: 'Primary work mix. Default mixed_new_and_service.',
+  },
+  competitor_status: {
+    type: 'string',
+    enum: ['no_smart_home_competitor', 'evaluating_competitors', 'resideo_honeywell_dealer', 'ecobee_or_other_dealer', 'committed_competitor', 'unknown'],
+    description: 'CRITICAL: check Resideo/Honeywell Pro locator and ecobee Pro installer search first.',
+  },
+  service_agreement_count: {
+    type: 'integer',
+    description: 'Active maintenance agreements (estimate from review count if unstated; flag low confidence).',
+  },
+} as const;
+
+const V2_FIELD_KEYS = [
+  'geographic_tier', 'tech_adoption_signal', 'training_readiness', 'contact_trust_level',
+  'builder_segment', 'smart_home_readiness', 'wholesale_partner_match', 'nest_pro_status', 'permits_in_pipeline',
+  'contractor_segment', 'work_type_focus', 'competitor_status', 'service_agreement_count',
+] as const;
+
+// Pull v2 strategic fields out of an AI-tool response, dropping empties / 'unknown'.
+export function extractV2Fields(enrichedData: Record<string, any>): Record<string, any> {
+  const out: Record<string, any> = {};
+  for (const key of V2_FIELD_KEYS) {
+    const v = enrichedData?.[key];
+    if (v === undefined || v === null || v === '' || v === 'unknown') continue;
+    out[key] = v;
+  }
+  return out;
+}
+

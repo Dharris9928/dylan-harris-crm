@@ -7,8 +7,27 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Bot, Loader2 } from 'lucide-react';
+import { Bot, Loader2, TrendingUp, Lock, Check } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+
+const TIER_CAPABILITIES: Record<'free' | 'standard' | 'premium', { fields: string[]; estCoverage: number }> = {
+  free: {
+    fields: ['Company segment', 'Industry classification', 'Builder profile', 'Basic firmographics', 'Website signals'],
+    estCoverage: 55,
+  },
+  standard: {
+    fields: ['Apollo firmographics', 'Employee count & growth', 'Annual revenue', 'Tech stack', 'Verified emails & phones', 'Decision-maker contacts'],
+    estCoverage: 80,
+  },
+  premium: {
+    fields: ['Claude deep reasoning', 'Strategic buying signals', 'Competitive positioning', 'Project pipeline insights', 'Custom outreach hooks'],
+    estCoverage: 95,
+  },
+};
+
+const TIER_ORDER: Array<'free' | 'standard' | 'premium'> = ['free', 'standard', 'premium'];
+
 
 interface Settings {
   enabled: boolean;

@@ -1111,6 +1111,11 @@ Research the company thoroughly using the website and LinkedIn URLs provided. Be
   if (enrichedData.contractor_specialty) companyUpdates.contractor_specialty = enrichedData.contractor_specialty;
   if (enrichedData.service_area_type) companyUpdates.service_area_type = enrichedData.service_area_type;
 
+  // v2.0 strategic signals
+  Object.assign(companyUpdates, extractV2Fields(enrichedData));
+
+
+
   return {
     companyUpdates,
     insights: {

@@ -100,8 +100,8 @@ export function AssistantChat() {
                   </div>
                 </div>
               ) : (
-                <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
-                  <ReactMarkdown>{m.content}</ReactMarkdown>
+                <div className="text-sm whitespace-pre-wrap">
+                  {m.content}
                   {m.proposed_actions?.map((a) => (
                     <Card key={a.id} className="mt-2 p-2 bg-muted/50 not-prose">
                       <p className="text-xs font-medium mb-2">{a.label}?</p>

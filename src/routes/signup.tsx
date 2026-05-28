@@ -52,7 +52,7 @@ function SignupPage() {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Left Panel */}
-      <div className="hidden w-1/2 flex-col justify-between bg-emerald-900 p-12 lg:flex">
+      <div className="hidden w-1/2 flex-col justify-between bg-emerald-800 p-12 lg:flex">
         <div className="flex items-center gap-2">
           <Building2 className="h-8 w-8 text-gold-400" />
           <span className="font-mono text-xl font-bold text-white">Dwayne Harris CRM</span>
@@ -61,11 +61,11 @@ function SignupPage() {
           <h2 className="mb-4 font-mono text-3xl font-bold text-white">
             Join the team.
           </h2>
-          <p className="max-w-md text-emerald-200">
+          <p className="max-w-md text-emerald-100">
             Sign up for access to the Dwayne Harris CRM platform. New accounts require admin approval before gaining full access.
           </p>
         </div>
-        <p className="text-xs text-emerald-400">Demo app for interview portfolio</p>
+        <p className="text-xs text-emerald-300">Demo app for interview portfolio</p>
       </div>
 
       {/* Right Panel */}

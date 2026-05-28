@@ -53,7 +53,7 @@ function LoginPage() {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Left Panel */}
-      <div className="hidden w-1/2 flex-col justify-between bg-emerald-900 p-12 lg:flex">
+      <div className="hidden w-1/2 flex-col justify-between bg-emerald-800 p-12 lg:flex">
         <div className="flex items-center gap-2">
           <Building2 className="h-8 w-8 text-gold-400" />
           <span className="font-mono text-xl font-bold text-white">Dwayne Harris CRM</span>
@@ -62,21 +62,21 @@ function LoginPage() {
           <h2 className="mb-4 font-mono text-3xl font-bold text-white">
             Close more deals with intelligence.
           </h2>
-          <p className="max-w-md text-emerald-200">
+          <p className="max-w-md text-emerald-100">
             A premium sales CRM built for modern revenue teams. Track leads, manage pipelines, and nurture relationships — all in one place.
           </p>
           <div className="mt-8 flex gap-4">
-            <div className="rounded-lg bg-emerald-800/50 p-4">
+            <div className="rounded-lg bg-emerald-700/50 p-4">
               <p className="font-mono text-2xl font-bold text-gold-400">$12M+</p>
-              <p className="text-sm text-emerald-200">Pipeline managed</p>
+              <p className="text-sm text-emerald-100">Pipeline managed</p>
             </div>
-            <div className="rounded-lg bg-emerald-800/50 p-4">
+            <div className="rounded-lg bg-emerald-700/50 p-4">
               <p className="font-mono text-2xl font-bold text-gold-400">200+</p>
-              <p className="text-sm text-emerald-200">Active contacts</p>
+              <p className="text-sm text-emerald-100">Active contacts</p>
             </div>
           </div>
         </div>
-        <p className="text-xs text-emerald-400">Demo app for interview portfolio</p>
+        <p className="text-xs text-emerald-300">Demo app for interview portfolio</p>
       </div>
 
       {/* Right Panel */}

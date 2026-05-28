@@ -1198,6 +1198,36 @@ export type Database = {
         }
         Relationships: []
       }
+      bulk_enrichment_settings: {
+        Row: {
+          batch_size: number
+          enabled: boolean
+          id: number
+          retry_after_days: number
+          tier: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          batch_size?: number
+          enabled?: boolean
+          id?: number
+          retry_after_days?: number
+          tier?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          batch_size?: number
+          enabled?: boolean
+          id?: number
+          retry_after_days?: number
+          tier?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       business_context_settings: {
         Row: {
           business_description: string | null
@@ -1460,6 +1490,7 @@ export type Database = {
           is_franchise: boolean | null
           is_parent_company: boolean | null
           last_contact_date: string | null
+          last_enrichment_attempt_at: string | null
           lead_score: number | null
           linkedin_activity_level: string | null
           linkedin_company_url: string | null
@@ -1565,6 +1596,7 @@ export type Database = {
           is_franchise?: boolean | null
           is_parent_company?: boolean | null
           last_contact_date?: string | null
+          last_enrichment_attempt_at?: string | null
           lead_score?: number | null
           linkedin_activity_level?: string | null
           linkedin_company_url?: string | null
@@ -1670,6 +1702,7 @@ export type Database = {
           is_franchise?: boolean | null
           is_parent_company?: boolean | null
           last_contact_date?: string | null
+          last_enrichment_attempt_at?: string | null
           lead_score?: number | null
           linkedin_activity_level?: string | null
           linkedin_company_url?: string | null

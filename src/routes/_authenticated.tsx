@@ -99,7 +99,7 @@ function AuthenticatedLayout() {
         } ${collapsed ? "w-16" : "w-64"} lg:translate-x-0`}
       >
         {/* Header */}
-        <div className="flex h-14 items-center gap-2 border-b border-emerald-800/50 px-4">
+        <div className="flex h-14 items-center gap-2 border-b border-emerald-600/50 px-4">
           <Building2 className={`h-6 w-6 shrink-0 text-gold-400 ${collapsed ? "mx-auto" : ""}`} />
           {!collapsed && (
             <span className="font-mono text-sm font-bold tracking-tight text-white">

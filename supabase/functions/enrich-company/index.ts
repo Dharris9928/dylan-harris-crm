@@ -1027,7 +1027,8 @@ Research the company thoroughly using the website and LinkedIn URLs provided. Be
               growth_indicators: { type: 'array', items: { type: 'string' } },
               smart_home_readiness_score: { type: 'integer', minimum: 0, maximum: 100 },
               recommended_approach: { type: 'string', description: 'Recommended sales approach' },
-              confidence_level: { type: 'string', enum: ['high', 'medium', 'low'] }
+              confidence_level: { type: 'string', enum: ['high', 'medium', 'low'] },
+              ...V2_STRATEGIC_TOOL_PROPERTIES,
             }
           }
         }

@@ -7,8 +7,27 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Bot, Loader2 } from 'lucide-react';
+import { Bot, Loader2, TrendingUp, Lock, Check } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+
+const TIER_CAPABILITIES: Record<'free' | 'standard' | 'premium', { fields: string[]; estCoverage: number }> = {
+  free: {
+    fields: ['Company segment', 'Industry classification', 'Builder profile', 'Basic firmographics', 'Website signals'],
+    estCoverage: 55,
+  },
+  standard: {
+    fields: ['Apollo firmographics', 'Employee count & growth', 'Annual revenue', 'Tech stack', 'Verified emails & phones', 'Decision-maker contacts'],
+    estCoverage: 80,
+  },
+  premium: {
+    fields: ['Claude deep reasoning', 'Strategic buying signals', 'Competitive positioning', 'Project pipeline insights', 'Custom outreach hooks'],
+    estCoverage: 95,
+  },
+};
+
+const TIER_ORDER: Array<'free' | 'standard' | 'premium'> = ['free', 'standard', 'premium'];
+
 
 interface Settings {
   enabled: boolean;
@@ -192,6 +211,9 @@ export function BulkEnrichmentSettingsCard() {
           </div>
         </div>
 
+        <TierUpgradeRecommendations currentTier={settings.tier} onUpgrade={(t) => save({ tier: t })} disabled={saving} />
+
+
         <div className="flex items-center justify-between">
           <p className="text-xs text-muted-foreground">
             {settings.enabled && ready > 0
@@ -220,3 +242,78 @@ function Stat({ label, value, tone }: { label: string; value: number; tone?: 'su
     </div>
   );
 }
+
+function TierUpgradeRecommendations({
+  currentTier,
+  onUpgrade,
+  disabled,
+}: {
+  currentTier: 'free' | 'standard' | 'premium';
+  onUpgrade: (t: 'free' | 'standard' | 'premium') => void;
+  disabled?: boolean;
+}) {
+  const currentIdx = TIER_ORDER.indexOf(currentTier);
+  const current = TIER_CAPABILITIES[currentTier];
+  const upgrades = TIER_ORDER.slice(currentIdx + 1);
+
+  return (
+    <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
+      <div className="flex items-center gap-2">
+        <TrendingUp className="h-4 w-4 text-primary" />
+        <h4 className="text-sm font-semibold">Enrichment Coverage Recommendations</h4>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-medium capitalize">{currentTier} tier — current</span>
+          <span className="text-muted-foreground">~{current.estCoverage}% data coverage</span>
+        </div>
+        <Progress value={current.estCoverage} />
+        <div className="flex flex-wrap gap-1.5 pt-1">
+          {current.fields.map((f) => (
+            <Badge key={f} variant="secondary" className="text-xs font-normal">
+              <Check className="h-3 w-3 mr-1" /> {f}
+            </Badge>
+          ))}
+        </div>
+      </div>
+
+      {upgrades.length === 0 ? (
+        <p className="text-xs text-muted-foreground">
+          You're on the highest tier — maximum data coverage enabled.
+        </p>
+      ) : (
+        upgrades.map((tier) => {
+          const cap = TIER_CAPABILITIES[tier];
+          const gain = cap.estCoverage - current.estCoverage;
+          const newFields = cap.fields.filter((f) => !current.fields.includes(f));
+          return (
+            <div key={tier} className="rounded-md border border-dashed bg-background p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-sm font-medium capitalize">{tier} tier</span>
+                  <Badge variant="outline" className="text-xs">+{gain}% coverage</Badge>
+                </div>
+                <Button size="sm" variant="outline" disabled={disabled} onClick={() => onUpgrade(tier)}>
+                  Upgrade
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Unlocks {newFields.length} additional data point{newFields.length === 1 ? '' : 's'}:
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {newFields.map((f) => (
+                  <Badge key={f} variant="outline" className="text-xs font-normal border-primary/30 text-primary">
+                    + {f}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          );
+        })
+      )}
+    </div>
+  );
+}
+

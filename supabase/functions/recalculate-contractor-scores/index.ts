@@ -80,11 +80,15 @@ Deno.serve(async (req) => {
         summary.by_channel[channel]++;
         summary.by_tier[result.priority_tier]++;
 
+        const shortConfidence = result.confidence?.startsWith('High') ? 'High'
+          : result.confidence?.startsWith('Medium') ? 'Medium'
+          : result.confidence?.startsWith('Low') ? 'Low' : null;
+
         const { error: updErr } = await supabase
           .from('companies')
           .update({
             lead_score: Math.round(result.total_score),
-            segment_confidence: result.confidence,
+            segment_confidence: shortConfidence,
             score_breakdown_v2: result as any,
             program_readiness_stage: (result as any).program_readiness_stage ?? null,
             score_calculated_at: new Date().toISOString(),

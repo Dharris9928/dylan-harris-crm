@@ -107,7 +107,7 @@ function AuthenticatedLayout() {
             </span>
           )}
           <button
-            className="ml-auto text-emerald-400 hover:text-white lg:hidden"
+            className="ml-auto text-emerald-100 hover:text-white lg:hidden"
             onClick={() => setMobileOpen(false)}
           >
             <X className="h-5 w-5" />
@@ -121,9 +121,9 @@ function AuthenticatedLayout() {
               key={item.to}
               to={item.to}
               activeProps={{
-                className: "bg-emerald-800/60 text-white",
+                className: "bg-emerald-600/70 text-white",
               }}
-              className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-emerald-800/40 hover:text-white ${
+              className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-emerald-600/60 hover:text-white ${
                 collapsed ? "justify-center" : ""
               }`}
               onClick={() => setMobileOpen(false)}
@@ -135,7 +135,7 @@ function AuthenticatedLayout() {
         </nav>
 
         {/* Bottom */}
-        <div className="border-t border-emerald-800/50 p-3">
+        <div className="border-t border-emerald-600/50 p-3">
           <div className={`flex items-center gap-3 ${collapsed ? "justify-center" : ""}`}>
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold-500/20 font-mono text-xs font-bold text-gold-400">
               {userName.charAt(0).toUpperCase()}
@@ -155,7 +155,7 @@ function AuthenticatedLayout() {
           <Button
             variant="ghost"
             size="sm"
-            className={`mt-2 w-full justify-start text-emerald-400 hover:bg-emerald-800/40 hover:text-white ${
+            className={`mt-2 w-full justify-start text-emerald-100 hover:bg-emerald-600/60 hover:text-white ${
               collapsed ? "justify-center px-2" : ""
             }`}
             onClick={handleLogout}

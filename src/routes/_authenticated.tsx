@@ -90,8 +90,6 @@ function AuthenticatedLayout() {
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={() => setMobileOpen(false)}
         />
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r bg-emerald-700 text-white transition-all duration-300 lg:static ${
-
       {/* Sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r bg-emerald-950 text-emerald-50 transition-all duration-300 lg:static ${

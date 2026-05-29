@@ -383,6 +383,15 @@ export function EnrichmentErrorLog() {
           </div>
         )}
       </CardContent>
+      {openCompanyId && (
+        <EditCompanyDialog
+          open={!!openCompanyId}
+          companyId={openCompanyId}
+          onOpenChange={(o) => { if (!o) setOpenCompanyId(null); }}
+          onClose={() => setOpenCompanyId(null)}
+          onSuccess={() => { setOpenCompanyId(null); loadLogs(); }}
+        />
+      )}
     </Card>
   );
 }

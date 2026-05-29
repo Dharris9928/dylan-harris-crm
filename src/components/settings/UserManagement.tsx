@@ -31,7 +31,7 @@ interface UserProfile {
   first_name: string | null;
   last_name: string | null;
   created_at: string;
-  temp_password?: string | null;
+  // temp_password removed — plaintext passwords are never stored.
   invitation_email_sent_at?: string | null;
   invitation_email_opened_at?: string | null;
   invitation_email_status?: string | null;

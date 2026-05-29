@@ -259,8 +259,7 @@ const Settings = () => {
         {/* Automation Kill Switch (admin-only, self-gates) */}
         <AutomationKillSwitch />
 
-        {/* Admin Impersonation Tool */}
-        {userData?.role === 'admin' && <UserImpersonation />}
+        {/* Admin impersonation is now inline in the Users tab (next to each user's name) */}
         </TabsContent>
 
         {/* Security Settings */}

@@ -215,20 +215,28 @@ export function EnrichmentErrorLog() {
         {/* Summary Stats */}
         {logs.length > 0 && (
           <div className="grid grid-cols-3 gap-4 mb-6 p-4 bg-accent/50 rounded-lg">
-            <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setStatusFilter(statusFilter === 'success' ? 'all' : 'success')}
+              className={`flex items-center gap-2 text-left rounded-md p-2 -m-2 transition-colors hover:bg-background/60 ${statusFilter === 'success' ? 'ring-2 ring-green-500/60 bg-background/60' : ''}`}
+            >
               <CheckCircle2 className="h-5 w-5 text-green-500" />
               <div>
-                <div className="text-sm text-muted-foreground">Success</div>
+                <div className="text-sm text-muted-foreground">Success {statusFilter === 'success' && '(filtered)'}</div>
                 <div className="text-2xl font-bold">{successCount}</div>
               </div>
-            </div>
-            <div className="flex items-center gap-2">
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter(statusFilter === 'failed' ? 'all' : 'failed')}
+              className={`flex items-center gap-2 text-left rounded-md p-2 -m-2 transition-colors hover:bg-background/60 ${statusFilter === 'failed' ? 'ring-2 ring-destructive/60 bg-background/60' : ''}`}
+            >
               <AlertCircle className="h-5 w-5 text-destructive" />
               <div>
-                <div className="text-sm text-muted-foreground">Failed</div>
+                <div className="text-sm text-muted-foreground">Failed {statusFilter === 'failed' && '(filtered)'}</div>
                 <div className="text-2xl font-bold">{failedCount}</div>
               </div>
-            </div>
+            </button>
             <div className="flex items-center gap-2">
               <Coins className="h-5 w-5 text-primary" />
               <div>
@@ -238,6 +246,19 @@ export function EnrichmentErrorLog() {
             </div>
           </div>
         )}
+
+        {statusFilter !== 'all' && (
+          <div className="flex items-center justify-between mb-3 px-1">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <ListFilter className="h-4 w-4" />
+              Showing {statusFilter === 'success' ? 'successful' : 'failed'} enrichments only
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => setStatusFilter('all')}>
+              Clear filter
+            </Button>
+          </div>
+        )}
+
 
         {loading ? (
           <div className="text-center py-8 text-muted-foreground">

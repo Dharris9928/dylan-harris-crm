@@ -12,7 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from "sonner";
-import { Shield, ShieldAlert, ShieldCheck, Eye, Key, Pencil, Plus, Mail, Ban, UserX, CheckCircle } from "lucide-react";
+import { Shield, ShieldAlert, ShieldCheck, Eye, Key, Pencil, Plus, Mail, Ban, UserX, CheckCircle, UserCog } from "lucide-react";
+import { useImpersonation } from "@/hooks/useImpersonation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Tooltip,

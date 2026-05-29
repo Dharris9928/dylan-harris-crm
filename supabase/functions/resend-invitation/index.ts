@@ -28,10 +28,10 @@ serve(async (req) => {
       );
     }
 
-    // Get user profile with temp password
+    // Get user profile (no temp_password — passwords are never stored)
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('temp_password, first_name, last_name')
+      .select('first_name, last_name')
       .eq('id', userId)
       .single();
 
@@ -39,13 +39,6 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "User not found" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    if (!profile.temp_password) {
-      return new Response(
-        JSON.stringify({ error: "User does not have a temporary password" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -68,13 +61,27 @@ serve(async (req) => {
       ? `${profile.first_name} ${profile.last_name}` 
       : userEmail;
 
+    // Generate a brand-new temporary password and update the auth user.
+    // The plaintext value is emailed once and never persisted to the DB.
+    const newTempPassword = `Temp${crypto.randomUUID().replace(/-/g, '').slice(0, 10)}!`;
+    const { error: pwError } = await supabase.auth.admin.updateUserById(userId, {
+      password: newTempPassword,
+      user_metadata: { ...(userData.user.user_metadata || {}), requires_password_change: true },
+    });
+    if (pwError) {
+      console.error("Error resetting password:", pwError);
+      return new Response(
+        JSON.stringify({ error: "Failed to reset password" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Update invitation tracking and auto-approve if not already approved
     const { error: updateError } = await supabase
       .from('profiles')
       .update({
         invitation_email_sent_at: new Date().toISOString(),
         invitation_email_status: 'sent',
-        // Auto-approve invited users when resending invitation
         approval_status: 'approved',
         approved_at: new Date().toISOString(),
         approved_by: adminUser?.id

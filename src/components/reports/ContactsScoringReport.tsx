@@ -221,7 +221,7 @@ export function ContactsScoringReport() {
                     <Button
                       variant="link"
                       className="p-0 h-auto font-medium text-primary hover:underline"
-                      onClick={() => navigate('/contacts', { state: { editContactId: contact.id } })}
+                      onClick={() => handleOpenContact(contact.id)}
                     >
                       {contact.first_name} {contact.last_name}
                     </Button>

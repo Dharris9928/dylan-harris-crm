@@ -110,7 +110,7 @@ export function UserManagement() {
         // Fallback: direct query (RLS may limit results)
       const { data: fallbackProfiles, error: fallbackError } = await supabase
           .from('profiles')
-          .select('id, first_name, last_name, approval_status, created_at, temp_password, invitation_email_sent_at, invitation_email_delivered_at, invitation_email_opened_at, invitation_email_status, approved_at, approved_by, account_status');
+          .select('id, first_name, last_name, approval_status, created_at, invitation_email_sent_at, invitation_email_delivered_at, invitation_email_opened_at, invitation_email_status, approved_at, approved_by, account_status');
         if (fallbackError) {
           throw fallbackError;
         }

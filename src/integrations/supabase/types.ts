@@ -3038,7 +3038,7 @@ export type Database = {
       }
       enrichment_logs: {
         Row: {
-          company_id: string
+          company_id: string | null
           confidence_score: number | null
           created_at: string | null
           created_by: string | null
@@ -3050,7 +3050,7 @@ export type Database = {
           status: string
         }
         Insert: {
-          company_id: string
+          company_id?: string | null
           confidence_score?: number | null
           created_at?: string | null
           created_by?: string | null
@@ -3062,7 +3062,7 @@ export type Database = {
           status: string
         }
         Update: {
-          company_id?: string
+          company_id?: string | null
           confidence_score?: number | null
           created_at?: string | null
           created_by?: string | null

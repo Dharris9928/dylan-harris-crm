@@ -145,8 +145,15 @@ const Auth = () => {
       if (factors?.totp && factors.totp.length > 0) {
         const totpFactor = factors.totp.find(f => f.status === 'verified');
         if (totpFactor) {
-          // Trusted device window: skip MFA if verified within the last 2 hours on this device
-          const TRUST_WINDOW_MS = 2 * 60 * 60 * 1000; // 2 hours
+          // Trusted device window: admins re-verify every 8h, others every 2h
+          let trustWindowMs = 2 * 60 * 60 * 1000;
+          if (data.user?.id) {
+            const { data: isAdmin } = await supabase.rpc('has_role', {
+              _user_id: data.user.id,
+              _role: 'admin',
+            });
+            if (isAdmin) trustWindowMs = 8 * 60 * 60 * 1000;
+          }
           const trustKey = `mfa_trusted_until_${data.user?.id}`;
           const trustedUntil = parseInt(localStorage.getItem(trustKey) || '0', 10);
           if (trustedUntil && Date.now() < trustedUntil) {

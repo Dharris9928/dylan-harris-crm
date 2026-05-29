@@ -181,16 +181,15 @@ export function UserManagement() {
         u.approval_status === 'approved' && u.last_sign_in_at !== null
       );
       
-      // Invited users (pending login): approved with temp_password but haven't logged in yet
-      const invited = allUsers.filter(u => 
-        u.temp_password && 
-        u.approval_status === 'approved' && 
-        u.last_sign_in_at === null
+      // Invited users (pending login): approved, an invite email was sent, but they haven't logged in yet
+      const invited = allUsers.filter(u =>
+        u.approval_status === 'approved' &&
+        u.last_sign_in_at === null &&
+        !!u.invitation_email_sent_at
       );
-      
-      // Sign-up requests: no temp_password AND pending approval (organic sign-ups)
-      const signups = allUsers.filter(u => 
-        !u.temp_password && 
+
+      // Sign-up requests: pending approval (organic sign-ups — admin invites are auto-approved)
+      const signups = allUsers.filter(u =>
         u.approval_status === 'pending'
       );
 

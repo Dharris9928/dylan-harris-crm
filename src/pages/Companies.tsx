@@ -310,18 +310,35 @@ const Companies = () => {
     enabled: currentView === 'calendar',
   });
 
-  // Handle navigation from reports with editCompanyId
+  // Handle navigation from reports / other pages with editCompanyId.
+  // Opens the company profile dialog even if it's outside the current filtered list.
   useEffect(() => {
     const state = location.state as { editCompanyId?: string };
-    if (state?.editCompanyId && companies) {
-      const company = companies.find(c => c.id === state.editCompanyId);
-      if (company) {
-        setSelectedCompany(company);
+    if (!state?.editCompanyId) return;
+    const targetId = state.editCompanyId;
+
+    const openCompany = async () => {
+      const inList = companies?.find(c => c.id === targetId);
+      if (inList) {
+        setSelectedCompany(inList);
         setIsEditDialogOpen(true);
-        // Clear the state
+        window.history.replaceState({}, document.title);
+        return;
+      }
+      // Not in current view (filtered out or different perspective) — fetch directly
+      const { data } = await supabase
+        .from('companies')
+        .select('*')
+        .eq('id', targetId)
+        .maybeSingle();
+      if (data) {
+        setSelectedCompany(data as any);
+        setIsEditDialogOpen(true);
         window.history.replaceState({}, document.title);
       }
-    }
+    };
+
+    openCompany();
   }, [location.state, companies]);
 
   const filteredAndSortedCompanies = useMemo(() => {

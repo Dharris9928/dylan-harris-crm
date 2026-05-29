@@ -331,13 +331,8 @@ const Auth = () => {
 
         if (metadataError) console.error('Failed to update metadata:', metadataError);
 
-        // Clear temp_password in profiles table to move user to "Active Users"
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({ temp_password: null })
-          .eq('id', user.id);
-
-        if (profileError) console.error('Failed to clear temp password:', profileError);
+        // Note: temp_password is never stored in the DB anymore. The
+        // "Invited vs Active" distinction is based on auth.last_sign_in_at.
 
         toast.success("Password updated successfully! Checking MFA requirements...");
         

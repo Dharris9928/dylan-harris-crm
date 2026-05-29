@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from "sonner";
 import { Shield, ShieldAlert, ShieldCheck, Eye, Key, Pencil, Plus, Mail, Ban, UserX, CheckCircle, UserCog } from "lucide-react";
 import { useImpersonation } from "@/hooks/useImpersonation";
+import { useUserRole } from "@/hooks/useUserRole";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Tooltip,

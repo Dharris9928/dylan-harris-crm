@@ -528,7 +528,8 @@ export function UserManagement() {
     );
   };
 
-  const isAdmin = currentUser?.role === 'admin';
+  // Effective admin = actually an admin AND (not impersonating, OR impersonating another admin)
+  const isAdmin = currentUser?.role === 'admin' && effectiveRole?.role === 'admin';
 
   if (!isAdmin) {
     return (

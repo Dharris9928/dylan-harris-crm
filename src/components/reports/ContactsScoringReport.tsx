@@ -292,6 +292,23 @@ export function ContactsScoringReport() {
         </div>
         )}
       </CardContent>
+      {openCompanyId && (
+        <EditCompanyDialog
+          open={!!openCompanyId}
+          companyId={openCompanyId}
+          onOpenChange={(o) => { if (!o) setOpenCompanyId(null); }}
+          onClose={() => setOpenCompanyId(null)}
+          onSuccess={() => { setOpenCompanyId(null); fetchContactScores(); }}
+        />
+      )}
+      {openContact && (
+        <EditContactDialog
+          open={!!openContact}
+          contact={openContact}
+          onOpenChange={(o) => { if (!o) setOpenContact(null); }}
+          onSuccess={() => { setOpenContact(null); fetchContactScores(); }}
+        />
+      )}
     </Card>
   );
 }

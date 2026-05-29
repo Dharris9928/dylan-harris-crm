@@ -53,6 +53,8 @@ export function EnrichmentErrorLog() {
   const [logs, setLogs] = useState<EnrichmentLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'success' | 'failed'>('all');
+  const [openCompanyId, setOpenCompanyId] = useState<string | null>(null);
 
   useEffect(() => {
     checkAdminStatus();

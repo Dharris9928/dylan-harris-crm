@@ -1,0 +1,1 @@
+ALTER PUBLICATION supabase_realtime DROP TABLE public.job_quotes;

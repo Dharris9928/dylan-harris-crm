@@ -779,6 +779,31 @@ export function UserManagement() {
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
+                            {currentUser?.role === 'admin' && user.id !== currentUser?.id && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={async () => {
+                                        await startImpersonation({
+                                          userId: user.id,
+                                          userEmail: user.email,
+                                          userRole: user.role,
+                                        });
+                                        toast.success(`Now viewing as ${user.first_name || user.email}`);
+                                      }}
+                                    >
+                                      <UserCog className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Impersonate user</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>

@@ -62,7 +62,6 @@ export function UserApprovalPanel() {
         created_at: profile.created_at,
         approval_status: profile.approval_status,
         email: emailsMap[profile.id] || 'No email',
-        temp_password: profile.temp_password || null,
         invitation_email_sent_at: profile.invitation_email_sent_at || null,
         invitation_email_delivered_at: profile.invitation_email_delivered_at || null,
         invitation_email_opened_at: profile.invitation_email_opened_at || null,

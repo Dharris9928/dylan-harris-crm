@@ -276,7 +276,13 @@ export function EnrichmentErrorLog() {
         ) : (
           <ScrollArea className="h-[600px] pr-4">
             <div className="space-y-3">
-              {logs.map((log) => {
+              {logs
+                .filter(log => {
+                  if (statusFilter === 'all') return true;
+                  const isSuccess = log.status === 'success';
+                  return statusFilter === 'success' ? isSuccess : !isSuccess;
+                })
+                .map((log) => {
                 const costInfo = estimateCost(log.provider);
                 const fieldsCount = log.fields_enriched ? 
                   (Array.isArray(log.fields_enriched) ? log.fields_enriched.length : Object.keys(log.fields_enriched).length) 

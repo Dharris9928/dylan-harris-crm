@@ -1,0 +1,42 @@
+name: Sync from prod
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout demo repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure prod remote auth
+        env:
+          PROD_TOKEN: ${{ secrets.PROD_REPO_TOKEN }}
+        run: |
+          echo "PROD_REPO=https://x-access-token:${PROD_TOKEN}@github.com/Dharris9928/nestpro-connector.git" >> $GITHUB_ENV
+
+      - name: Run sync script
+        run: |
+          chmod +x scripts/sync-from-prod.sh
+          ./scripts/sync-from-prod.sh
+
+      - name: Open pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DATE_TAG="$(date +%Y-%m-%d)"
+          BRANCH="sync/from-prod-${DATE_TAG}"
+          gh pr create \
+            --base main \
+            --head "${BRANCH}" \
+            --title "Sync from prod ${DATE_TAG}" \
+            --body "Automated sync from nestpro-connector main. Review diff, then merge. See SYNC.md for post-merge checklist." \
+          || echo "PR may already exist for ${BRANCH}"

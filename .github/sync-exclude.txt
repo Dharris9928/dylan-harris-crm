@@ -1,0 +1,5 @@
+.env
+src/integrations/supabase/client.ts
+src/integrations/supabase/types.ts
+supabase/config.toml
+supabase/migrations

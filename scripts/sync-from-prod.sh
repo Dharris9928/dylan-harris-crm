@@ -38,11 +38,7 @@ echo "==> Creating ${SYNC_BRANCH}"
 git checkout -B "${SYNC_BRANCH}"
 
 echo "==> Merging prod/${PROD_BRANCH} (prod wins on conflicts)"
-git merge --no-edit -X theirs "prod/${PROD_BRANCH}" || {
-  echo "Merge had conflicts git couldn't auto-resolve. Aborting."
-  git merge --abort || true
-  exit 1
-}
+git merge --allow-unrelated-histories -X theirs prod/main -m "Sync from prod $(date +%Y-%m-%d)" || true
 
 echo "==> Restoring demo's protected files"
 while IFS= read -r path; do

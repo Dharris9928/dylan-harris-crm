@@ -192,133 +192,88 @@ function matchesKeywords(company: any, updates: any, keywords: string[]): boolea
 }
 
 export function determineSegment(company: any, updates: any): { segment: string | null; rationale: string | null } {
-  const industryType = updates.industry_type || company.industry_type;
-  if (!industryType) return { segment: null, rationale: null };
-  
-  // Get enriched employee count
+  const rawIndustry = updates.industry_type || company.industry_type;
+
+  // Normalize non-Builder industries to Contractor for segment matching.
+  // Partner/Other, Energy, Engineer, etc. previously returned null forever
+  // because SEGMENT_DEFINITIONS only contains Builder + Contractor entries.
+  const industryType: 'Builder' | 'Contractor' =
+    rawIndustry === 'Builder' ? 'Builder' : 'Contractor';
+
   const employees = updates.total_employees || company.total_employees;
-  
-  // Get enriched revenue (in millions)
   const revenueRange = updates.annual_revenue_range || company.annual_revenue_range;
   const revenue = parseRevenueRange(revenueRange);
-  
-  console.log(`Segment matching - Industry: ${industryType}, Employees: ${employees}, Revenue: ${revenue}M`);
-  
-  // Filter segments by industry type and sort by priority
+
+  console.log(`Segment matching - Industry: ${rawIndustry} (as ${industryType}), Employees: ${employees}, Revenue: ${revenue}M`);
+
+  // Try strict definition match first (employees AND revenue both in range)
   const matchingSegments = SEGMENT_DEFINITIONS
     .filter(seg => seg.industryType === industryType)
     .sort((a, b) => a.priority - b.priority);
-  
-  // Find the best matching segment
+
   for (const segment of matchingSegments) {
     let matches = true;
-    
-    // Check employee count
     if (employees) {
       if (segment.employeeMin && employees < segment.employeeMin) matches = false;
       if (segment.employeeMax && employees > segment.employeeMax) matches = false;
     }
-    
-    // Check revenue
     if (revenue && matches) {
       if (segment.revenueMin && revenue < segment.revenueMin) matches = false;
       if (segment.revenueMax && revenue > segment.revenueMax) matches = false;
     }
-    
-    // Check keywords (optional, adds specificity)
     if (matches && segment.keywords && segment.keywords.length > 0) {
       const keywordMatch = matchesKeywords(company, updates, segment.keywords);
-      // Keywords are a bonus for specific segments, but not required
       if (keywordMatch) {
-        const rationale = `Matched ${segment.name} based on: ${employees ? `${employees} employees` : ''}${employees && revenue ? ', ' : ''}${revenue ? `$${revenue}M revenue` : ''}, and keyword indicators in company profile.`;
-        console.log(`Matched segment: ${segment.name} (with keywords)`);
+        const rationale = `Matched ${segment.name} based on: ${employees ? `${employees} employees` : ''}${employees && revenue ? ', ' : ''}${revenue ? `$${revenue}M revenue` : ''}, and keyword indicators.`;
         return { segment: segment.name, rationale };
       }
     }
-    
-    // If all required criteria match (even without keywords)
     if (matches && (employees || revenue)) {
       const rationale = `Matched ${segment.name} based on company size: ${employees ? `${employees} employees` : ''}${employees && revenue ? ' and ' : ''}${revenue ? `$${revenue}M annual revenue` : ''}.`;
-      console.log(`Matched segment: ${segment.name}`);
       return { segment: segment.name, rationale };
     }
   }
-  
-  // Default fallback based on size and revenue if no keyword match
-  if (employees || revenue) {
-    const metrics = `${employees ? `${employees} employees` : ''}${employees && revenue ? ', ' : ''}${revenue ? `$${revenue}M revenue` : ''}`;
-    
-    if (industryType === 'Builder') {
-      // Production/Tract: 201-1000+ employees, $50M+ revenue
-      if (employees >= 201 || (revenue && revenue >= 50)) {
-        return { segment: 'production_tract', rationale: `Assigned to Production/Tract segment based on large scale: ${metrics}. Typical for high-volume production builders.` };
-      }
-      
-      // Multi-Family: 51-500 employees, $25M+ revenue (check before regional mid-volume)
-      if (employees >= 51 && revenue && revenue >= 25) {
-        return { segment: 'multi_family', rationale: `Assigned to Multi-Family segment based on: ${metrics}. Scale indicates multi-family/community development focus.` };
-      }
-      
-      // Regional Mid-Volume: 11-200 employees, $10M-$50M revenue
-      if (employees >= 11 && employees <= 200 && revenue && revenue >= 10 && revenue <= 50) {
-        return { segment: 'regional_mid_volume', rationale: `Assigned to Regional Mid-Volume segment based on: ${metrics}. Typical for semi-custom regional builders.` };
-      }
-      
-      // Active Adult: 10-200 employees, $15M-$40M revenue
-      if (employees >= 10 && employees <= 200 && revenue && revenue >= 15 && revenue <= 40) {
-        return { segment: 'active_adult', rationale: `Assigned to Active Adult segment based on: ${metrics}. Scale suggests specialized community development.` };
-      }
-      
-      // Luxury Custom: 5-50 employees, $5M-$25M revenue
-      if (employees >= 5 && employees <= 50 && revenue && revenue >= 5 && revenue <= 25) {
-        return { segment: 'luxury_custom', rationale: `Assigned to Luxury Custom segment based on: ${metrics}. Size indicates custom/luxury builder profile.` };
-      }
-      
-      // Affordable Housing: 5-100 employees, $5M-$20M revenue
-      if (employees >= 5 && employees <= 100 && revenue && revenue >= 5 && revenue <= 20) {
-        return { segment: 'affordable_housing', rationale: `Assigned to Affordable Housing segment based on: ${metrics}. Scale suggests affordable/workforce housing focus.` };
-      }
-      
-      // Spec Home: 5-50 employees, $3M-$15M revenue (smallest builders)
-      if (employees >= 5 && employees <= 50 && revenue && revenue >= 3) {
-        return { segment: 'spec_home', rationale: `Assigned to Spec Home segment based on: ${metrics}. Small-scale builder profile.` };
-      }
-      
-      // Fallback for small builders
-      return { segment: 'spec_home', rationale: `Assigned to Spec Home segment as default for small builder profile: ${metrics}.` };
-    } else if (industryType === 'Contractor') {
-      // High volume: 25-100+ employees, $5M+ revenue
-      if (employees >= 25 && revenue && revenue >= 5) {
-        return { segment: 'high_volume', rationale: `Assigned to High Volume segment based on: ${metrics}. Scale indicates high-volume operations.` };
-      }
-      
-      // Smart home champions: 15-50 employees, $2M-$8M revenue
-      if (employees >= 15 && employees <= 50 && revenue && revenue >= 2) {
-        return { segment: 'smart_home_champions', rationale: `Assigned to Smart Home Champions segment based on: ${metrics}. Mid-size profile suitable for smart home focus.` };
-      }
-      
-      // Customer experience: 10-40 employees, $1.5M-$6M revenue
-      if (employees >= 10 && employees <= 40 && revenue && revenue >= 1.5) {
-        return { segment: 'customer_experience', rationale: `Assigned to Customer Experience segment based on: ${metrics}. Size suggests customer-focused service operations.` };
-      }
-      
-      // Regional growth: 8-30 employees, $1M-$4M revenue
-      if (employees >= 8 && employees <= 30 && revenue && revenue >= 1) {
-        return { segment: 'regional_growth', rationale: `Assigned to Regional Growth segment based on: ${metrics}. Profile indicates regional expansion potential.` };
-      }
-      
-      // Premium specialists: 5-25 employees, $1M-$5M revenue
-      if (employees >= 5 && employees <= 25) {
-        return { segment: 'premium_specialists', rationale: `Assigned to Premium Specialists segment based on: ${metrics}. Small specialized contractor profile.` };
-      }
-      
-      // Traditionalists: 3-15 employees, $500K-$2M revenue (smallest)
-      if (employees >= 3) {
-        return { segment: 'traditionalists', rationale: `Assigned to Traditionalists segment based on: ${metrics}. Small traditional contractor profile.` };
-      }
+
+  // Tiered fallbacks
+  const metrics = `${employees ? `${employees} employees` : 'unknown employees'}${revenue ? `, $${revenue}M revenue` : ''}`;
+
+  if (industryType === 'Builder') {
+    if ((employees && employees >= 201) || (revenue && revenue >= 50)) {
+      return { segment: 'production_tract', rationale: `Production/Tract by scale: ${metrics}.` };
     }
+    if ((employees && employees >= 51) || (revenue && revenue >= 25)) {
+      return { segment: 'multi_family', rationale: `Multi-Family by scale: ${metrics}.` };
+    }
+    if ((employees && employees >= 11) || (revenue && revenue >= 10)) {
+      return { segment: 'regional_mid_volume', rationale: `Regional Mid-Volume by scale: ${metrics}.` };
+    }
+    if ((employees && employees >= 5) || (revenue && revenue >= 3)) {
+      return { segment: 'spec_home', rationale: `Spec Home by scale: ${metrics}.` };
+    }
+    // Last-resort builder fallback (no data or sub-$3M)
+    return { segment: 'spec_home', rationale: `Spec Home (default small-builder fallback): ${metrics}.` };
   }
-  
-  console.log('No segment match found');
-  return { segment: null, rationale: null };
+
+  // Contractor (and normalized non-Builder industries)
+  if ((employees && employees >= 25) || (revenue && revenue >= 5)) {
+    return { segment: 'high_volume', rationale: `High Volume by scale: ${metrics}.` };
+  }
+  if ((employees && employees >= 15) || (revenue && revenue >= 2)) {
+    return { segment: 'smart_home_champions', rationale: `Smart Home Champions by scale: ${metrics}.` };
+  }
+  if ((employees && employees >= 10) || (revenue && revenue >= 1.5)) {
+    return { segment: 'customer_experience', rationale: `Customer Experience by scale: ${metrics}.` };
+  }
+  if ((employees && employees >= 8) || (revenue && revenue >= 1)) {
+    return { segment: 'regional_growth', rationale: `Regional Growth by scale: ${metrics}.` };
+  }
+  if ((employees && employees >= 5) || (revenue && revenue >= 0.5)) {
+    return { segment: 'premium_specialists', rationale: `Premium Specialists by scale: ${metrics}.` };
+  }
+  // Last-resort contractor fallback — catches micro-shops, <$500K revenue,
+  // and the 60%+ of free-tier enrichments where AI couldn't extract size.
+  return {
+    segment: 'traditionalists',
+    rationale: `Traditionalists (default micro/unknown-size fallback): ${metrics}.`,
+  };
 }

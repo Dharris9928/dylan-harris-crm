@@ -160,7 +160,7 @@ serve(async (req) => {
               enrichment_type: 'bulk',
               status: gotSegment ? 'success' : 'no_segment',
               error_message: gotSegment ? null : `enrich-company returned 200 but ${isBuilder ? 'builder_segment' : 'segment'} is still null. Response: ${bodyText?.slice(0, 300)}`,
-              fields_enriched: gotSegment ? { builder_segment: c.builder_segment } : [],
+              fields_enriched: gotSegment ? { [isBuilder ? 'builder_segment' : 'segment']: effectiveSegment } : [],
             });
           }
         } catch (e) {

@@ -442,6 +442,33 @@ serve(async (req) => {
     };
 
     const updates = sanitize(enrichmentResult.companyUpdates);
+
+    // Pre-strip enum fields whose AI-supplied value doesn't match the DB check
+    // constraint. Without this, every update goes through 9+ retry round-trips
+    // and the segment can be stripped collaterally before it ever persists.
+    const ENUM_ALLOWLIST: Record<string, string[]> = {
+      linkedin_activity_level: ['Very Active','Active','Moderate','Inactive'],
+      price_point_category: ['entry_level','move_up','premium','luxury'],
+      service_area_type: ['local','metro','regional','multi_state'],
+      social_media_presence: ['Strong','Moderate','Minimal','None'],
+      total_employees_range: ['500+','250-499','100-249','50-99','25-49','10-24','5-9','1-4'],
+      website_quality: ['Professional','Basic','Outdated','None'],
+      years_in_business_range: ['30+','20-29','15-19','10-14','6-9','3-5','0-2'],
+      average_home_price_range: ['$3M+','$2M-$2.99M','$1.5M-$1.99M','$1M-$1.49M','$800K-$999K','$600K-$799K','$500K-$599K','$400K-$499K','$300K-$399K','$250K-$299K','$200K-$249K','$150K-$199K','<$150K'],
+      annual_volume_range: ['10,000+','5,000-9,999','3,000-4,999','2,000-2,999','1,500-1,999','1,000-1,499','1,000+','750-999','500-749','500-999','250-499','100-249','50-99','25-49','10-24','5-9','1-4','<100'],
+      annual_revenue_range: ['$100M+','$50M-$99M','$50M+','$25M-$49M','$10M-$24M','$10M+','$6M-$10M','$5M-$9M','$3M-$5.9M','$2M-$4M','$1M-$2.9M','$1M-$1.9M','$500K-$999K','<$500K','<$1M','<$2M'],
+      revenue_growth_trend: ['High Growth 20%+','Moderate Growth 10-20%','Stable 0-10%','Declining','Unknown'],
+      profitability_level: ['Highly Profitable','Profitable','Break-even','Struggling','Unknown'],
+    };
+    for (const [field, allowed] of Object.entries(ENUM_ALLOWLIST)) {
+      const v = updates[field];
+      if (v == null || v === '') { delete updates[field]; continue; }
+      if (!allowed.includes(String(v))) {
+        console.log(`[enum-sanitize] Dropping ${field}='${v}' (not in allowlist)`);
+        delete updates[field];
+      }
+    }
+
     
     // Auto-assign segment based on enriched data
     const segmentResult = determineSegment(company, updates);

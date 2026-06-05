@@ -252,17 +252,20 @@ export function EnrichmentErrorLog() {
           </div>
         )}
 
-        {statusFilter !== 'all' && (
-          <div className="flex items-center justify-between mb-3 px-1">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <ListFilter className="h-4 w-4" />
-              Showing {statusFilter === 'success' ? 'successful' : 'failed'} enrichments only
-            </div>
-            <Button variant="ghost" size="sm" onClick={() => setStatusFilter('all')}>
-              Clear filter
+        <div className="flex items-center gap-2 mb-3 px-1 flex-wrap">
+          <Button
+            variant={recentOnly ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setRecentOnly(v => !v)}
+          >
+            Recently Enriched (24h)
+          </Button>
+          {(statusFilter !== 'all' || recentOnly) && (
+            <Button variant="ghost" size="sm" onClick={() => { setStatusFilter('all'); setRecentOnly(false); }}>
+              Clear filters
             </Button>
-          </div>
-        )}
+          )}
+        </div>
 
 
         {loading ? (
@@ -283,9 +286,15 @@ export function EnrichmentErrorLog() {
             <div className="space-y-3">
               {logs
                 .filter(log => {
-                  if (statusFilter === 'all') return true;
-                  const isSuccess = log.status === 'success';
-                  return statusFilter === 'success' ? isSuccess : !isSuccess;
+                  if (statusFilter !== 'all') {
+                    const isSuccess = log.status === 'success';
+                    if (statusFilter === 'success' ? !isSuccess : isSuccess) return false;
+                  }
+                  if (recentOnly) {
+                    const ageMs = Date.now() - new Date(log.created_at).getTime();
+                    if (ageMs > 24 * 60 * 60 * 1000) return false;
+                  }
+                  return true;
                 })
                 .map((log) => {
                 const costInfo = estimateCost(log.provider);

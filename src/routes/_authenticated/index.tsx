@@ -186,15 +186,17 @@ function KPICard({
   change,
   trend,
   icon: Icon,
+  to,
 }: {
   title: string;
   value: string | number;
   change: string;
   trend: "up" | "down";
   icon: React.ElementType;
+  to?: string;
 }) {
-  return (
-    <Card>
+  const inner = (
+    <Card className={to ? "transition-all hover:shadow-md hover:border-emerald-500/50 cursor-pointer" : ""}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
         <Icon className="h-4 w-4 text-muted-foreground" />
@@ -212,6 +214,8 @@ function KPICard({
       </CardContent>
     </Card>
   );
+  if (to) return <Link to={to}>{inner}</Link>;
+  return inner;
 }
 
 function PriorityDistribution() {

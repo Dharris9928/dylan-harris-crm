@@ -26,6 +26,7 @@ export type Database = {
           handoff_from: string | null
           handoff_to: string | null
           id: string
+          is_demo: boolean
           opportunity_id: string | null
           outcome: Database["public"]["Enums"]["activity_outcome"]
           scheduled_at: string | null
@@ -44,6 +45,7 @@ export type Database = {
           handoff_from?: string | null
           handoff_to?: string | null
           id?: string
+          is_demo?: boolean
           opportunity_id?: string | null
           outcome?: Database["public"]["Enums"]["activity_outcome"]
           scheduled_at?: string | null
@@ -62,6 +64,7 @@ export type Database = {
           handoff_from?: string | null
           handoff_to?: string | null
           id?: string
+          is_demo?: boolean
           opportunity_id?: string | null
           outcome?: Database["public"]["Enums"]["activity_outcome"]
           scheduled_at?: string | null
@@ -168,6 +171,7 @@ export type Database = {
           created_at: string
           expiration_date: string | null
           id: string
+          is_demo: boolean
           issue_date: string | null
           jurisdiction: string | null
           lat: number | null
@@ -189,6 +193,7 @@ export type Database = {
           created_at?: string
           expiration_date?: string | null
           id?: string
+          is_demo?: boolean
           issue_date?: string | null
           jurisdiction?: string | null
           lat?: number | null
@@ -210,6 +215,7 @@ export type Database = {
           created_at?: string
           expiration_date?: string | null
           id?: string
+          is_demo?: boolean
           issue_date?: string | null
           jurisdiction?: string | null
           lat?: number | null
@@ -242,6 +248,7 @@ export type Database = {
           created_by: string | null
           engagement_score: number | null
           id: string
+          is_demo: boolean
           meeting_scheduled_at: string | null
           opened_at: string | null
           replied_at: string | null
@@ -257,6 +264,7 @@ export type Database = {
           created_by?: string | null
           engagement_score?: number | null
           id?: string
+          is_demo?: boolean
           meeting_scheduled_at?: string | null
           opened_at?: string | null
           replied_at?: string | null
@@ -272,6 +280,7 @@ export type Database = {
           created_by?: string | null
           engagement_score?: number | null
           id?: string
+          is_demo?: boolean
           meeting_scheduled_at?: string | null
           opened_at?: string | null
           replied_at?: string | null
@@ -310,6 +319,7 @@ export type Database = {
           firmographic_score: number | null
           id: string
           industry: Database["public"]["Enums"]["company_industry"] | null
+          is_demo: boolean
           lead_score: number | null
           name: string
           notes: string | null
@@ -337,6 +347,7 @@ export type Database = {
           firmographic_score?: number | null
           id?: string
           industry?: Database["public"]["Enums"]["company_industry"] | null
+          is_demo?: boolean
           lead_score?: number | null
           name: string
           notes?: string | null
@@ -364,6 +375,7 @@ export type Database = {
           firmographic_score?: number | null
           id?: string
           industry?: Database["public"]["Enums"]["company_industry"] | null
+          is_demo?: boolean
           lead_score?: number | null
           name?: string
           notes?: string | null
@@ -424,6 +436,7 @@ export type Database = {
           decision_authority: string | null
           email: string | null
           id: string
+          is_demo: boolean
           is_primary: boolean
           linkedin_url: string | null
           mobile: string | null
@@ -442,6 +455,7 @@ export type Database = {
           decision_authority?: string | null
           email?: string | null
           id?: string
+          is_demo?: boolean
           is_primary?: boolean
           linkedin_url?: string | null
           mobile?: string | null
@@ -460,6 +474,7 @@ export type Database = {
           decision_authority?: string | null
           email?: string | null
           id?: string
+          is_demo?: boolean
           is_primary?: boolean
           linkedin_url?: string | null
           mobile?: string | null
@@ -584,6 +599,7 @@ export type Database = {
           estimated_value: number | null
           expected_close_date: string | null
           id: string
+          is_demo: boolean
           name: string
           notes: string | null
           probability: number | null
@@ -600,6 +616,7 @@ export type Database = {
           estimated_value?: number | null
           expected_close_date?: string | null
           id?: string
+          is_demo?: boolean
           name: string
           notes?: string | null
           probability?: number | null
@@ -616,6 +633,7 @@ export type Database = {
           estimated_value?: number | null
           expected_close_date?: string | null
           id?: string
+          is_demo?: boolean
           name?: string
           notes?: string | null
           probability?: number | null
@@ -680,8 +698,11 @@ export type Database = {
           id: string
           mfa_enabled: boolean
           phone: string | null
+          plan: Database["public"]["Enums"]["plan_tier"]
           session_timeout_minutes: number
           title: string | null
+          trial_ends_at: string | null
+          trial_started_at: string | null
           updated_at: string
         }
         Insert: {
@@ -691,8 +712,11 @@ export type Database = {
           id: string
           mfa_enabled?: boolean
           phone?: string | null
+          plan?: Database["public"]["Enums"]["plan_tier"]
           session_timeout_minutes?: number
           title?: string | null
+          trial_ends_at?: string | null
+          trial_started_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -702,9 +726,42 @@ export type Database = {
           id?: string
           mfa_enabled?: boolean
           phone?: string | null
+          plan?: Database["public"]["Enums"]["plan_tier"]
           session_timeout_minutes?: number
           title?: string | null
+          trial_ends_at?: string | null
+          trial_started_at?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      usage_counters: {
+        Row: {
+          count: number
+          created_at: string
+          feature: Database["public"]["Enums"]["quota_feature"]
+          id: string
+          period_start: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          count?: number
+          created_at?: string
+          feature: Database["public"]["Enums"]["quota_feature"]
+          id?: string
+          period_start?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          count?: number
+          created_at?: string
+          feature?: Database["public"]["Enums"]["quota_feature"]
+          id?: string
+          period_start?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -735,12 +792,42 @@ export type Database = {
     }
     Functions: {
       has_elevated_access: { Args: { _user_id: string }; Returns: boolean }
+      has_quota: {
+        Args: {
+          _feature: Database["public"]["Enums"]["quota_feature"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      start_pro_trial: {
+        Args: never
+        Returns: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          mfa_enabled: boolean
+          phone: string | null
+          plan: Database["public"]["Enums"]["plan_tier"]
+          session_timeout_minutes: number
+          title: string | null
+          trial_ends_at: string | null
+          trial_started_at: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
     }
     Enums: {
@@ -763,7 +850,19 @@ export type Database = {
         | "Committed"
         | "Purchased"
         | "Declined"
+      plan_tier: "free" | "pro" | "business" | "enterprise"
       priority_tier: "P1" | "P2" | "P3" | "P4"
+      quota_feature:
+        | "companies"
+        | "contacts"
+        | "opportunities"
+        | "apollo_enrich"
+        | "permit_ai_search"
+        | "ai_presentation"
+        | "ai_prioritize"
+        | "ai_score_contacts"
+        | "ai_outreach"
+        | "ai_communication"
       region: "East" | "West"
     }
     CompositeTypes: {
@@ -913,7 +1012,20 @@ export const Constants = {
         "Purchased",
         "Declined",
       ],
+      plan_tier: ["free", "pro", "business", "enterprise"],
       priority_tier: ["P1", "P2", "P3", "P4"],
+      quota_feature: [
+        "companies",
+        "contacts",
+        "opportunities",
+        "apollo_enrich",
+        "permit_ai_search",
+        "ai_presentation",
+        "ai_prioritize",
+        "ai_score_contacts",
+        "ai_outreach",
+        "ai_communication",
+      ],
       region: ["East", "West"],
     },
   },
